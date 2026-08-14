@@ -45,7 +45,18 @@ TOP_CONTEXT = 5
 API_URL = 'https://api.deepseek.com/v1/chat/completions'
 MODEL = 'deepseek-chat'
 
-DATASETS = ['scidocs', 'scifact']
+DATASETS = ['scidocs', 'scifact', 'nfcorpus', 'trec-covid']
+V3DATA = os.path.join(ROOT, 'data')
+V3ART = os.path.join(ROOT, 'artifacts')
+
+
+def ds_locations(ds):
+    """Return (base_dir_with_beir_files, prep_dir, scoremats_npz)."""
+    if ds in ('scidocs', 'scifact'):
+        return (os.path.join(V2, ds), os.path.join(V2, f'{ds}_prep'),
+                os.path.join(V2, f'{ds}_scoremats.npz'))
+    return (os.path.join(V3DATA, ds), os.path.join(V3ART, f'{ds}_prep'),
+            os.path.join(V3ART, f'{ds}_scoremats.npz'))
 
 GEN_SYS = ('You are an academic writing assistant. Answer the question using '
            'ONLY the provided passages. Cite supporting passages inline as '
@@ -128,13 +139,12 @@ def build_tasks():
     rng = random.Random(SEED)
     tasks = []
     for ds in DATASETS:
-        base = os.path.join(V2, ds)
-        prep = os.path.join(V2, f'{ds}_prep')
+        base, prep, sm_path = ds_locations(ds)
         doc_ids = json.load(open(os.path.join(prep, 'doc_ids.json')))
         didx = {d: i for i, d in enumerate(doc_ids)}
         C = np.load(os.path.join(prep, 'C.npy'))
         Rr = np.load(os.path.join(prep, 'R.npy'))
-        z = np.load(os.path.join(V2, f'{ds}_scoremats.npz'))
+        z = np.load(sm_path)
         S_bm, S_sb = z['S_bm'], z['S_sb']
         qrels = load_qrels(os.path.join(base, 'qrels', 'test.tsv'))
         qids = sorted(qrels.keys())
@@ -143,7 +153,8 @@ def build_tasks():
                    for q in load_jsonl(os.path.join(base, 'queries.jsonl'))}
         corpus = {str(d['_id']): d for d in
                   load_jsonl(os.path.join(base, 'corpus.jsonl'))}
-        sample = rng.sample(qids, N_PER_DS)
+        n_take = min(N_PER_DS, len(qids))
+        sample = rng.sample(qids, n_take)
         for q in sample:
             qi = qids.index(q)
             bm_n = minmax(S_bm[qi].astype(np.float64))
@@ -201,8 +212,9 @@ def main():
         with open(CKPT, encoding='utf-8') as f:
             for line in f:
                 r = json.loads(line)
-                done.add((r['qid'], r['system']))
-    tasks = [t for t in build_tasks() if (t['qid'], t['system']) not in done]
+                done.add((r['ds'], r['qid'], r['system']))
+    tasks = [t for t in build_tasks()
+             if (t['ds'], t['qid'], t['system']) not in done]
     print(f'todo: {len(tasks)} generations', flush=True)
     if not tasks:
         return
@@ -211,7 +223,8 @@ def main():
     # qrels lookup for citation precision
     rel_docs = {}
     for ds in DATASETS:
-        qr = load_qrels(os.path.join(V2, ds, 'qrels', 'test.tsv'))
+        base, _, _ = ds_locations(ds)
+        qr = load_qrels(os.path.join(base, 'qrels', 'test.tsv'))
         for q, dd in qr.items():
             rel_docs[(ds, q)] = {d for d, s in dd.items() if s >= 1}
 
@@ -297,6 +310,27 @@ def summarize():
                 'n': len(ab), 'mean_CA-HR': float(x.mean()),
                 'mean_Neural-Hybrid': float(y.mean()),
                 'wilcoxon_p_two_sided': p}
+    json.dump(out, open(SUMMARY, 'w'), indent=1)
+    # per-dataset breakdown (the study's claim is four-domain)
+    by_ds = {}
+    for r in ok:
+        by_ds.setdefault(r['ds'], []).append(r)
+    for ds, recs_ds in by_ds.items():
+        sub = {}
+        for sysname in ('CA-HR', 'Neural-Hybrid'):
+            rr = [r for r in recs_ds if r['system'] == sysname]
+            rel = [r['relevance'] for r in rr if r.get('relevance')]
+            fai = [r['faithfulness'] for r in rr if r.get('faithfulness')]
+            cp = [r['citation_precision'] for r in rr
+                  if r.get('citation_precision') is not None]
+            sub[sysname] = {
+                'n': len(rr),
+                'relevance_mean': float(np.mean(rel)) if rel else None,
+                'faithfulness_mean': float(np.mean(fai)) if fai else None,
+                'citation_precision_mean': float(np.mean(cp)) if cp else None,
+                'rel_docs_in_context_mean': float(np.mean(
+                    [r['n_rel_context'] for r in rr])) if rr else None}
+        out.setdefault('by_dataset', {})[ds] = sub
     json.dump(out, open(SUMMARY, 'w'), indent=1)
     print(json.dumps(out, indent=1))
 

@@ -23,6 +23,7 @@ METHODS7 = ['BM25', 'LSA-Dense', 'SBERT-Dense', 'Neural-Hybrid', 'UMA-RAG',
             'LP-RAG', 'CA-HR']
 METHODS8 = ['BM25', 'LSA-Dense', 'SBERT-Dense', 'BGE-Dense', 'Neural-Hybrid',
             'UMA-RAG', 'LP-RAG', 'CA-HR']
+METHODS10 = METHODS8 + ['BGE-Hybrid', 'BGE-CA-HR']
 METRICS = ['R@1', 'R@5', 'R@10', 'N@10', 'MRR']
 DS_META = {
     'scidocs': {'name': 'SCIDOCS', 'domain': 'computer science',
@@ -65,6 +66,9 @@ def load_perquery(ds):
     d = {m: {k: z[f'{m}||{k}'] for k in METRICS} for m in METHODS7}
     zb = np.load(os.path.join(R3, f'{ds}_bge_perquery.npz'))
     d['BGE-Dense'] = {k: zb[f'BGE-Dense||{k}'] for k in METRICS}
+    zh = np.load(os.path.join(R3, f'{ds}_bge_hybrid_perquery.npz'))
+    for m in ('BGE-Hybrid', 'BGE-CA-HR'):
+        d[m] = {k: zh[f'{m}||{k}'] for k in METRICS}
     return d
 
 
@@ -75,9 +79,9 @@ def main():
     for ds in DS_META:
         d = load_perquery(ds)
         avg = {m: {k: float(np.mean(v)) for k, v in d[m].items()}
-               for m in METHODS8}
+               for m in METHODS10}
         tests = {}
-        for base in METHODS8:
+        for base in METHODS10:
             if base == 'CA-HR':
                 continue
             for k in METRICS:
@@ -85,7 +89,7 @@ def main():
                 tests[f'CA-HR vs {base} | {k}'] = {
                     'cahr': float(np.mean(a)), 'base': float(np.mean(b)),
                     'p_one_sided': wilcoxon_greater(a, b), 'd': cohend(a, b)}
-        # BGE significance vs the MiniLM dense and vs CA-HR (two-sided)
+        # does metadata help on the STRONG BGE backbone? (key reviewer question)
         from scipy import stats as sstats
         bge_tests = {}
         for other in ('SBERT-Dense', 'CA-HR', 'Neural-Hybrid'):
@@ -96,10 +100,24 @@ def main():
             bge_tests[f'BGE-Dense vs {other} | N@10'] = {
                 'bge': float(x.mean()), 'other': float(y.mean()),
                 'p_two_sided': p, 'd': cohend(x, y)}
+        # BGE-CA-HR vs its metadata-free counterparts (one-sided "greater")
+        for other in ('BGE-Dense', 'BGE-Hybrid'):
+            a, b = d['BGE-CA-HR']['N@10'], d[other]['N@10']
+            bge_tests[f'BGE-CA-HR vs {other} | N@10'] = {
+                'cahr_bge': float(a.mean()), 'base': float(b.mean()),
+                'p_one_sided': wilcoxon_greater(a, b), 'd': cohend(a, b)}
+        # CA-HR vs BGE-CA-HR (backbone swap effect)
+        a, b = d['BGE-CA-HR']['N@10'], d['CA-HR']['N@10']
+        diff = a - b
+        nz = diff != 0
+        bge_tests['BGE-CA-HR vs CA-HR | N@10'] = {
+            'bge_cahr': float(a.mean()), 'cahr': float(b.mean()),
+            'p_two_sided': float(sstats.wilcoxon(a[nz], b[nz]).pvalue)
+            if nz.sum() else 1.0, 'd': cohend(a, b)}
         routed = ['UMA-RAG', 'LP-RAG', 'CA-HR']
         oracle = {k: float(np.mean(np.max(
             np.stack([d[m][k] for m in routed]), axis=0))) for k in METRICS}
-        best_single = max(METHODS8, key=lambda m: avg[m]['N@10'])
+        best_single = max(METHODS10, key=lambda m: avg[m]['N@10'])
         out['main'][ds] = {'n_queries': len(d['BM25']['N@10']), 'avg': avg,
                            'tests_vs_cahr': tests, 'bge_tests': bge_tests,
                            'best_single_N@10': best_single}

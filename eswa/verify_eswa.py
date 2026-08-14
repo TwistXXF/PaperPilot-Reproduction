@@ -32,7 +32,7 @@ def expect(label, value):
 
 
 METHODS = ['BM25', 'LSA-Dense', 'SBERT-Dense', 'BGE-Dense', 'Neural-Hybrid',
-           'UMA-RAG', 'LP-RAG', 'CA-HR']
+           'UMA-RAG', 'LP-RAG', 'CA-HR', 'BGE-Hybrid', 'BGE-CA-HR']
 DS = ['scidocs', 'scifact', 'nfcorpus', 'trec-covid']
 
 # 1. main table values
@@ -49,13 +49,21 @@ for ds in DS:
     for v in ABL:
         expect(f'ablation {ds} {v}', f"{T['ablation'][ds][v]['N@10']:.4f}")
 
-# 3. robustness quoted values
-for ds, noise, m in [('scifact', '0.4', 'CA-HR'), ('scifact', '0.4', 'BM25'),
-                     ('trec-covid', '0.4', 'CA-HR'),
-                     ('trec-covid', '0.4', 'BM25'),
-                     ('trec-covid', '0.4', 'Neural-Hybrid')]:
-    expect(f'robust {ds} {noise} {m}',
-           f"{T['robust'][ds][noise][m]:.4f}")
+# 3. robustness quoted values (nested metric dicts; manuscript quotes N@10)
+for ds, m in [('scifact', 'CA-HR'), ('scifact', 'BM25'),
+              ('scifact', 'Neural-Hybrid'),
+              ('trec-covid', 'CA-HR'), ('trec-covid', 'BM25'),
+              ('trec-covid', 'Neural-Hybrid'),
+              ('nfcorpus', 'CA-HR'), ('nfcorpus', 'Neural-Hybrid'),
+              ('scidocs', 'BM25'), ('scidocs', 'CA-HR'),
+              ('scidocs', 'Neural-Hybrid')]:
+    expect(f'robust {ds} 0.4 {m}',
+           f"{T['robust'][ds]['0.4'][m]['N@10']:.4f}")
+
+# 3b. BGE backbone-transfer effect sizes quoted in Section 6.1
+for ds in DS:
+    d_val = T['main'][ds]['bge_tests']['BGE-CA-HR vs BGE-Hybrid | N@10']['d']
+    expect(f'bge transfer d {ds}', f'd = {d_val:.3f}')
 
 # 4. router / oracle
 for ds in DS:
@@ -66,15 +74,28 @@ for ds in DS:
     expect(f'oracle N@10 {ds}',
            f"{T['oracle'][ds]['routed_oracle']['N@10']:.4f}")
 
-# 5. generation summary
+# 5. generation summary (200 paired queries, four datasets)
 g = T['generation']
 for sysname in ('CA-HR', 'Neural-Hybrid'):
     s = g[sysname]
     expect(f'gen {sysname} relevance mean', f"{s['relevance']['mean']:.2f}")
     expect(f'gen {sysname} faith mean', f"{s['faithfulness']['mean']:.2f}")
-expect('gen paired relevance p', 'p = %.3f' % g['paired_relevance']['wilcoxon_p_two_sided'])
+
+
+def pstr(p):
+    return 'p < 0.001' if p < 0.001 else 'p = %.3f' % p
+
+
+for key in ['paired_relevance', 'paired_faithfulness',
+            'paired_citation_precision', 'paired_n_rel_context']:
+    expect(f'gen {key} p', pstr(g[key]['wilcoxon_p_two_sided']))
 expect('gen paired citprec CA-HR', '%.3f' % g['paired_citation_precision']['mean_CA-HR'])
 expect('gen paired citprec NH', '%.3f' % g['paired_citation_precision']['mean_Neural-Hybrid'])
+expect('gen rel ctx CA-HR', '%.2f' % g['paired_n_rel_context']['mean_CA-HR'])
+expect('gen rel ctx NH', '%.2f' % g['paired_n_rel_context']['mean_Neural-Hybrid'])
+# by-dataset citation-precision contrast quoted in text
+expect('gen citprec trec-covid', '0.87')
+expect('gen citprec scidocs', '0.15')
 
 # 6. dataset facts
 for s in ['25,657', '1,000', '5,183', '300', '3,633', '323', '171,332',
@@ -103,7 +124,11 @@ for label, value in checks:
 # staleness checks
 stale = []
 for bad in ['Information Processing', 'IP&M', 'two benchmarks',
-            'two datasets', 'SCIDOCS (computer science; 25,657 documents, '
+            'two datasets', 'PAV-Agent', 'eight retrieval configurations',
+            'Eight retrieval configurations', 'eight methods',
+            'eight configurations', '100 paired', '100 test queries',
+            'all p > 0.17',
+            'SCIDOCS (computer science; 25,657 documents, '
             '1,000 queries) and SciFact (biomedical;']:
     if bad in TEXT:
         stale.append(bad)

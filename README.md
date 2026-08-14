@@ -189,11 +189,12 @@ with Applications*:
 |---|---|---|
 | Extended pipeline | `eswa/reproduce.py` | All original stages plus NFCorpus / TREC-COVID support, checkpointed at 1000-doc granularity |
 | BGE baseline | `eswa/bge_baseline.py` | BGE-small-en-v1.5 dense retrieval on all four datasets (official query instruction) |
-| Generation eval | `eswa/gen_eval.py` | 100 paired queries (50 SCIDOCS + 50 SciFact), DeepSeek `deepseek-chat` answers, LLM-judged relevance/faithfulness + citation precision vs. gold judgments |
+| BGE backbone transfer | `eswa/bge_hybrid.py` | BGE-Hybrid (equal-weight BM25+BGE fusion) and BGE-CA-HR (CA-HR re-ranking on the BGE backbone): tests whether metadata gains survive a stronger encoder — they do not |
+| Generation eval | `eswa/gen_eval.py` | 200 paired queries (50 per dataset across all four benchmarks), DeepSeek `deepseek-chat` answers, LLM-judged relevance/faithfulness + citation precision vs. gold judgments |
 | Consolidation | `eswa/make_eswa_tables.py` | Merges every result into `results/eswa_tables.json` (single source of truth) |
 | Figures | `eswa/make_eswa_figs.py`, `eswa/make_arch_fig.py` | Fig. 1-5 (architecture, main results, ablation, robustness, routing) |
 | Manuscript | `eswa/build_eswa.py` | Generates the full ESWA submission package with numbers injected from `eswa_tables.json` |
-| Audit | `eswa/verify_eswa.py` | 141 checks: every manuscript number must match the result files |
+| Audit | `eswa/verify_eswa.py` | 174 checks: every manuscript number must match the result files |
 
 ### Key files
 
@@ -216,5 +217,5 @@ with Applications*:
 ### Audit
 
 ```
-python eswa/verify_eswa.py     # -> "checks: 141, failed: 0, stale: 0"
+python eswa/verify_eswa.py     # -> "checks: 174, failed: 0, stale: 0"
 ```

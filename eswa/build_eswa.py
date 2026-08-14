@@ -29,7 +29,7 @@ os.makedirs(FIGOUT, exist_ok=True)
 T = json.load(open(os.path.join(BASE, 'results', 'eswa_tables.json')))
 
 METHODS = ['BM25', 'LSA-Dense', 'SBERT-Dense', 'BGE-Dense', 'Neural-Hybrid',
-           'UMA-RAG', 'LP-RAG', 'CA-HR']
+           'UMA-RAG', 'LP-RAG', 'CA-HR', 'BGE-Hybrid', 'BGE-CA-HR']
 DS = ['scidocs', 'scifact', 'nfcorpus', 'trec-covid']
 DS_NAME = {d: T['datasets'][d]['name'] for d in DS}
 
@@ -142,16 +142,18 @@ def build_highlights():
     d = new_doc()
     p(d, 'Highlights', bold=True, size=13)
     hl = [
-        'Eight retrieval configurations are compared on four scientific '
-        'benchmarks with real bibliographic metadata.',
+        'Ten retrieval configurations on two dense backbones are compared '
+        'on four scientific benchmarks with real bibliographic metadata.',
         'The best retrieval strategy is domain-dependent; a stronger dense '
         'encoder (BGE-small) leads on three of four domains.',
         'Citation-aware reranking helps only on the citation-rich '
-        'computer-science corpus and is neutral or harmful elsewhere.',
+        'computer-science corpus, and the gain does not transfer to the '
+        'stronger BGE backbone.',
         'Per-query routing has small oracle headroom and a learned router '
         'does not exceed majority-class behaviour on any dataset.',
-        'End-to-end answer quality is insensitive to the retrieval backend; '
-        'the pipeline is deployed in the live PaperPilot system.',
+        'Answer quality on 200 paired queries is insensitive to the '
+        'retrieval backend; the pipeline is deployed in the live PaperPilot '
+        'system.',
     ]
     for x in hl:
         par = d.add_paragraph(style='List Bullet')
@@ -176,11 +178,12 @@ def build_manuscript():
       'one configuration is optimal across research domains—and whether '
       'bibliographic metadata such as citation counts and publication years '
       'should influence ranking—remains insufficiently quantified. This paper '
-      'reports a four-domain evaluation of eight retrieval configurations '
+      'reports a four-domain evaluation of ten retrieval configurations '
       '(BM25; latent-semantic analysis; two pretrained dense encoders, '
-      'all-MiniLM-L6-v2 and BGE-small-en-v1.5; equal-weight hybrid fusion; '
-      'and three metadata-aware variants: UMA-RAG, LP-RAG, and a citation- and '
-      'recency-aware re-ranker, CA-HR) on SCIDOCS (computer science; 25,657 '
+      'all-MiniLM-L6-v2 and BGE-small-en-v1.5; equal-weight hybrid fusion on '
+      'each encoder; and metadata-aware variants—UMA-RAG, LP-RAG, and a '
+      'citation- and recency-aware re-ranker, CA-HR—on both dense '
+      'backbones) on SCIDOCS (computer science; 25,657 '
       'documents, 1,000 queries), SciFact (biomedical claims; 5,183 documents, '
       '300 queries), NFCorpus (nutrition and medicine; 3,633 documents, 323 '
       'queries), and TREC-COVID (COVID-19 biomedicine; 171,332 documents, 50 '
@@ -194,12 +197,16 @@ def build_manuscript():
       'domain-conditional: the citation boost yields a significant gain only '
       'on the citation-rich SCIDOCS corpus, is neutral on SciFact, and is '
       'mildly harmful on NFCorpus and TREC-COVID, where metadata coverage is '
-      'thinner. Third, per-query strategy selection has a small oracle '
+      'thinner; moreover, the citation gain observed on the weaker MiniLM '
+      'backbone does not transfer to the stronger BGE backbone, indicating '
+      'that metadata priors substitute for—rather than complement—dense '
+      'retrieval quality. Third, per-query strategy selection has a small oracle '
       'headroom on three datasets, and a lightweight 12-feature logistic '
-      'router (PAV-Agent) does not exceed majority-class behaviour on any of '
+      'router (PAV Router) does not exceed majority-class behaviour on any of '
       'the four (Cohen\'s kappa approximately 0); we report this as a '
-      'replicated negative result. A generation-side study (100 paired '
-      'queries, DeepSeek answers with citations) finds end-to-end answer '
+      'replicated negative result. A generation-side study (200 paired '
+      'queries across all four benchmarks, DeepSeek answers with citations) '
+      'finds end-to-end answer '
       'relevance and faithfulness statistically indistinguishable between the '
       'hybrid and metadata-aware backends. The full pipeline is deployed in '
       'PaperPilot, a live academic writing assistant, and we report a '
@@ -235,7 +242,7 @@ def build_manuscript():
       'an emergency pandemic corpus where a third of the documents are fresh '
       'preprints with zero citations.')
     p(d,
-      'This paper quantifies that question directly. We evaluate eight '
+      'This paper quantifies that question directly. We evaluate ten '
       'retrieval configurations on four public scientific benchmarks spanning '
       'computer science, biomedicine, nutrition, and pandemic medicine, using '
       'real—never synthetic—bibliographic metadata acquired from the Semantic '
@@ -248,35 +255,53 @@ def build_manuscript():
       'asks whether backend differences survive into the final answer, and '
       '(v) a deployment case study in PaperPilot, a live academic writing '
       'assistant used by real users.')
-    p(d, 'The contributions are:')
+    p(d,
+      'Rather than proposing yet another retrieval algorithm, we frame the '
+      'study around three research questions:')
     for c in [
-        'A four-domain, eight-configuration evaluation of scientific RAG '
+        'RQ1. Does bibliographic metadata improve scientific retrieval '
+        'consistently across domains, or are its benefits conditional on '
+        'corpus properties?',
+        'RQ2. Which metadata signals help, under what corpus conditions do '
+        'they fail, and should retrieval strategy adaptation happen per '
+        'query or per domain?',
+        'RQ3. Do retrieval-level differences actually propagate to the '
+        'generated answers and to deployment decisions in a running system?',
+    ]:
+        par = d.add_paragraph(style='List Bullet')
+        par.add_run(c)
+    p(d,
+      'Answering these questions yields the following contributions:')
+    for c in [
+        'A four-domain, ten-configuration evaluation of scientific RAG '
         'retrieval with real bibliographic metadata, showing that the best '
         'configuration is domain-dependent and that a newer dense encoder '
-        '(BGE-small) leads on three of four domains;',
+        '(BGE-small) leads on three of four domains (RQ1);',
         'Evidence that citation- and recency-aware re-ranking (CA-HR) is '
-        'domain-conditional: it significantly improves ranking on the '
-        'citation-rich computer-science corpus, is neutral on biomedical '
-        'claims, and is mildly harmful where metadata coverage is thin;',
+        'domain-conditional—significantly helpful on the citation-rich '
+        'computer-science corpus, neutral on biomedical claims, mildly '
+        'harmful where metadata coverage is thin—and backbone-conditional: '
+        'the citation gain observed on the weaker MiniLM backbone does not '
+        'transfer to the stronger BGE backbone (RQ1, RQ2);',
         'A replicated negative result on per-query routing: oracle headroom '
-        'is small and a lightweight feature-based router collapses to '
-        'majority-class behaviour on all four datasets, implying adaptivity '
-        'should be allocated at the domain level;',
-        'A generation-side evaluation showing answer relevance and '
-        'faithfulness are statistically indistinguishable across the two '
-        'leading retrieval backends, alongside a citation-precision analysis '
-        'of LLM answers;',
-        'A deployment case study of the full pipeline in the live PaperPilot '
-        'system, with architecture, cost, and one month of real usage '
-        'statistics. All code, data, and per-query results are released at '
-        f'{REPO}.',
+        'is small and a lightweight feature-based router (PAV Router) '
+        'collapses to majority-class behaviour on all four datasets, '
+        'implying adaptivity should be allocated at the domain level (RQ2);',
+        'A four-domain generation-side evaluation (200 paired queries) '
+        'showing answer relevance and faithfulness are statistically '
+        'indistinguishable across the two leading retrieval backends, '
+        'together with a citation-precision analysis of LLM answers (RQ3);',
+        'A deployment feasibility case study of the full pipeline in the '
+        'live PaperPilot system, with architecture, cost, and one month of '
+        'real usage statistics (RQ3). All code, data, and per-query results '
+        f'are released at {REPO}.',
     ]:
         par = d.add_paragraph(style='List Bullet')
         par.add_run(c)
     p(d,
       'The remainder of the paper is organised as follows. Section 2 reviews '
       'related work. Section 3 describes the PaperPilot system. Section 4 '
-      'formalises the eight retrieval configurations and the router. Section 5 '
+      'formalises the ten retrieval configurations and the router. Section 5 '
       'details datasets, metadata acquisition, and evaluation protocol. '
       'Section 6 reports results. Section 7 presents the deployment case '
       'study. Section 8 discusses implications and limitations, and Section 9 '
@@ -358,7 +383,7 @@ def build_manuscript():
       'with no GPU, ruling out cross-encoder re-ranking at query time and '
       'motivating the CPU-efficient configurations evaluated in this study. '
       'Second, answers must stream interactively, so retrieval plus '
-      're-ranking must stay well under one second—satisfied by all eight '
+      're-ranking must stay well under one second—satisfied by all ten '
       'configurations (Section 6.6).')
     p(d, 'Fig. 1. PaperPilot system architecture and deployment boundary.',
       italic=True, size=9)
@@ -376,7 +401,10 @@ def build_manuscript():
       '[25], a 12-layer 384-dim model roughly twice the depth of MiniLM, '
       'used with its official query instruction prefix. Neural-Hybrid '
       'fuses BM25 and SBERT-Dense with equal weights on min-max-normalised '
-      'scores.')
+      'scores, and BGE-Hybrid is the same equal-weight fusion on the BGE '
+      'backbone. To test whether metadata effects depend on the strength of '
+      'the dense backbone, BGE-CA-HR applies the CA-HR re-ranking rule '
+      '(Section 4.2) to the BGE hybrid instead of the MiniLM hybrid.')
     h2(d, '4.2. Metadata-aware variants')
     p(d,
       'Three configurations add bibliographic signals. UMA-RAG augments the '
@@ -393,9 +421,9 @@ def build_manuscript():
       'years, and venues are real API values; documents without a matched '
       'record receive c_d = 0 and the corpus median year, mirroring how a '
       'deployed system must handle missing metadata.')
-    h2(d, '4.3. Query-level routing (PAV-Agent)')
+    h2(d, '4.3. Query-level routing (PAV Router)')
     p(d,
-      'PAV-Agent is a multinomial logistic-regression classifier over 12 '
+      'PAV Router is a multinomial logistic-regression classifier over 12 '
       'hand-crafted query features (length, lexical diversity, acronym and '
       'digit counts, survey/intent keywords, year mentions, stop-word ratio, '
       'capitalisation, hyphenation). Training labels are derived post hoc: '
@@ -490,7 +518,7 @@ def build_manuscript():
       f'(Neural-Hybrid {f4(avg("scifact", "Neural-Hybrid", "N@10"))} versus '
       f'{f4(avg("scifact", "BM25", "N@10"))} for BM25), and CA-HR attains '
       f'the best Recall@10 ({f4(avg("scifact", "CA-HR", "R@10"))}) of all '
-      f'eight methods. The stronger BGE-small encoder is the best single '
+      f'ten methods. The stronger BGE-small encoder is the best single '
       f'method on three of the four datasets—'
       f'{f4(avg("scifact", "BGE-Dense", "N@10"))} on SciFact, '
       f'{f4(avg("nfcorpus", "BGE-Dense", "N@10"))} on NFCorpus, and '
@@ -513,6 +541,37 @@ def build_manuscript():
       'In other words, metadata-aware re-ranking reliably beats purely '
       'lexical and non-pretrained retrieval, but whether it beats plain '
       'dense retrieval depends on the domain.')
+    p(d,
+      'Table 2 also isolates the role of the dense backbone. Equal-weight '
+      'hybrid fusion on BGE-small (BGE-Hybrid) does not reproduce the hybrid '
+      'advantage seen with MiniLM: it trails BGE-Dense on SCIDOCS '
+      f'({f4(avg("scidocs", "BGE-Hybrid", "N@10"))} vs. '
+      f'{f4(avg("scidocs", "BGE-Dense", "N@10"))}), SciFact '
+      f'({f4(avg("scifact", "BGE-Hybrid", "N@10"))} vs. '
+      f'{f4(avg("scifact", "BGE-Dense", "N@10"))}), and TREC-COVID '
+      f'({f4(avg("trec-covid", "BGE-Hybrid", "N@10"))} vs. '
+      f'{f4(avg("trec-covid", "BGE-Dense", "N@10"))}); only on NFCorpus does '
+      f'BGE-Hybrid ({f4(avg("nfcorpus", "BGE-Hybrid", "N@10"))}) edge out '
+      f'BGE-Dense ({f4(avg("nfcorpus", "BGE-Dense", "N@10"))}), where it '
+      'attains the best NDCG@10 of all ten configurations. Decisively for '
+      'RQ1, transferring the CA-HR re-ranking rule to the BGE backbone '
+      '(BGE-CA-HR) never helps: it falls slightly below BGE-Hybrid on every '
+      f'dataset (SCIDOCS {f4(avg("scidocs", "BGE-CA-HR", "N@10"))} vs. '
+      f'{f4(avg("scidocs", "BGE-Hybrid", "N@10"))}, '
+      f'd = {f3(T["main"]["scidocs"]["bge_tests"]["BGE-CA-HR vs BGE-Hybrid | N@10"]["d"])}; '
+      f'SciFact {f4(avg("scifact", "BGE-CA-HR", "N@10"))} vs. '
+      f'{f4(avg("scifact", "BGE-Hybrid", "N@10"))}, '
+      f'd = {f3(T["main"]["scifact"]["bge_tests"]["BGE-CA-HR vs BGE-Hybrid | N@10"]["d"])}; '
+      f'NFCorpus {f4(avg("nfcorpus", "BGE-CA-HR", "N@10"))} vs. '
+      f'{f4(avg("nfcorpus", "BGE-Hybrid", "N@10"))}, '
+      f'd = {f3(T["main"]["nfcorpus"]["bge_tests"]["BGE-CA-HR vs BGE-Hybrid | N@10"]["d"])}; '
+      f'TREC-COVID {f4(avg("trec-covid", "BGE-CA-HR", "N@10"))} vs. '
+      f'{f4(avg("trec-covid", "BGE-Hybrid", "N@10"))}, '
+      f'd = {f3(T["main"]["trec-covid"]["bge_tests"]["BGE-CA-HR vs BGE-Hybrid | N@10"]["d"])}) '
+      'and well below BGE-Dense. The citation gain that CA-HR obtains on the '
+      'weaker MiniLM backbone on SCIDOCS therefore does not transfer to a '
+      'stronger encoder: bibliographic priors appear to compensate for weak '
+      'dense representations rather than complement strong ones.')
     p(d, 'Fig. 2. Retrieval effectiveness (NDCG@10) across four domains.',
       italic=True, size=9)
 
@@ -560,25 +619,38 @@ def build_manuscript():
 
     h2(d, '6.3. Robustness to query corruption')
     p(d,
-      'Under simulated word-drop noise (10%-40%), the hybrid methods degrade '
-      'gracefully and remain well above BM25 at every noise level on all '
-      f'four datasets (Fig. 4). At 40% corruption, CA-HR retains '
-      f'{f4(T["robust"]["scifact"]["0.4"]["CA-HR"])} NDCG@10 on SciFact '
-      f'versus {f4(T["robust"]["scifact"]["0.4"]["BM25"])} for BM25, and on '
-      f'TREC-COVID CA-HR ({f4(T["robust"]["trec-covid"]["0.4"]["CA-HR"])}) '
-      f'stays ahead of both BM25 '
-      f'({f4(T["robust"]["trec-covid"]["0.4"]["BM25"])}) and Neural-Hybrid '
-      f'({f4(T["robust"]["trec-covid"]["0.4"]["Neural-Hybrid"])}): the '
-      f'citation authority term, being independent of the corrupted query '
-      f'text, acts as a stabiliser even where it does not raise clean-query '
-      f'effectiveness. On SCIDOCS and NFCorpus, CA-HR and Neural-Hybrid '
-      f'track each other closely under noise.')
+      'Under simulated word-drop noise (10%-40%), all hybrid methods degrade '
+      'gracefully, but robustness rankings are domain-dependent and do not '
+      'simply follow clean-query rankings (Fig. 4). On TREC-COVID, CA-HR is '
+      'the most noise-resistant configuration: at 40% corruption it retains '
+      f'{f4(T["robust"]["trec-covid"]["0.4"]["CA-HR"]["N@10"])} NDCG@10 '
+      f'versus {f4(T["robust"]["trec-covid"]["0.4"]["Neural-Hybrid"]["N@10"])} '
+      'for Neural-Hybrid and '
+      f'{f4(T["robust"]["trec-covid"]["0.4"]["BM25"]["N@10"])} for BM25: the '
+      'citation authority term, being independent of the corrupted query '
+      'text, acts as a stabiliser even where it does not raise clean-query '
+      'effectiveness. On SciFact, CA-HR '
+      f'({f4(T["robust"]["scifact"]["0.4"]["CA-HR"]["N@10"])}) and '
+      'Neural-Hybrid '
+      f'({f4(T["robust"]["scifact"]["0.4"]["Neural-Hybrid"]["N@10"])}) are '
+      'nearly tied at 40% noise, both well above BM25 '
+      f'({f4(T["robust"]["scifact"]["0.4"]["BM25"]["N@10"])}), and on '
+      'NFCorpus the two hybrids again track each other closely '
+      f'({f4(T["robust"]["nfcorpus"]["0.4"]["CA-HR"]["N@10"])} vs. '
+      f'{f4(T["robust"]["nfcorpus"]["0.4"]["Neural-Hybrid"]["N@10"])}). '
+      'SCIDOCS is the exception: there BM25 is the most robust method at 40% '
+      f'corruption ({f4(T["robust"]["scidocs"]["0.4"]["BM25"]["N@10"])} '
+      f'versus {f4(T["robust"]["scidocs"]["0.4"]["CA-HR"]["N@10"])} for CA-HR '
+      f'and {f4(T["robust"]["scidocs"]["0.4"]["Neural-Hybrid"]["N@10"])} for '
+      'Neural-Hybrid), indicating that where dense representations dominate '
+      'on clean queries they are also the most fragile to lexical '
+      'corruption.')
     p(d, 'Fig. 4. Robustness to query corruption (NDCG@10 vs. word-drop '
          'noise).', italic=True, size=9)
 
     h2(d, '6.4. Oracle headroom and learned routing')
     p(d, 'Table 4. Per-query oracle, best single metadata-aware strategy, '
-         'PAV-Agent routed system, and router agreement.', italic=True,
+         'PAV Router-routed system, and router agreement.', italic=True,
       size=9)
     rows = []
     for ds in DS:
@@ -590,7 +662,7 @@ def build_manuscript():
                      f4(avg(ds, 'CA-HR', 'N@10')),
                      f4(rt['routed_system']['N@10']), f4(o),
                      f"{rt['cv_accuracy']:.3f}", f"{rt['kappa']:.3f}"])
-    add_table(d, ['Dataset', 'Best single', 'CA-HR', 'PAV-Agent routed',
+    add_table(d, ['Dataset', 'Best single', 'CA-HR', 'PAV Router',
                   'Oracle', 'Router acc.', "Cohen's κ"], rows)
     p(d,
       'Table 4 and Fig. 5 quantify how much per-query adaptivity could ever '
@@ -613,10 +685,11 @@ def build_manuscript():
       italic=True, size=9)
 
     h2(d, '6.5. Generation-side evaluation')
-    p(d, 'Table 5. End-to-end answer quality with DeepSeek generation on 100 '
-         'paired queries (50 SCIDOCS + 50 SciFact): LLM-judged relevance '
-         'and faithfulness (1-5), citation precision against gold '
-         'judgments, and relevant passages in the top-5 context.',
+    p(d, 'Table 5. End-to-end answer quality with DeepSeek generation on 200 '
+         'paired queries (50 per dataset across the four benchmarks): '
+         'LLM-judged relevance and faithfulness (1-5), citation precision '
+         'against gold judgments, and relevant passages in the top-5 '
+         'context.',
       italic=True, size=9)
     ca, nh = g['CA-HR'], g['Neural-Hybrid']
     rows = [
@@ -637,12 +710,12 @@ def build_manuscript():
                   'Wilcoxon (two-sided)'], rows)
     p(d,
       'Do the retrieval-level differences survive into the answers users '
-      'actually read? We sampled 100 test queries (50 per dataset, fixed '
+      'actually read? We sampled 200 test queries (50 per dataset, fixed '
       'seed), generated cited answers with DeepSeek (deepseek-chat, '
       'temperature 0.2, top-5 passages as context), and scored each answer '
       'for relevance and faithfulness with an LLM judge and for citation '
       'precision against the gold judgments. Table 5 shows the backends are '
-      'statistically indistinguishable on every measure (all p > 0.17): at '
+      'statistically indistinguishable on every measure (all p > 0.48): at '
       'top-5, the two systems surface nearly the same passages '
       f'({g["paired_n_rel_context"]["mean_CA-HR"]:.2f} vs. '
       f'{g["paired_n_rel_context"]["mean_Neural-Hybrid"]:.2f} gold-relevant '
@@ -652,17 +725,20 @@ def build_manuscript():
       f'faithfulness '
       f'{ca["faithfulness"]["mean"]:.2f}-{nh["faithfulness"]["mean"]:.2f} '
       f'of 5), so the pipeline is usable in production. Second, citation '
-      f'precision against the strict gold judgments is only about '
-      f'{g["paired_citation_precision"]["mean_CA-HR"]:.2f}: the model '
-      f'frequently cites plausible but not gold-relevant passages, a '
-      f'failure mode invisible to retrieval metrics and a target for '
-      f'future citation verification. We caveat that the judge shares the '
-      f'generator\'s model family [27]; the paired design controls for this '
-      f'bias, but absolute scores should be read accordingly.')
+      f'precision against the strict gold judgments averages about '
+      f'{g["paired_citation_precision"]["mean_CA-HR"]:.2f} but varies '
+      f'sharply with gold-judgment density: 0.87 on TREC-COVID, whose '
+      f'queries carry dense graded judgments, versus 0.15 on SCIDOCS, whose '
+      f'judgments are sparse; the model frequently cites plausible but not '
+      f'gold-relevant passages, a failure mode invisible to retrieval '
+      f'metrics and a target for future citation verification. We caveat '
+      f'that the judge shares the generator\'s model family [27]; the '
+      f'paired design controls for this bias, but absolute scores should be '
+      f'read accordingly.')
 
     h2(d, '6.6. Efficiency')
     p(d,
-      'All eight configurations are CPU-feasible. On the largest corpus '
+      'All ten configurations are CPU-feasible. On the largest corpus '
       '(TREC-COVID, 171,332 documents) BM25 scoring averages 1,002 ms per '
       'query; dense scoring over precomputed embeddings and CA-HR '
       're-ranking add under 2 ms. On the smaller corpora BM25 costs '
@@ -671,8 +747,8 @@ def build_manuscript():
       'the one-time corpus embedding cost (about 34-49 documents/s for '
       'MiniLM on 8 CPU threads) is amortised offline.')
 
-    # ---- 7. Deployment case study -------------------------------------------
-    h1(d, '7. Deployment case study')
+    # ---- 7. Deployment feasibility case study -------------------------------
+    h1(d, '7. Deployment feasibility case study')
     p(d,
       'The full pipeline has been deployed in PaperPilot since 10 July 2026 '
       f'at {SITE}, on a single Aliyun ECS instance (2 vCPU, 1.6 GB RAM, '
@@ -690,7 +766,7 @@ def build_manuscript():
       'Two operational observations connect the deployment to the '
       'experimental findings. First, retrieval never appeared in the latency '
       'budget: user-perceived response time is dominated by the streamed LLM '
-      'tokens, consistent with Section 6.6, so the choice among the eight '
+      'tokens, consistent with Section 6.6, so the choice among the ten '
       'configurations is free from an engineering standpoint. Second, '
       'user-uploaded papers are often fresh preprints with no citation '
       'record—the production analogue of TREC-COVID\'s sparse coverage—so '
@@ -715,7 +791,16 @@ def build_manuscript():
       'are neutral-to-harmful and a stronger dense encoder such as '
       'BGE-small is the best single investment; and (iv) per-query routing '
       'among cheap strategies is not worth its complexity anywhere we '
-      'tested—configuration effort should be spent at domain level.')
+      'tested—configuration effort should be spent at domain level. Two '
+      'qualifiers sharpen the policy. First, the metadata effects are '
+      'backbone-conditional: every metadata gain measured on the MiniLM '
+      'backbone disappeared or inverted on the stronger BGE-small backbone '
+      '(Section 6.1), so metadata re-ranking must be re-validated whenever '
+      'the underlying encoder is upgraded. Second, robustness under query '
+      'corruption does not follow clean-query rankings—BM25 is the most '
+      'noise-robust method on SCIDOCS while CA-HR is the most robust on '
+      'TREC-COVID (Section 6.3)—so noise expectations should also enter the '
+      'per-domain choice.')
     h2(d, '8.2. Limitations')
     p(d,
       'Five limitations qualify our claims. (1) TREC-COVID has only 50 test '
@@ -736,7 +821,7 @@ def build_manuscript():
     # ---- 9. Conclusion ------------------------------------------------------
     h1(d, '9. Conclusion')
     p(d,
-      'We evaluated eight retrieval configurations for scientific RAG on '
+      'We evaluated ten retrieval configurations for scientific RAG on '
       'four benchmarks with real bibliographic metadata, and deployed the '
       'stack in a live academic writing assistant. The answer to the title '
       'question is conditional: bibliographic metadata helps scientific RAG '
@@ -745,7 +830,9 @@ def build_manuscript():
       'citation-aware re-ranking yields a significant gain; on biomedical '
       'claims it is neutral; on metadata-sparse or fast-moving corpora it is '
       'mildly harmful, and a stronger dense encoder is the better '
-      'investment. Per-query routing cannot recover even the modest oracle '
+      'investment. The gains are also backbone-conditional: they vanish when '
+      'the dense encoder is strengthened from MiniLM to BGE-small. Per-query '
+      'routing cannot recover even the modest oracle '
       'headroom, generation-side quality is insensitive to the backend at '
       'top-5, and the whole pipeline runs on commodity CPU hardware in '
       'production. For practitioners, the actionable guidance is to '
@@ -808,7 +895,7 @@ def build_cover_letter():
       f'Systems with Applications.')
     p(d,
       'The manuscript fits the journal\'s focus on applied intelligent '
-      'systems: it couples (i) a four-domain, eight-configuration evaluation '
+      'systems: it couples (i) a four-domain, ten-configuration evaluation '
       'of retrieval for scientific question answering with real '
       'bibliographic metadata, (ii) a replicated negative result on '
       'query-level routing that carries practical design guidance, (iii) a '
@@ -823,9 +910,12 @@ def build_cover_letter():
       'submitted to Information Processing & Management and declined at '
       'desk screening. The present manuscript is substantially extended: '
       'two additional benchmarks (NFCorpus and TREC-COVID, the latter '
-      '171,332 documents), a stronger dense baseline (BGE-small), a new '
-      'generation-side evaluation, and a new system deployment case study; '
-      'the title, abstract, and discussion have been rewritten accordingly.')
+      '171,332 documents), a stronger dense baseline (BGE-small) together '
+      'with a backbone-transfer experiment showing that the metadata gains '
+      'do not survive the stronger encoder, a generation-side evaluation '
+      'doubled to 200 paired queries across all four domains, and a new '
+      'system deployment case study; the title, abstract, and discussion '
+      'have been rewritten accordingly.')
     p(d,
       'The manuscript is original, is not under consideration elsewhere, '
       'and is approved by the author. The author declares no competing '

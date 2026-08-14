@@ -1,83 +1,149 @@
 {
- "n_records": 200,
- "n_scored": 200,
- "n_paired": 100,
+ "n_records": 400,
+ "n_scored": 400,
+ "n_paired": 200,
  "CA-HR": {
   "relevance": {
-   "mean": 4.11,
-   "std": 1.4275503493747603,
-   "n": 100
+   "mean": 4.185,
+   "std": 1.2848248907925157,
+   "n": 200
   },
   "faithfulness": {
-   "mean": 4.86,
-   "std": 0.44766058571198786,
-   "n": 100
+   "mean": 4.895,
+   "std": 0.3660259553638239,
+   "n": 200
   },
   "citation_precision": {
-   "mean": 0.3572164948453609,
-   "std": 0.3736059020987455,
-   "n": 97
+   "mean": 0.49043993231810495,
+   "std": 0.409720756193435,
+   "n": 197
   },
   "rel_docs_in_context": {
-   "mean": 0.81,
-   "std": 0.7168681887209113,
-   "n": 100
+   "mean": 1.68,
+   "std": 1.6755894485225193,
+   "n": 200
   },
   "n_citations": {
-   "mean": 3.27,
-   "std": 1.690295832095672,
-   "n": 100
+   "mean": 3.49,
+   "std": 1.499966666296288,
+   "n": 200
   }
  },
  "Neural-Hybrid": {
   "relevance": {
-   "mean": 4.22,
-   "std": 1.3826062346163495,
-   "n": 100
+   "mean": 4.245,
+   "std": 1.2864583164642374,
+   "n": 200
   },
   "faithfulness": {
-   "mean": 4.94,
-   "std": 0.27640549922170504,
-   "n": 100
+   "mean": 4.92,
+   "std": 0.2891366458960192,
+   "n": 200
   },
   "citation_precision": {
-   "mean": 0.3596219931271478,
-   "std": 0.3685505730872577,
-   "n": 97
+   "mean": 0.4833333333333334,
+   "std": 0.4087340113857569,
+   "n": 196
   },
   "rel_docs_in_context": {
-   "mean": 0.83,
-   "std": 0.7078841713161835,
-   "n": 100
+   "mean": 1.7,
+   "std": 1.676305461424021,
+   "n": 200
   },
   "n_citations": {
-   "mean": 3.42,
-   "std": 1.6981166037701887,
-   "n": 100
+   "mean": 3.605,
+   "std": 1.5096274374825067,
+   "n": 200
   }
  },
  "paired_relevance": {
-  "n": 100,
-  "mean_CA-HR": 4.11,
-  "mean_Neural-Hybrid": 4.22,
-  "wilcoxon_p_two_sided": 0.4407029210702854
+  "n": 200,
+  "mean_CA-HR": 4.185,
+  "mean_Neural-Hybrid": 4.245,
+  "wilcoxon_p_two_sided": 0.5666236709081388
  },
  "paired_faithfulness": {
-  "n": 100,
-  "mean_CA-HR": 4.86,
-  "mean_Neural-Hybrid": 4.94,
-  "wilcoxon_p_two_sided": 0.1748046875
+  "n": 200,
+  "mean_CA-HR": 4.895,
+  "mean_Neural-Hybrid": 4.92,
+  "wilcoxon_p_two_sided": 0.4809719234038309
  },
  "paired_citation_precision": {
-  "n": 96,
-  "mean_CA-HR": 0.3609375000000001,
-  "mean_Neural-Hybrid": 0.36336805555555557,
-  "wilcoxon_p_two_sided": 0.6810855635403779
+  "n": 195,
+  "mean_CA-HR": 0.49547008547008553,
+  "mean_Neural-Hybrid": 0.48581196581196573,
+  "wilcoxon_p_two_sided": 0.581395222495049
  },
  "paired_n_rel_context": {
-  "n": 100,
-  "mean_CA-HR": 0.81,
-  "mean_Neural-Hybrid": 0.83,
-  "wilcoxon_p_two_sided": 0.6875
+  "n": 200,
+  "mean_CA-HR": 1.68,
+  "mean_Neural-Hybrid": 1.7,
+  "wilcoxon_p_two_sided": 0.5437929678767246
+ },
+ "by_dataset": {
+  "scifact": {
+   "CA-HR": {
+    "n": 50,
+    "relevance_mean": 4.62,
+    "faithfulness_mean": 4.96,
+    "citation_precision_mean": 0.5663194444444445,
+    "rel_docs_in_context_mean": 0.9
+   },
+   "Neural-Hybrid": {
+    "n": 50,
+    "relevance_mean": 4.84,
+    "faithfulness_mean": 4.96,
+    "citation_precision_mean": 0.5695035460992907,
+    "rel_docs_in_context_mean": 0.96
+   }
+  },
+  "scidocs": {
+   "CA-HR": {
+    "n": 50,
+    "relevance_mean": 3.6,
+    "faithfulness_mean": 4.76,
+    "citation_precision_mean": 0.1523809523809524,
+    "rel_docs_in_context_mean": 0.72
+   },
+   "Neural-Hybrid": {
+    "n": 50,
+    "relevance_mean": 3.6,
+    "faithfulness_mean": 4.92,
+    "citation_precision_mean": 0.16233333333333333,
+    "rel_docs_in_context_mean": 0.7
+   }
+  },
+  "trec-covid": {
+   "CA-HR": {
+    "n": 50,
+    "relevance_mean": 4.68,
+    "faithfulness_mean": 5.0,
+    "citation_precision_mean": 0.8723333333333333,
+    "rel_docs_in_context_mean": 3.82
+   },
+   "Neural-Hybrid": {
+    "n": 50,
+    "relevance_mean": 4.74,
+    "faithfulness_mean": 4.92,
+    "citation_precision_mean": 0.8226666666666667,
+    "rel_docs_in_context_mean": 3.8
+   }
+  },
+  "nfcorpus": {
+   "CA-HR": {
+    "n": 50,
+    "relevance_mean": 3.84,
+    "faithfulness_mean": 4.86,
+    "citation_precision_mean": 0.36700000000000005,
+    "rel_docs_in_context_mean": 1.28
+   },
+   "Neural-Hybrid": {
+    "n": 50,
+    "relevance_mean": 3.8,
+    "faithfulness_mean": 4.88,
+    "citation_precision_mean": 0.3819727891156463,
+    "rel_docs_in_context_mean": 1.34
+   }
+  }
  }
 }

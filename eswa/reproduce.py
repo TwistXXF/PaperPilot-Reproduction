@@ -645,9 +645,11 @@ def stage_robust(datasets=('scidocs', 'scifact')):
                         sc[cand] = hyb[cand] + BETA * C[cand] + GAMMA * Rr[cand]
                     orders.append(np.argsort(-sc)[:100])
                 res = eval_orders(orders, qrels, qids, didx, len(doc_ids))
-                row[m] = float(np.mean(res['R@10']))
+                row[m] = {k: float(np.mean(v)) for k, v in res.items()}
             done[str(noise)] = row
-            print(ds, 'noise', noise, {k: round(v, 4) for k, v in row.items()}, flush=True)
+            print(ds, 'noise', noise,
+                  {k: round(v['N@10'], 4) for k, v in row.items()},
+                  flush=True)
         json.dump(done, open(os.path.join(RES, f'{ds}_robust.json'), 'w'), indent=1)
 
 
