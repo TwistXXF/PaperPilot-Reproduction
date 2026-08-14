@@ -182,8 +182,8 @@ def build_manuscript():
     h1(d, 'Abstract')
     p(d,
       'Retrieval-augmented generation (RAG) systems for scientific '
-      'literature often ship a single static retrieval configuration, yet '
-      'whether one configuration is optimal across research domains—and '
+      'literature often ship one static retrieval configuration, yet '
+      'whether one is optimal across research domains—and '
       'whether bibliographic metadata should influence ranking—remains '
       'insufficiently quantified. We evaluate ten retrieval '
       'configurations—BM25, latent semantic analysis, two pretrained dense '
@@ -191,8 +191,8 @@ def build_manuscript():
       '(UMA-RAG, LP-RAG, and a citation- and recency-aware re-ranker, '
       'CA-HR)—on SCIDOCS, SciFact, NFCorpus, and '
       'TREC-COVID (3,633 to 171,332 documents; 1,673 queries), using real '
-      'citation counts, years, and venues from the Semantic '
-      'Scholar and OpenAlex APIs (coverage 69.8%-99.7%). Three findings '
+      'citation counts, years, and venues from Semantic '
+      'Scholar and OpenAlex (coverage 69.8%-99.7%). Three findings '
       'emerge. First, the optimal strategy is domain-dependent: '
       'no configuration wins everywhere. Second, citation-aware signals '
       'help only where citation authority predicts relevance (on SCIDOCS, '
@@ -205,13 +205,13 @@ def build_manuscript():
       'sweep recovers it only on the citation-informative corpus. Third, '
       'per-query strategy selection offers little recoverable headroom: a '
       '12-feature logistic router does not exceed majority-class behaviour '
-      'on any dataset (Cohen\'s kappa near 0). On 200 paired '
+      'on any dataset (kappa near 0). On 200 paired '
       'queries, answer relevance and faithfulness are statistically '
       'indistinguishable between the hybrid and metadata-aware backends. '
       'The pipeline is deployed in a live academic writing assistant '
       '(anonymized for review); we report a one-month pilot '
-      'deployment. All data, code, and per-query results are released '
-      'through an anonymized public repository.')
+      'deployment. Data, code, and per-query results are released '
+      'through an anonymized repository.')
     p(d, 'Keywords: retrieval-augmented generation; scientific information '
          'retrieval; hybrid retrieval; bibliographic metadata; citation-aware '
          'ranking; query routing; expert systems',
@@ -617,9 +617,10 @@ def build_manuscript():
       'vs. BM25, SBERT-Dense, and Neural-Hybrid, and BGE-CA-HR vs. '
       'BGE-Hybrid, all on NDCG@10); quoted primary p-values are '
       'Holm-Bonferroni-adjusted within this family. Ablation, robustness, '
-      'routing, metadata-weight sensitivity, and generation-side '
-      'comparisons are reported as exploratory '
-      'analyses with unadjusted two-sided p-values. All retrieval runs use '
+      'routing, and generation-side comparisons are exploratory analyses '
+      'with unadjusted two-sided p-values; metadata-weight sensitivity '
+      'uses one-sided Wilcoxon tests with Holm correction within each '
+      'dataset. All retrieval runs use '
       'a single '
       'CPU-only workstation. Measured per-query cost on the largest corpus '
       '(TREC-COVID, 171k documents): BM25 scoring averages 1,002 ms; dense '
@@ -1108,47 +1109,48 @@ def build_manuscript():
 
     # ---- Declaration of generative AI (required before references) --------
     h1(d, 'Declaration of generative AI and AI-assisted technologies in '
-          'the writing process')
+          'the manuscript preparation process')
     p(d,
       'During the preparation of this work the author used Kimi (Moonshot '
-      'AI) for code debugging and language polishing. After using this '
-      'tool, the author reviewed and edited the content as needed and '
-      'takes full responsibility for the content of the published article.')
+      'AI) for code debugging and language polishing. All AI-assisted '
+      'output, including code and experimental results, was reviewed, '
+      'executed, and verified by the author, who takes full responsibility '
+      'for the content of the published article.')
 
     # ---- References (APA, author-year, alphabetical) -----------------------
     h1(d, 'References')
     refs = [
-        'Asai, A., He, J., Shao, R., et al. (2024a). OpenScholar: Synthesizing scientific literature with retrieval-augmented language models. arXiv:2411.14199.',
-        'Asai, A., Wu, Z., Wang, Y., et al. (2024b). Self-RAG: Learning to retrieve, generate, and critique through self-reflection. In Proceedings of ICLR.',
-        'Bao, T., Nayeem, M. T., Rafiei, D., & Zhang, C. (2025). SurveyGen: Quality-aware scientific survey generation with large language models. In Proceedings of EMNLP (pp. 2712-2736).',
-        'Boteva, V., Gholipour, D., Sokolov, A., & Riezler, S. (2016). A full-text learning to rank dataset for medical information retrieval. In Proceedings of ECIR (pp. 716-722).',
-        'Chen, J., Xiao, S., Zhang, P., et al. (2024). BGE M3-Embedding: Multi-lingual, multi-functionality, multi-granularity text embeddings through self-knowledge distillation. arXiv:2402.03216.',
-        'Cohan, A., Feldman, S., Beltagy, I., et al. (2020). SPECTER: Document-level representation learning using citation-informed transformers. In Proceedings of ACL (pp. 2270-2282).',
-        'Deerwester, S., Dumais, S. T., Furnas, G. W., Landauer, T. K., & Harshman, R. (1990). Indexing by latent semantic analysis. Journal of the American Society for Information Science, 41(6), 391-407.',
-        'DeepSeek-AI. (2024). DeepSeek-V3 technical report. arXiv:2412.19437.',
-        'Ding, H., Zhao, Y., Hu, T., Wang, Z., Patwardhan, M., & Cohan, A. (2026). SciRAG: Adaptive, citation-aware, and outline-guided retrieval and synthesis for scientific literature. In Proceedings of EACL (Volume 1: Long Papers) (pp. 6440-6460).',
-        'Hwang, J., Park, J., Park, H., et al. (2025). Retrieval-augmented generation with estimation of source reliability. In Proceedings of EMNLP (pp. 34279-34303).',
-        'Karpukhin, V., Oguz, B., Min, S., et al. (2020). Dense passage retrieval for open-domain question answering. In Proceedings of EMNLP (pp. 6769-6781).',
-        'Lewis, P., Perez, E., Piktus, A., et al. (2020). Retrieval-augmented generation for knowledge-intensive NLP tasks. In Proceedings of NeurIPS (pp. 9459-9474).',
+        'Asai, A., He, J., Shao, R., Shi, W., Singh, A., Chang, J. C., Lo, K., Soldaini, L., Feldman, S., D\'Arcy, M., Wadden, D., Latzke, M., Tian, M., Ji, P., Liu, S., Tong, H., Wu, B., Xiong, Y., Zettlemoyer, L., ... Hajishirzi, H. (2024a). OpenScholar: Synthesizing scientific literature with retrieval-augmented language models. arXiv:2411.14199. https://doi.org/10.48550/arXiv.2411.14199',
+        'Asai, A., Wu, Z., Wang, Y., Sil, A., & Hajishirzi, H. (2024b). Self-RAG: Learning to retrieve, generate, and critique through self-reflection. In Proceedings of ICLR.',
+        'Bao, T., Nayeem, M. T., Rafiei, D., & Zhang, C. (2025). SurveyGen: Quality-aware scientific survey generation with large language models. In Proceedings of EMNLP (pp. 2712–2736). https://doi.org/10.18653/v1/2025.emnlp-main.136',
+        'Boteva, V., Gholipour, D., Sokolov, A., & Riezler, S. (2016). A full-text learning to rank dataset for medical information retrieval. In Proceedings of ECIR (pp. 716–722).',
+        'Chen, J., Xiao, S., Zhang, P., Luo, K., Lian, D., & Liu, Z. (2024). BGE M3-Embedding: Multi-lingual, multi-functionality, multi-granularity text embeddings through self-knowledge distillation. arXiv:2402.03216. https://doi.org/10.48550/arXiv.2402.03216',
+        'Cohan, A., Feldman, S., Beltagy, I., Downey, D., & Weld, D. S. (2020). SPECTER: Document-level representation learning using citation-informed transformers. In Proceedings of ACL (pp. 2270–2282). https://doi.org/10.18653/v1/2020.acl-main.207',
+        'Deerwester, S., Dumais, S. T., Furnas, G. W., Landauer, T. K., & Harshman, R. (1990). Indexing by latent semantic analysis. Journal of the American Society for Information Science, 41(6), 391–407.',
+        'DeepSeek-AI. (2024). DeepSeek-V3 technical report. arXiv:2412.19437. https://doi.org/10.48550/arXiv.2412.19437',
+        'Ding, H., Zhao, Y., Hu, T., Wang, Z., Patwardhan, M., & Cohan, A. (2026). SciRAG: Adaptive, citation-aware, and outline-guided retrieval and synthesis for scientific literature. In Proceedings of EACL (Volume 1: Long Papers) (pp. 6440–6460).',
+        'Hwang, J., Park, J., Park, H., Kim, D., Park, S., & Ok, J. (2025). Retrieval-augmented generation with estimation of source reliability. In Proceedings of EMNLP (pp. 34279–34303). https://doi.org/10.18653/v1/2025.emnlp-main.1738',
+        'Karpukhin, V., Oğuz, B., Min, S., Lewis, P., Wu, L., Edunov, S., Chen, D., & Yih, W.-t. (2020). Dense passage retrieval for open-domain question answering. In Proceedings of EMNLP (pp. 6769–6781). https://doi.org/10.18653/v1/2020.emnlp-main.550',
+        'Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V., Goyal, N., Küttler, H., Lewis, M., Yih, W.-t., Rocktäschel, T., Riedel, S., & Kiela, D. (2020). Retrieval-augmented generation for knowledge-intensive NLP tasks. In Proceedings of NeurIPS (pp. 9459–9474).',
         'Lin, J. (2021). A proposed conceptual framework for a representational approach to information retrieval. ACM SIGIR Forum, 55(2).',
-        'Nogueira, R., Jiang, Z., Pradeep, R., & Lin, J. (2020). Document ranking with a pretrained sequence-to-sequence model. In Findings of EMNLP (pp. 708-718).',
-        'Ostendorff, M., Rethmeier, N., Augenstein, I., et al. (2022). Neighborhood contrastive learning for scientific document representations with citation embeddings. In Proceedings of EMNLP (pp. 11670-11688).',
-        'Priem, J., Piwowar, H., & Orr, R. (2022). OpenAlex: A fully-open index of scholarly works, authors, venues, institutions, and concepts. arXiv:2205.01833.',
-        'Qu, Y., Ding, Y., Liu, J., et al. (2021). RocketQA: An optimized training approach to dense passage retrieval. In Proceedings of NAACL (pp. 5835-5847).',
-        'Reimers, N., & Gurevych, I. (2019). Sentence-BERT: Sentence embeddings using Siamese BERT-networks. In Proceedings of EMNLP-IJCNLP (pp. 3982-3992).',
-        'Robertson, S., & Zaragoza, H. (2009). The probabilistic relevance framework: BM25 and beyond. Foundations and Trends in Information Retrieval, 3(4), 333-389.',
-        'Shao, Z., Gong, Y., Shen, Y., et al. (2023). Enhancing retrieval-augmented large language models with iterative retrieval-generation synergy. In Findings of EMNLP (pp. 9248-9274).',
-        'Singh, A., D\'Arcy, M., Cohan, A., et al. (2023). SciRepEval: A multi-format benchmark for scientific document representations. In Proceedings of EMNLP (pp. 5548-5566).',
-        'Thakur, N., Reimers, N., Rücklé, A., et al. (2021). BEIR: A heterogeneous benchmark for zero-shot evaluation of information retrieval models. In Proceedings of NeurIPS Datasets and Benchmarks.',
-        'Voorhees, E., Alam, T., Bedrick, S., et al. (2021). TREC-COVID: Constructing a pandemic information retrieval test collection. ACM SIGIR Forum, 54(1), 1-12.',
-        'Wadden, D., Lin, S., Lo, K., et al. (2020). Fact or fiction: Verifying scientific claims. In Proceedings of EMNLP (pp. 7534-7550).',
-        'Wang, L., Yang, N., Huang, X., et al. (2022). Text embeddings by weakly-supervised contrastive pre-training. arXiv:2212.03533.',
-        'Wang, L., Ma, C., Feng, X., et al. (2024). A survey on large language model based autonomous agents. Frontiers of Computer Science, 18(6), 186345.',
-        'Wang, W., Wei, F., Dong, L., et al. (2020). MiniLM: Deep self-attention distillation for task-agnostic compression of pre-trained transformers. In Proceedings of NeurIPS.',
-        'Xiao, S., Liu, Z., Zhang, P., Muennighoff, N., et al. (2023). C-Pack: Packaged resources to advance general Chinese embedding. arXiv:2309.07597.',
-        'Yousuf, R. B., Xu, S., Sharma, M., et al. (2026). Utilizing metadata for better retrieval-augmented generation. In Proceedings of ECIR (pp. 305-319).',
-        'Zheng, L., Chiang, W.-L., Sheng, Y., et al. (2023). Judging LLM-as-a-judge with MT-Bench and Chatbot Arena. In Proceedings of NeurIPS Datasets and Benchmarks.',
-        'Zhuang, S., Zhuang, H., Koopman, B., & Zuccon, G. (2024). A setwise approach for effective and highly efficient zero-shot ranking with large language models. In Proceedings of SIGIR (pp. 38-47).',
+        'Nogueira, R., Jiang, Z., Pradeep, R., & Lin, J. (2020). Document ranking with a pretrained sequence-to-sequence model. In Findings of EMNLP (pp. 708–718). https://doi.org/10.18653/v1/2020.findings-emnlp.63',
+        'Ostendorff, M., Rethmeier, N., Augenstein, I., Gipp, B., & Rehm, G. (2022). Neighborhood contrastive learning for scientific document representations with citation embeddings. In Proceedings of EMNLP (pp. 11670–11688).',
+        'Priem, J., Piwowar, H., & Orr, R. (2022). OpenAlex: A fully-open index of scholarly works, authors, venues, institutions, and concepts. arXiv:2205.01833. https://doi.org/10.48550/arXiv.2205.01833',
+        'Qu, Y., Ding, Y., Liu, J., Liu, K., Ren, R., Zhao, W. X., Dong, D., Wu, H., & Wang, H. (2021). RocketQA: An optimized training approach to dense passage retrieval. In Proceedings of NAACL (pp. 5835–5847). https://doi.org/10.18653/v1/2021.naacl-main.466',
+        'Reimers, N., & Gurevych, I. (2019). Sentence-BERT: Sentence embeddings using Siamese BERT-networks. In Proceedings of EMNLP-IJCNLP (pp. 3982–3992). https://doi.org/10.18653/v1/D19-1410',
+        'Robertson, S., & Zaragoza, H. (2009). The probabilistic relevance framework: BM25 and beyond. Foundations and Trends in Information Retrieval, 3(4), 333–389. https://doi.org/10.1561/1500000019',
+        'Shao, Z., Gong, Y., Shen, Y., Huang, M., Duan, N., & Chen, W. (2023). Enhancing retrieval-augmented large language models with iterative retrieval-generation synergy. In Findings of EMNLP (pp. 9248–9274).',
+        'Singh, A., D\'Arcy, M., Cohan, A., Downey, D., & Feldman, S. (2023). SciRepEval: A multi-format benchmark for scientific document representations. In Proceedings of EMNLP (pp. 5548–5566).',
+        'Thakur, N., Reimers, N., Rücklé, A., Srivastava, A., & Gurevych, I. (2021). BEIR: A heterogeneous benchmark for zero-shot evaluation of information retrieval models. In Proceedings of NeurIPS Datasets and Benchmarks.',
+        'Voorhees, E., Alam, T., Bedrick, S., Demner-Fushman, D., Hersh, W. R., Lo, K., Roberts, K., Soboroff, I., & Wang, L. L. (2021). TREC-COVID: Constructing a pandemic information retrieval test collection. ACM SIGIR Forum, 54(1), 1–12.',
+        'Wadden, D., Lin, S., Lo, K., Wang, L. L., van Zuylen, M., Cohan, A., & Hajishirzi, H. (2020). Fact or fiction: Verifying scientific claims. In Proceedings of EMNLP (pp. 7534–7550). https://doi.org/10.18653/v1/2020.emnlp-main.609',
+        'Wang, L., Yang, N., Huang, X., Jiao, B., Yang, L., Jiang, D., Majumder, R., & Wei, F. (2022). Text embeddings by weakly-supervised contrastive pre-training. arXiv:2212.03533. https://doi.org/10.48550/arXiv.2212.03533',
+        'Wang, L., Ma, C., Feng, X., Zhang, Z., Yang, H., Zhang, J., Chen, Z., Tang, J., Chen, X., Lin, Y., Zhao, W. X., Wei, Z., & Wen, J.-R. (2024). A survey on large language model based autonomous agents. Frontiers of Computer Science, 18(6), 186345.',
+        'Wang, W., Wei, F., Dong, L., Bao, H., Yang, N., & Zhou, M. (2020). MiniLM: Deep self-attention distillation for task-agnostic compression of pre-trained transformers. In Proceedings of NeurIPS.',
+        'Xiao, S., Liu, Z., Zhang, P., & Muennighoff, N. (2023). C-Pack: Packaged resources to advance general Chinese embedding. arXiv:2309.07597. https://doi.org/10.48550/arXiv.2309.07597',
+        'Yousuf, R. B., Xu, S., Sharma, M., Neeser, A., Latimer, C., & Ramakrishnan, N. (2026). Utilizing metadata for better retrieval-augmented generation. In Proceedings of ECIR (pp. 305–319). https://doi.org/10.1007/978-3-032-21289-4_20',
+        'Zheng, L., Chiang, W.-L., Sheng, Y., Zhuang, S., Wu, Z., Zhuang, Y., Lin, Z., Li, Z., Li, D., Xing, E. P., Zhang, H., Gonzalez, J. E., & Stoica, I. (2023). Judging LLM-as-a-judge with MT-Bench and Chatbot Arena. In Proceedings of NeurIPS Datasets and Benchmarks.',
+        'Zhuang, S., Zhuang, H., Koopman, B., & Zuccon, G. (2024). A setwise approach for effective and highly efficient zero-shot ranking with large language models. In Proceedings of SIGIR (pp. 38–47).',
     ]
     for r in refs:
         p(d, r, size=10)
@@ -1236,12 +1238,13 @@ def build_declarations():
       'was obtained from the public Semantic Scholar and OpenAlex APIs. All '
       f'code, fetched metadata, and per-query result files are publicly '
       f'available at {REPO} (archived at https://doi.org/{DOI}).')
-    h2(d, 'Use of AI in the writing process')
+    h2(d, 'Use of AI in the manuscript preparation process')
     p(d,
       'During the preparation of this work the author used Kimi (Moonshot '
-      'AI) for code debugging and language polishing. The author reviewed '
-      'and edited all content and takes full responsibility for the '
-      'integrity of the publication.')
+      'AI) for code debugging and language polishing. All AI-assisted '
+      'output, including code and experimental results, was reviewed, '
+      'executed, and verified by the author, who takes full responsibility '
+      'for the integrity of the publication.')
     d.save(os.path.join(OUT, '04_Declarations.docx'))
 
 
