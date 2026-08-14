@@ -1,25 +1,23 @@
 # PaperPilot-Reproduction
 
-> **Update (2026-08): ESWA extension in `eswa/`** — the study has been
-> extended to **four datasets** (adding NFCorpus and TREC-COVID), a stronger
-> dense baseline (**BGE-small-en-v1.5**), a **generation-side evaluation**
-> (100 paired queries, DeepSeek answers with citations), and a **deployment
-> case study** of the live PaperPilot system. See
-> [eswa/README section](#eswa-extension-four-datasets) below. The revised
-> manuscript targets *Expert Systems with Applications*.
+Reproduction package for the manuscript:
 
-Official reproduction package for the paper:
-
-> **PaperPilot: Metadata-Aware Hybrid Retrieval and Personalized Routing for
-> Academic Paper Recommendation** (submitted to *Information Processing &
-> Management*)
+> **When does bibliographic metadata help scientific retrieval-augmented
+> generation? A four-domain evaluation of metadata-aware hybrid retrieval
+> with a deployed academic writing assistant**
+> (submitted to *Expert Systems with Applications*)
 
 This repository contains **all code, raw data, cached metadata, and final
 result files** needed to reproduce every number, table, and figure in the
-paper. Nothing is simulated: the corpora are the official BEIR/SciFact
-benchmarks, the citation metadata was collected live from the Semantic
-Scholar API, and the dense retriever is the public
-`sentence-transformers/all-MiniLM-L6-v2` checkpoint.
+paper. Nothing is simulated: the corpora are the official BEIR benchmarks
+(SCIDOCS, SciFact, NFCorpus, TREC-COVID), the citation metadata was
+collected live from the Semantic Scholar / OpenAlex APIs, and the dense
+retrievers are the public `all-MiniLM-L6-v2` and `bge-small-en-v1.5`
+checkpoints.
+
+The four-dataset ESWA study lives in [`eswa/`](#eswa-study-four-datasets).
+The repository root keeps the original two-dataset (SCIDOCS + SciFact)
+conference-version pipeline for reference.
 
 ---
 
@@ -27,32 +25,33 @@ Scholar API, and the dense retriever is the public
 
 ```
 PaperPilot-Reproduction/
-├── reproduce.py               # single entry point, staged pipeline
-├── requirements.txt
+├── eswa/                      # *** the ESWA study (start here) ***
+│   ├── reproduce.py           # single staged entry point (layout-aware)
+│   ├── _layout.py             # path resolver (repo vs. dev tree)
+│   ├── bge_baseline.py        # BGE-small dense baseline, four datasets
+│   ├── bge_hybrid.py          # BGE-Hybrid / BGE-CA-HR backbone transfer
+│   ├── sensitivity_rrf.py     # beta x gamma grid + RRF(k=60) baselines
+│   ├── metadata_diagnostics.py# citation-relevance association diagnostics
+│   ├── gen_eval.py            # generation-side eval (needs DeepSeek key)
+│   ├── make_eswa_tables.py    # consolidates results/eswa_tables.json
+│   ├── make_eswa_figs.py      # manuscript Fig. 2-5 (PDF + PNG)
+│   ├── build_eswa.py          # regenerates the submission package
+│   ├── verify_eswa.py         # 208-check manuscript audit
+│   ├── results/               # exact published result files
+│   └── figures/               # manuscript figures
 ├── data/
-│   ├── scidocs/               # BEIR SCIDOCS (25,657 docs / 1,000 test queries)
-│   │   ├── corpus.jsonl
-│   │   ├── queries.jsonl
-│   │   └── qrels/test.tsv
-│   ├── scifact/               # SciFact (5,183 docs / 300 test queries)
-│   │   ├── corpus.jsonl
-│   │   ├── queries.jsonl
-│   │   └── qrels/{train,test}.tsv
-│   └── metadata/              # real citation metadata from Semantic Scholar
+│   ├── scidocs/  scifact/     # BEIR raw data (corpus/queries/qrels)
+│   └── metadata/              # real citation metadata, all four datasets
 │       ├── scidocs_metadata.json   # 25,582/25,657 matched (99.7%)
-│       └── scifact_metadata.json   # 4,879/5,183 matched (94.1%)
-├── artifacts/                 # cached embeddings (regenerable via `encode`)
-│   ├── scidocs_emb/  scifact_emb/      # document embedding chunks
-│   └── *_qemb.npy  *_qids.json         # query embeddings
-├── results/                   # the exact result files reported in the paper
-│   ├── tables.json                   # main results (Tables 2 & 3)
-│   ├── {ds}_ablation.json            # component ablation (Table 4)
-│   ├── {ds}_robust.json              # metadata-sparsity robustness (Table 5)
-│   ├── {ds}_router.json              # routing analysis (Section 5.4)
-│   ├── {ds}_latency.json             # per-query latency measurements
-│   └── {ds}_perquery.npz             # per-query NDCG@10 for every method
-├── figures/                   # Fig. 1–4 as they appear in the manuscript
-└── models/minilm/             # local copy of all-MiniLM-L6-v2 (see §3)
+│       ├── scifact_metadata.json   #  4,879/5,183  matched (94.1%)
+│       ├── nfcorpus_metadata.json  # 94.0% via Semantic Scholar batch API
+│       └── trec-covid_metadata.json# 69.8% citations / 96.4% years /
+│                                   # 92.5% venues (CORD-19 -> DOI -> OpenAlex)
+├── artifacts/                 # cached MiniLM embeddings (scidocs/scifact)
+├── results/                   # two-dataset per-query results (conference ver.)
+├── manuscript/                # 01_Manuscript_ESWA.docx (audited by verify_eswa.py)
+├── reproduce.py               # original two-dataset pipeline (conference ver.)
+└── verify_paper_numbers.py    # conference-version audit
 ```
 
 ## 2. Installation
@@ -63,159 +62,126 @@ Python 3.10+ is required.
 pip install -r requirements.txt
 ```
 
-## 3. Model
+## 3. Models
 
-The dense retriever is
-[`sentence-transformers/all-MiniLM-L6-v2`](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2).
-A local copy is expected at `models/minilm/`. If it is missing, run:
+Both encoders download automatically on first use (and are cached under
+`eswa/models/`):
 
-```python
-from sentence_transformers import SentenceTransformer
-m = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-m.save("models/minilm")
-```
+- `sentence-transformers/all-MiniLM-L6-v2` (main dense retriever)
+- `BAAI/bge-small-en-v1.5` (stronger-backbone baseline)
 
 (If huggingface.co is unreachable from your network, set
 `HF_ENDPOINT=https://hf-mirror.com` before running.)
 
-## 4. Reproducing the paper
+## 4. Reproducing the ESWA paper
 
-The pipeline is staged; each stage is idempotent and skips work whose outputs
-already exist, so you can resume at any point.
-
-```bash
-python reproduce.py download     # fetch raw BEIR data (skipped — data/ ships with repo)
-python reproduce.py metadata     # query Semantic Scholar (skipped — cached files ship with repo)
-python reproduce.py encode       # embed all documents/queries (skipped — artifacts/ ship)
-python reproduce.py retrieval    # BM25 + dense + all hybrid methods  (~3–5 min)
-python reproduce.py tables       # aggregate main results -> results/tables.json
-python reproduce.py ablation     # component ablation (Table 4)
-python reproduce.py robust       # metadata-sparsity robustness (Table 5)
-python reproduce.py router       # routing analysis (Section 5.4)
-python reproduce.py figures      # regenerate Fig. 1–4 into figures/
-```
-
-Or run everything end-to-end:
+The pipeline is staged; each stage is idempotent and skips work whose
+outputs already exist, so it can be resumed at any point.
 
 ```bash
+cd eswa
 python reproduce.py all
 ```
 
-Because `data/`, `data/metadata/`, `artifacts/`, and `results/` all ship with
-the repository, a fresh clone only needs `retrieval` → `figures` (a few
-minutes on a CPU) to regenerate every number from the raw corpus upward.
-Stages `download`, `metadata`, and `encode` are provided for full
-transparency and can be re-run from scratch by deleting the corresponding
-directories.
+This runs, in order:
+
+| Stage | What it does | Fresh-clone runtime (CPU) |
+|---|---|---|
+| `download` | Fetch the four BEIR datasets (SCIDOCS/SciFact ship with the repo; NFCorpus/TREC-COVID download from the official BEIR zips) | ~10-30 min |
+| `metadata` | Fetch citation metadata from Semantic Scholar (skipped: all four `*_metadata.json` ship with the repo) | 0 |
+| `encode` | MiniLM embeddings for all corpora/queries (SCIDOCS/SciFact ship cached) | ~1 h |
+| `retrieval` | BM25 / LSA / SBERT / Neural-Hybrid / UMA-RAG / LP-RAG / CA-HR, per-query metrics | ~15 min |
+| `bge` | BGE-small dense baseline + BGE-Hybrid + BGE-CA-HR | ~2-4 h |
+| `tables` | Aggregate tables + Wilcoxon / Cohen's d | < 1 min |
+| `ablation` | CA-HR component ablation, four datasets | ~5 min |
+| `robust` | Query word-drop noise robustness (10-40%) | ~10 min |
+| `router` | PAV-Agent 5-fold CV routing analysis | < 1 min |
+| `sensitivity` | BGE-CA-HR beta x gamma grid (30 combos x 4 datasets, Holm-corrected) + RRF(k=60) baselines on both encoders | ~15 min |
+| `diagnostics` | Bibliographic-metadata diagnostics (citation-relevance AUC) | ~2 min |
+| `eswa_tables` | Consolidate everything into `results/eswa_tables.json` | < 1 min |
+| `eswa_figs` | Regenerate the manuscript figures into `figures/` | < 1 min |
+
+Any stage can be run individually, optionally restricted to one dataset:
+
+```bash
+python reproduce.py sensitivity scidocs
+```
+
+The **generation-side evaluation is optional** and not part of `all`
+(it calls the DeepSeek API; 200 paired generations + LLM judging):
+
+```bash
+echo "sk-..." > .deepseek_key        # git-ignored, never committed
+python reproduce.py generation
+```
+
+All result files it would produce (`results/gen_eval_ckpt.jsonl`,
+`results/gen_eval_summary.json`) ship with the repository.
 
 ## 5. Hyper-parameters (exactly as reported in the paper)
 
 | Component | Setting |
 |---|---|
-| BM25 | rank_bm25 default (k1=1.5, b=0.75), top-100 candidates |
-| Dense retriever | all-MiniLM-L6-v2, cosine similarity |
-| CA-HR weights | α=0.6 (dense), β=0.15 (BM25), γ=0.10 (citations), δ=0.10 (recency), ε=0.10 (venue) |
-| LP-RAG | reciprocal-rank fusion (k=60) + paper-profile re-ranking, η=0.2 |
-| Recency decay | exponential, reference year 2024 |
-| Citation normalisation | log(1+c), clipped at μ=5000 |
-| Router | λ=0.1, rule-based on query profile features |
-| Robustness | query word-drop noise at {10,20,30,40}% (seed 42); SCIDOCS evaluated on a fixed 300-query subsample (seed 7) |
+| BM25 | rank_bm25 (k1=1.5, b=0.75, epsilon=0.25) |
+| Dense retrievers | all-MiniLM-L6-v2; bge-small-en-v1.5 (official query instruction) |
+| CA-HR | alpha=0.6 hybrid fusion; beta=0.15 citation, gamma=0.10 recency re-ranking of the top-100 |
+| UMA-RAG | delta=0.10 venue, epsilon=0.10 citation |
+| LP-RAG | length-prior scaling eta=0.2, mu=5000 |
+| RRF baselines | k=60 |
+| Sensitivity grid | beta in {0,.05,.10,.15,.20,.30}, gamma in {0,.05,.10,.15,.20} |
+| Recency decay | exponential, lambda=0.1 per year, reference year 2024 |
+| Robustness | query word-drop noise {10,20,30,40}% (seed 42); SCIDOCS on a fixed 300-query subsample (seed 7) |
+| Router | logistic regression on 12 surface features, 5-fold stratified CV (seed 42) |
 | Random seed | 42 everywhere unless stated |
 
 ## 6. Verifying the numbers
 
-`verify_paper_numbers.py` audits the manuscript itself: it parses every table
-in `01_Manuscript_IPM.docx` cell-by-cell and recomputes each value from the
-raw per-query scores (including the Wilcoxon p-values and Cohen's d), then
-checks every numeric claim in the running text (44.7% relative gain, oracle
-gaps, router accuracy/kappa, robustness figures, metadata coverage, dataset
-sizes). Run:
+`eswa/verify_eswa.py` audits the manuscript itself: every number that
+appears in `manuscript/01_Manuscript_ESWA.docx` (all table cells, all
+in-text statistics, significance values, effect sizes, the sensitivity
+grid, RRF baselines, dataset sizes, metadata coverage) is checked against
+`results/eswa_tables.json`, plus staleness checks for leftover phrasing:
 
 ```bash
-python verify_paper_numbers.py path/to/01_Manuscript_IPM.docx
-# -> "142 passed, 0 failed"
+cd eswa
+python verify_eswa.py
+# -> "checks: 208, failed: 0, stale: 0"
 ```
 
-`results/` contains the **exact files** from which every table in the paper
-was typeset. `tables.json` is human-readable; per-query scores in
-`*_perquery.npz` let you recompute any mean and any significance test:
+`results/` contains the **exact files** from which every table was
+typeset. Per-query scores in `*_perquery.npz` let you recompute any mean
+and any significance test:
 
 ```python
 import numpy as np
-d = np.load("results/scidocs_perquery.npz", allow_pickle=True)
-print(d["SBERT-Dense"].mean())   # -> 0.2164 (Table 2)
+d = np.load("results/scidocs_bge_hybrid_perquery.npz", allow_pickle=True)
+print(d["BGE-Hybrid||N@10"].mean())   # -> 0.1832 (Table 2)
 ```
 
 ## 7. Data sources and citations
 
-- **SCIDOCS**: Cohan et al., *SPECTER: Document-level Representation Learning
-  using Citation-informed Transformers*, ACL 2020. Distributed via
-  [BEIR](https://github.com/beir-cellar/beir).
-- **SciFact**: Wadden et al., *Fact or Fiction: Verifying Scientific Claims*,
-  EMNLP 2020.
-- **BEIR benchmark**: Thakur et al., *BEIR: A Heterogenous Benchmark for
-  Zero-shot Evaluation of Information Retrieval Models*, NeurIPS 2021
-  (Datasets & Benchmarks).
+- **SCIDOCS**: Cohan et al., *SPECTER: Document-level Representation
+  Learning using Citation-informed Transformers*, ACL 2020.
+- **SciFact**: Wadden et al., *Fact or Fiction: Verifying Scientific
+  Claims*, EMNLP 2020.
+- **NFCorpus / TREC-COVID / BEIR**: Thakur et al., *BEIR: A Heterogenous
+  Benchmark for Zero-shot Evaluation of Information Retrieval Models*,
+  NeurIPS 2021 (Datasets & Benchmarks).
 - **Metadata**: [Semantic Scholar Academic Graph API](https://api.semanticscholar.org/)
-  (citation counts, years, venues; collected 2025).
-- **Encoder**: Reimers & Gurevych, *Sentence-BERT*, EMNLP 2019;
-  checkpoint `all-MiniLM-L6-v2`.
+  and [OpenAlex](https://openalex.org/) (collected 2025-2026).
+- **Encoders**: Reimers & Gurevych, *Sentence-BERT*, EMNLP 2019
+  (`all-MiniLM-L6-v2`); Xiao et al., *C-Pack*, 2023 (`bge-small-en-v1.5`).
 
 ## 8. Hardware / runtime notes
 
-All experiments were run on a single CPU-only workstation (no GPU required).
-Full retrieval on SCIDOCS takes ≈2 minutes; the complete `all` pipeline from
-raw data (including encoding) takes under one hour.
+All experiments were run on a single CPU-only workstation (no GPU
+required). With the shipped caches, re-running `retrieval` through
+`eswa_figs` takes well under one hour; a from-scratch run including both
+encoders takes roughly half a day, dominated by BGE encoding of
+TREC-COVID (171k documents).
 
 ## 9. License
 
-Code is released under the MIT License (see `LICENSE`). The datasets remain
-under their original licenses (SCIDOCS: CC BY-NC-SA; SciFact: CC BY-NC).
-
----
-
-## ESWA extension (four datasets)
-
-The `eswa/` directory contains the extended study targeting *Expert Systems
-with Applications*:
-
-> **When does bibliographic metadata help scientific retrieval-augmented
-> generation? A four-domain evaluation of metadata-aware hybrid retrieval
-> with a deployed academic writing assistant**
-
-### What is added
-
-| Component | File | Contents |
-|---|---|---|
-| Extended pipeline | `eswa/reproduce.py` | All original stages plus NFCorpus / TREC-COVID support, checkpointed at 1000-doc granularity |
-| BGE baseline | `eswa/bge_baseline.py` | BGE-small-en-v1.5 dense retrieval on all four datasets (official query instruction) |
-| BGE backbone transfer | `eswa/bge_hybrid.py` | BGE-Hybrid (equal-weight BM25+BGE fusion) and BGE-CA-HR (CA-HR re-ranking on the BGE backbone): tests whether metadata gains survive a stronger encoder — they do not |
-| Generation eval | `eswa/gen_eval.py` | 200 paired queries (50 per dataset across all four benchmarks), DeepSeek `deepseek-chat` answers, LLM-judged relevance/faithfulness + citation precision vs. gold judgments |
-| Consolidation | `eswa/make_eswa_tables.py` | Merges every result into `results/eswa_tables.json` (single source of truth) |
-| Figures | `eswa/make_eswa_figs.py`, `eswa/make_arch_fig.py` | Fig. 1-5 (architecture, main results, ablation, robustness, routing) |
-| Manuscript | `eswa/build_eswa.py` | Generates the full ESWA submission package with numbers injected from `eswa_tables.json` |
-| Audit | `eswa/verify_eswa.py` | 174 checks: every manuscript number must match the result files |
-
-### Key files
-
-- `eswa/results/eswa_tables.json` — consolidated tables (main, ablation,
-  robustness, router, oracle, generation) for all four datasets
-- `eswa/metadata/{nfcorpus,trec-covid}_metadata.json` — real citation
-  metadata (NFCorpus 94.0% via Semantic Scholar batch API; TREC-COVID
-  69.8% citations / 96.4% years / 92.5% venues via CORD-19 → DOI →
-  OpenAlex)
-- `eswa/results/gen_eval_ckpt.jsonl` — all 200 generation records with
-  answers and judge scores
-- Raw NFCorpus / TREC-COVID corpora are downloaded by
-  `python eswa/reproduce.py download` (official BEIR zips, TU Darmstadt)
-
-### Running the generation evaluation
-
-`gen_eval.py` requires a DeepSeek API key placed in `eswa/.deepseek_key`
-(a single line with the key; the file is git-ignored and never committed).
-
-### Audit
-
-```
-python eswa/verify_eswa.py     # -> "checks: 174, failed: 0, stale: 0"
-```
+Code is released under the MIT License (see `LICENSE`). The datasets
+remain under their original licenses (SCIDOCS: CC BY-NC-SA; SciFact:
+CC BY-NC; NFCorpus / TREC-COVID: see the BEIR repository).

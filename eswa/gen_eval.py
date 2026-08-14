@@ -30,12 +30,13 @@ import urllib.error
 import numpy as np
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-V2 = os.path.join(ROOT, os.pardir, 'exp_v2')
 RES = os.path.join(ROOT, 'results')
 CKPT = os.path.join(RES, 'gen_eval_ckpt.jsonl')
 SUMMARY = os.path.join(RES, 'gen_eval_summary.json')
 ENV_PATH = os.path.join(os.path.expanduser('~'), 'Desktop',
                         'paperpilot-src', 'paperpilot', '.env')
+
+import _layout as L
 
 ALPHA, BETA, GAMMA = 0.6, 0.15, 0.10
 TOPK = 100
@@ -46,17 +47,11 @@ API_URL = 'https://api.deepseek.com/v1/chat/completions'
 MODEL = 'deepseek-chat'
 
 DATASETS = ['scidocs', 'scifact', 'nfcorpus', 'trec-covid']
-V3DATA = os.path.join(ROOT, 'data')
-V3ART = os.path.join(ROOT, 'artifacts')
 
 
 def ds_locations(ds):
     """Return (base_dir_with_beir_files, prep_dir, scoremats_npz)."""
-    if ds in ('scidocs', 'scifact'):
-        return (os.path.join(V2, ds), os.path.join(V2, f'{ds}_prep'),
-                os.path.join(V2, f'{ds}_scoremats.npz'))
-    return (os.path.join(V3DATA, ds), os.path.join(V3ART, f'{ds}_prep'),
-            os.path.join(V3ART, f'{ds}_scoremats.npz'))
+    return (L.raw_ds(ds), L.prep_dir(ds), L.scoremats(ds))
 
 GEN_SYS = ('You are an academic writing assistant. Answer the question using '
            'ONLY the provided passages. Cite supporting passages inline as '

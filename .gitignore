@@ -10,3 +10,7 @@ artifacts/*_method_ckpt/
 __pycache__/
 *.pyc
 .DS_Store
+
+# never commit API keys
+.deepseek_key
+eswa/.deepseek_key

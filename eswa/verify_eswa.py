@@ -11,10 +11,11 @@ import sys
 
 from docx import Document
 
+import _layout as L
+
 BASE = os.path.dirname(os.path.abspath(__file__))
 T = json.load(open(os.path.join(BASE, 'results', 'eswa_tables.json')))
-DOCX = os.path.normpath(os.path.join(BASE, '..', 'ESWA_submission',
-                                      '01_Manuscript_ESWA.docx'))
+DOCX = L.manuscript_docx()
 
 doc = Document(DOCX)
 parts = [p.text for p in doc.paragraphs]
@@ -117,10 +118,29 @@ for ds, key in [('scidocs', 'CA-HR vs BM25 | N@10'),
     expect(f'holm pval {ds} {key}',
            'p < 0.001' if pv < 0.001 else 'p = %.3f' % pv)
 
-# 9. bibliographic diagnostics (Section 5.2, Table 2)
+# 9. bibliographic diagnostics (Section 5.2, Table 3)
 for s in ['0.798', '0.582', '0.498', '0.461', '566', '254', '179',
           '27.4%', '34.7%', '6 vs. 16', 'Mann-Whitney p = 0.55']:
     expect(f'diagnostic {s}', s)
+
+# 10. BGE metadata-weight sensitivity + RRF baselines (Section 6.4, Table 6)
+S = T['sensitivity']
+for ds in DS:
+    expect(f'sens {ds} hybrid', f"{S[ds]['bge_hybrid_N@10']:.4f}")
+    expect(f'sens {ds} best', f"{S[ds]['best_N@10']:.4f}")
+    for m in ('RRF-MiniLM', 'RRF-BGE'):
+        expect(f'rrf {ds} {m}', f"{S[ds]['rrf'][m]['N@10']:.4f}")
+expect('sens scidocs best combo', 'beta = 0.3, gamma = 0.0')
+expect('sens scidocs significant', 'yes')
+for ds in ('scifact', 'nfcorpus', 'trec-covid'):
+    assert not S[ds]['any_significant_gain_after_holm'], ds
+assert S['scidocs']['any_significant_gain_after_holm']
+# Table 6/7/8 captions and renumbered cross-references
+for s in ['Table 6. BGE-backbone metadata-weight sensitivity',
+          'Table 7. Per-query oracle',
+          'Table 8. End-to-end answer quality',
+          'Table 7 and Fig. 5', 'Table 8 shows']:
+    expect(f'caption {s}', s)
 
 fails = []
 for label, value in checks:
@@ -138,6 +158,9 @@ for bad in ['Information Processing', 'IP&M', 'two benchmarks',
             'metadata coverage is thin or',
             'best metadata-aware choice',
             'The stronger BGE-small encoder is the best single',
+            'Table 6. Per-query oracle', 'Table 7. End-to-end',
+            'Section 6.6', 'Table 6 and Fig',
+            'Findings of EMNLP, 2022', 'R. Ren, Y. Qu', '679-693',
             'SCIDOCS (computer science; 25,657 documents, '
             '1,000 queries) and SciFact (biomedical;']:
     if bad in TEXT:

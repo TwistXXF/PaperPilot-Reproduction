@@ -15,29 +15,17 @@ from statistics import median
 import numpy as np
 from scipy.stats import mannwhitneyu
 
+import _layout as L
+
 BASE = os.path.dirname(os.path.abspath(__file__))
 
 DATASETS = {
-    'scidocs': {
-        'corpus': os.path.join(BASE, '..', 'exp_v2', 'scidocs', 'corpus.jsonl'),
-        'qrels': os.path.join(BASE, '..', 'exp_v2', 'scidocs', 'qrels', 'test.tsv'),
-        'meta': os.path.join(BASE, '..', 'exp_v2', 'scidocs_metadata.json'),
-    },
-    'scifact': {
-        'corpus': os.path.join(BASE, '..', 'exp_v2', 'scifact', 'corpus.jsonl'),
-        'qrels': os.path.join(BASE, '..', 'exp_v2', 'scifact', 'qrels', 'test.tsv'),
-        'meta': os.path.join(BASE, '..', 'exp_v2', 'scifact_metadata.json'),
-    },
-    'nfcorpus': {
-        'corpus': os.path.join(BASE, 'data', 'nfcorpus', 'corpus.jsonl'),
-        'qrels': os.path.join(BASE, 'data', 'nfcorpus', 'qrels', 'test.tsv'),
-        'meta': os.path.join(BASE, 'data', 'metadata', 'nfcorpus_metadata.json'),
-    },
-    'trec-covid': {
-        'corpus': os.path.join(BASE, 'data', 'trec-covid', 'corpus.jsonl'),
-        'qrels': os.path.join(BASE, 'data', 'trec-covid', 'qrels', 'test.tsv'),
-        'meta': os.path.join(BASE, 'data', 'metadata', 'trec-covid_metadata.json'),
-    },
+    ds: {
+        'corpus': os.path.join(L.raw_ds(ds), 'corpus.jsonl'),
+        'qrels': os.path.join(L.raw_ds(ds), 'qrels', 'test.tsv'),
+        'meta': L.meta_file(ds),
+    }
+    for ds in ('scidocs', 'scifact', 'nfcorpus', 'trec-covid')
 }
 
 T_REF = 2024  # same reference year as the CA-HR recency prior

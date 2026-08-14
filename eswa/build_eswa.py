@@ -182,49 +182,36 @@ def build_manuscript():
     h1(d, 'Abstract')
     p(d,
       'Retrieval-augmented generation (RAG) systems for scientific literature '
-      'usually ship with a single static retrieval configuration, yet whether '
-      'one configuration is optimal across research domains—and whether '
-      'bibliographic metadata such as citation counts and publication years '
-      'should influence ranking—remains insufficiently quantified. This paper '
-      'reports a four-domain evaluation of ten retrieval configurations '
-      '(BM25; latent-semantic analysis; two pretrained dense encoders, '
-      'all-MiniLM-L6-v2 and BGE-small-en-v1.5; equal-weight hybrid fusion on '
-      'each encoder; and metadata-aware variants—UMA-RAG, LP-RAG, and a '
-      'citation- and recency-aware re-ranker, CA-HR—on both dense '
-      'backbones) on SCIDOCS (computer science; 25,657 '
-      'documents, 1,000 queries), SciFact (biomedical claims; 5,183 documents, '
-      '300 queries), NFCorpus (nutrition and medicine; 3,633 documents, 323 '
-      'queries), and TREC-COVID (COVID-19 biomedicine; 171,332 documents, 50 '
-      'queries), using real citation counts, publication years, and venue '
-      'statistics obtained from the Semantic Scholar and OpenAlex APIs '
-      '(coverage 69.8%-99.7% per corpus). Three findings emerge. First, the '
-      'optimal retrieval strategy is decisively domain-dependent: pretrained '
-      'dense retrieval dominates on SCIDOCS, hybrid fusion is best-in-family '
-      'on SciFact, and BGE-based configurations attain the best single '
-      'result on three of four datasets. Second, citation-aware re-ranking is '
-      'conditional on bibliographic informativeness rather than raw coverage: '
-      'the citation boost yields a significant gain only where citation '
-      'authority is genuinely informative about relevance (on SCIDOCS, '
-      'relevant documents carry a median of 566 citations versus 71 for '
-      'non-relevant ones), is neutral on SciFact, where the association is '
-      'weak, and is mildly harmful on NFCorpus and TREC-COVID, where '
-      'citations are uninformative (AUC approximately 0.50) or inversely '
-      'associated with relevance (AUC 0.46); moreover, the citation gain '
-      'observed on the weaker MiniLM backbone does not transfer to the '
-      'stronger BGE backbone, indicating '
-      'that metadata priors substitute for—rather than complement—dense '
-      'retrieval quality. Third, per-query strategy selection has a small oracle '
-      'headroom on three datasets, and a lightweight 12-feature logistic '
-      'router (PAV Router) does not exceed majority-class behaviour on any of '
-      'the four (Cohen\'s kappa approximately 0); we report this as a '
-      'replicated negative result. A generation-side study (200 paired '
-      'queries across all four benchmarks, DeepSeek answers with citations) '
-      'finds end-to-end answer '
-      'relevance and faithfulness statistically indistinguishable between the '
-      'hybrid and metadata-aware backends. The full pipeline is deployed in '
-      'PaperPilot, a live academic writing assistant, and we report a '
-      'one-month pilot deployment. All data, code, and per-query results are '
-      'publicly released.')
+      'usually ship a single static retrieval configuration, yet whether one '
+      'configuration is optimal across research domains—and whether '
+      'bibliographic metadata should influence ranking—remains '
+      'insufficiently quantified. We evaluate ten retrieval configurations '
+      '(BM25; latent-semantic analysis; two pretrained dense encoders; '
+      'equal-weight hybrid fusion; and metadata-aware variants—UMA-RAG, '
+      'LP-RAG, and a citation- and recency-aware re-ranker, CA-HR—on both '
+      'dense backbones) on SCIDOCS, SciFact, NFCorpus, and TREC-COVID '
+      '(171,332 to 3,633 documents; 1,673 queries in total), using real '
+      'citation counts, publication years, and venue statistics from the '
+      'Semantic Scholar and OpenAlex APIs (coverage 69.8%-99.7%). Three '
+      'findings emerge. First, the optimal strategy is decisively '
+      'domain-dependent: no configuration wins everywhere. Second, '
+      'citation-aware re-ranking helps only where citation authority is '
+      'informative about relevance (on SCIDOCS, relevant documents carry a '
+      'median of 566 citations versus 71 for non-relevant ones; AUC 0.798), '
+      'is neutral where the association is weak, and is mildly harmful where '
+      'citations are uninformative or inversely associated with relevance '
+      '(AUC approximately 0.50 and 0.46); the gain observed on the weaker '
+      'MiniLM backbone does not transfer to the stronger BGE backbone under '
+      'fixed hyperparameters; a 30-combination weight sweep recovers it only '
+      'on the citation-informative corpus. Third, per-query strategy selection offers '
+      'little recoverable headroom: a lightweight 12-feature logistic router '
+      '(PAV Router) does not exceed majority-class behaviour on any dataset '
+      '(Cohen\'s kappa approximately 0). A generation-side study (200 paired '
+      'queries) finds answer relevance and faithfulness statistically '
+      'indistinguishable between the hybrid and metadata-aware backends. The '
+      'pipeline is deployed in PaperPilot, a live academic writing '
+      'assistant, and we report a one-month pilot deployment. All data, '
+      'code, and per-query results are publicly released.')
     p(d, 'Keywords: retrieval-augmented generation; scientific information '
          'retrieval; hybrid retrieval; bibliographic metadata; citation-aware '
          'ranking; query routing; expert systems',
@@ -371,6 +358,50 @@ def build_manuscript():
       'and faithfulness with an LLM judge [27] and for citation precision '
       'against the gold relevance judgments. This closes the loop between '
       'retrieval evaluation and deployed answer quality.')
+    h2(d, '2.5. Recent metadata-aware scientific RAG and positioning')
+    p(d,
+      'The RAG literature has moved quickly, and several 2025-2026 studies '
+      'are closest to our problem. SurveyGen [28] builds a large-scale '
+      'scientific survey dataset and a quality-aware framework (QUAL-SG) '
+      'that injects citation counts, author influence, and venue reputation '
+      'into literature retrieval for survey generation; it demonstrates that '
+      'quality metadata helps its generation pipeline but does not isolate '
+      'when or why the retrieval-level gain occurs. Yousuf et al. [29] '
+      'systematically compare metadata-as-text, dual-encoder, and '
+      'reformulation strategies on SEC filings and show that moderate '
+      'metadata weights help on structured financial corpora; their metadata '
+      'is structural (company, form, section), not bibliometric. SciRAG '
+      '[30] couples adaptive retrieval with citation-graph symbolic '
+      'reasoning and outline-guided synthesis for scientific question '
+      'answering, using citations to organise evidence rather than as a '
+      'ranking prior. RA-RAG [31] estimates per-source reliability by '
+      'cross-checking and retrieves only from reliable sources in '
+      'multi-source QA. Table 1 summarises the positioning. Our work is '
+      'complementary and, to our knowledge, the first to (i) quantify, '
+      'across four scientific domains, when citation- and recency-aware '
+      'ranking priors help, are neutral, or harm—linking the outcome to a '
+      'measurable corpus property (citation-relevance AUC) rather than to '
+      'metadata coverage—and (ii) show, via a weight-sensitivity sweep on a '
+      'stronger encoder, that the gain is backbone-dependent and re-emerges '
+      'only where citations are informative, and that it does not propagate '
+      'to generation quality or to a deployed system.')
+    add_table(d,
+      ['Study', 'Venue', 'Metadata signal', 'Role of metadata',
+       'Cross-domain analysis', 'Deployment'],
+      [
+        ['SurveyGen [28]', 'EMNLP 2025', 'Citations, author, venue',
+         'Quality filter for survey generation', 'No', 'No'],
+        ['Yousuf et al. [29]', 'arXiv 2026', 'Structural fields (SEC)',
+         'Embedding/fusion strategies', 'Single corpus', 'No'],
+        ['SciRAG [30]', 'arXiv 2025', 'Citation graph',
+         'Evidence organisation & attribution', 'No', 'No'],
+        ['RA-RAG [31]', 'EMNLP 2025', 'Source reliability',
+         'Source selection & voting', 'No', 'No'],
+        ['This paper', '—', 'Citations, recency, venue (real APIs)',
+         'Ranking prior; informativeness-gated', 'Four domains', 'Live system'],
+      ])
+    p(d, 'Table 1. Positioning against recent (2025-2026) metadata-aware and '
+         'citation-aware RAG studies.', italic=True, size=9)
 
     # ---- 3. PaperPilot system ----------------------------------------------
     h1(d, '3. The PaperPilot system')
@@ -399,7 +430,7 @@ def build_manuscript():
       'motivating the CPU-efficient configurations evaluated in this study. '
       'Second, answers must stream interactively, so retrieval plus '
       're-ranking must stay well under one second—satisfied by all ten '
-      'configurations (Section 6.6).')
+      'configurations (Section 6.7).')
     p(d, 'Fig. 1. PaperPilot system architecture and deployment boundary.',
       italic=True, size=9)
 
@@ -425,8 +456,9 @@ def build_manuscript():
       'Three configurations add bibliographic signals. UMA-RAG augments the '
       'hybrid score uniformly with venue prestige V(d) and citation authority '
       'C(d). LP-RAG multiplies the hybrid score by a length prior '
-      '1 + eta * exp(-len(d)/mu), favouring documents near a reference '
-      'length. CA-HR forms the hybrid base score S_hybrid(q, d) = alpha * '
+      '1 + eta * exp(-len(d)/mu), which smoothly down-weights longer '
+      'documents: shorter documents receive up to a 1 + eta boost that '
+      'decays exponentially with document length. CA-HR forms the hybrid base score S_hybrid(q, d) = alpha * '
       'S_sparse + (1 - alpha) * S_dense with alpha = 0.6, takes the top-100 '
       'candidates, and re-ranks by S_CA-HR(q, d) = S_hybrid(q, d) + beta * '
       'C(d) + gamma * R(d), where C(d) = log(1 + c_d) / max_j log(1 + c_j) '
@@ -463,7 +495,7 @@ def build_manuscript():
                      f"{100*cov['citations']:.1f}%",
                      f"{100*cov['year']:.1f}%",
                      f"{100*cov['venue']:.1f}%"])
-    p(d, 'Table 1. Datasets and real-metadata coverage.', italic=True, size=9)
+    p(d, 'Table 2. Datasets and real-metadata coverage.', italic=True, size=9)
     add_table(d,
               ['Dataset', 'Domain', 'Docs', 'Queries', 'Citation cov.',
                'Year cov.', 'Venue cov.'], rows)
@@ -473,14 +505,14 @@ def build_manuscript():
       '(nutrition and medicine [23]), and TREC-COVID (COVID-19 biomedicine '
       '[24]). They span two orders of magnitude in corpus size (3.6k-171k '
       'documents) and four distinct domains, and—critically—differ in '
-      'metadata coverage (Table 1): SCIDOCS is nearly complete (99.7%), '
+      'metadata coverage (Table 2): SCIDOCS is nearly complete (99.7%), '
       'SciFact and NFCorpus are high (94%), while TREC-COVID is genuinely '
       'sparse at 69.8% citation coverage, reflecting its many preprints. We '
       'treat this sparsity not as a defect to hide but as a property of '
       'real-world corpora that our cross-domain design is built to expose.')
     h2(d, '5.2. Bibliographic informativeness diagnostics')
     DI = T['diagnostics']
-    p(d, 'Table 2. Bibliographic informativeness diagnostics per corpus. '
+    p(d, 'Table 3. Bibliographic informativeness diagnostics per corpus. '
          'Citation-relevance AUC = P(citations of a relevant document exceed '
          'those of a non-relevant one); non-relevant sets are judged '
          'non-relevant documents where available (SCIDOCS, TREC-COVID) and a '
@@ -503,7 +535,7 @@ def build_manuscript():
       'Coverage alone does not explain where metadata helps: SciFact (94.1%) '
       'and NFCorpus (94.0%) have virtually identical citation coverage yet '
       'respond oppositely to citation-aware ranking. The discriminating '
-      'variable is the citation-relevance association (Table 2). On SCIDOCS, '
+      'variable is the citation-relevance association (Table 3). On SCIDOCS, '
       f'relevant documents carry a median of '
       f'{DI["scidocs"]["rel_median_citations"]:.0f} citations versus '
       f'{DI["scidocs"]["nonrel_median_citations"]:.0f} for non-relevant ones '
@@ -516,9 +548,9 @@ def build_manuscript():
       f'(AUC = {DI["trec-covid"]["cit_rel_auc"]:.3f}): relevant COVID-19 '
       'documents are newer and less cited than the background literature '
       '(median 6 vs. 16 citations), because the benchmark rewards recent '
-      'pandemic findings, not established ones. Metadata utility is '
-      'therefore governed by the informativeness of the bibliographic '
-      'signal, not by how completely it covers the corpus.')
+      'pandemic findings, not established ones. Across our four benchmarks, '
+      'metadata utility therefore tracks the informativeness of the '
+      'bibliographic signal, not how completely it covers the corpus.')
     h2(d, '5.3. Metadata acquisition')
     p(d,
       'Citation counts, publication years, and venues were fetched from the '
@@ -557,7 +589,7 @@ def build_manuscript():
     # ---- 6. Results ---------------------------------------------------------
     h1(d, '6. Results')
     h2(d, '6.1. Main retrieval results')
-    p(d, 'Table 3. Retrieval effectiveness: NDCG@10 / Recall@10 on the four '
+    p(d, 'Table 4. Retrieval effectiveness: NDCG@10 / Recall@10 on the four '
          'test sets (best single method per dataset in bold in Fig. 2).',
       italic=True, size=9)
     rows = []
@@ -573,7 +605,7 @@ def build_manuscript():
         f"({avg(ds, T['main'][ds]['best_single_N@10'], 'N@10'):.4f})"
         for ds in DS)
     p(d,
-      f'Fig. 2 and Table 3 show the central pattern: no configuration wins '
+      f'Fig. 2 and Table 4 show the central pattern: no configuration wins '
       f'everywhere. The best single method per dataset is {best_str}. '
       f'Pretrained dense retrieval dominates on SCIDOCS, where '
       f'SBERT-Dense reaches {f4(avg("scidocs", "SBERT-Dense", "N@10"))} '
@@ -608,7 +640,7 @@ def build_manuscript():
       'lexical and non-pretrained retrieval, but whether it beats plain '
       'dense retrieval depends on the domain.')
     p(d,
-      'Table 3 also isolates the role of the dense backbone. Equal-weight '
+      'Table 4 also isolates the role of the dense backbone. Equal-weight '
       'hybrid fusion on BGE-small (BGE-Hybrid) does not reproduce the hybrid '
       'advantage seen with MiniLM: it trails BGE-Dense on SCIDOCS '
       f'({f4(avg("scidocs", "BGE-Hybrid", "N@10"))} vs. '
@@ -634,15 +666,16 @@ def build_manuscript():
       f'TREC-COVID {f4(avg("trec-covid", "BGE-CA-HR", "N@10"))} vs. '
       f'{f4(avg("trec-covid", "BGE-Hybrid", "N@10"))}, '
       f'd = {f3(T["main"]["trec-covid"]["bge_tests"]["BGE-CA-HR vs BGE-Hybrid | N@10"]["d"])}) '
-      'and well below BGE-Dense. The citation gain that CA-HR obtains on the '
-      'weaker MiniLM backbone on SCIDOCS therefore does not transfer to a '
-      'stronger encoder: bibliographic priors appear to compensate for weak '
-      'dense representations rather than complement strong ones.')
+      'and well below BGE-Dense. Under CA-HR\'s fixed a-priori '
+      'hyperparameters, the citation gain obtained on the weaker MiniLM '
+      'backbone on SCIDOCS does not transfer to a stronger encoder: the '
+      'observed metadata benefit is backbone-dependent rather than '
+      'additive (Section 6.4 tests whether any metadata weight rescues it).')
     p(d, 'Fig. 2. Retrieval effectiveness (NDCG@10) across four domains.',
       italic=True, size=9)
 
     h2(d, '6.2. Ablation of CA-HR components')
-    p(d, 'Table 4. CA-HR ablation (NDCG@10; bold marks cases where removing '
+    p(d, 'Table 5. CA-HR ablation (NDCG@10; bold marks cases where removing '
          'a component improves performance).', italic=True, size=9)
     ABL = ['full', '-citation', '-recency', '-dense (alpha=1)',
            '-sparse (alpha=0)', '-rerank (plain hybrid)']
@@ -661,7 +694,7 @@ def build_manuscript():
     add_table(d, ['Variant', 'SCIDOCS', 'SciFact', 'NFCorpus', 'TREC-COVID'],
               rows)
     p(d,
-      f'The ablation (Table 4, Fig. 3; * = removal improves on the full '
+      f'The ablation (Table 5, Fig. 3; * = removal improves on the full '
       f'model) localises exactly where metadata helps and where it hurts. '
       f'On SCIDOCS—the corpus where citations are most informative about '
       f'relevance (AUC = {T["diagnostics"]["scidocs"]["cit_rel_auc"]:.3f})—removing the '
@@ -676,7 +709,7 @@ def build_manuscript():
       f'and on TREC-COVID '
       f'({f4(abl("trec-covid", "full"))} → {f4(abl("trec-covid", "-citation"))}), '
       f'The sign flip tracks the bibliographic-informativeness diagnostics '
-      f'(Table 2), not coverage: NFCorpus and TREC-COVID are exactly the '
+      f'(Table 3), not coverage: NFCorpus and TREC-COVID are exactly the '
       f'corpora where citation counts carry no (AUC = '
       f'{T["diagnostics"]["nfcorpus"]["cit_rel_auc"]:.3f}) or inverse '
       f'(AUC = {T["diagnostics"]["trec-covid"]["cit_rel_auc"]:.3f}) '
@@ -720,8 +753,76 @@ def build_manuscript():
     p(d, 'Fig. 4. Robustness to query corruption (NDCG@10 vs. word-drop '
          'noise).', italic=True, size=9)
 
-    h2(d, '6.4. Oracle headroom and learned routing')
-    p(d, 'Table 5. Per-query oracle, best single metadata-aware strategy, '
+    h2(d, '6.4. Metadata-weight sensitivity and rank-fusion baselines')
+    p(d,
+      'Two objections remain after Section 6.1. First, CA-HR\'s weights were '
+      'fixed a priori, so the absence of a metadata gain on the stronger BGE '
+      'backbone could be an artefact of under-weighting the metadata terms. '
+      'Second, our hybrids interpolate min-max-normalised scores, so a '
+      'standard rank-fusion reference is missing. Table 6 addresses both. '
+      'We sweep the citation and recency weights of BGE-CA-HR over a '
+      '30-combination grid (beta in {0, 0.05, 0.10, 0.15, 0.20, 0.30}, '
+      'gamma in {0, 0.05, 0.10, 0.15, 0.20}) and test each combination '
+      'against BGE-Hybrid with one-sided Wilcoxon tests, Holm-corrected '
+      'within each dataset. The metadata gain re-emerges only on SCIDOCS: '
+      f'{T["sensitivity"]["scidocs"]["best_combo"].replace("beta=", "beta = ").replace("|gamma=", ", gamma = ")} '
+      f'attains {f4(T["sensitivity"]["scidocs"]["best_N@10"])} NDCG@10, '
+      'significantly above BGE-Hybrid '
+      f'({f4(T["sensitivity"]["scidocs"]["bge_hybrid_N@10"])}; Holm '
+      'p < 0.001) and marginally above BGE-Dense '
+      f'({f4(avg("scidocs", "BGE-Dense", "N@10"))}). On SciFact, NFCorpus, '
+      'and TREC-COVID no grid combination significantly beats BGE-Hybrid '
+      f'(best {f4(T["sensitivity"]["scifact"]["best_N@10"])}, '
+      f'{f4(T["sensitivity"]["nfcorpus"]["best_N@10"])}, and '
+      f'{f4(T["sensitivity"]["trec-covid"]["best_N@10"])} versus '
+      f'{f4(T["sensitivity"]["scifact"]["bge_hybrid_N@10"])}, '
+      f'{f4(T["sensitivity"]["nfcorpus"]["bge_hybrid_N@10"])}, and '
+      f'{f4(T["sensitivity"]["trec-covid"]["bge_hybrid_N@10"])}; all '
+      'Holm-adjusted p = 1.0). The backbone effect is therefore not a '
+      'weight artefact: metadata gains on a strong encoder are gated by '
+      'citation informativeness, and where the signal is informative the '
+      'gain transfers only after re-calibrating the metadata weight.')
+    p(d,
+      'As a stronger fusion reference we add reciprocal rank fusion '
+      '(RRF, k = 60) of BM25 with each dense encoder. RRF-MiniLM / RRF-BGE '
+      'reach NDCG@10 '
+      f'{f4(T["sensitivity"]["scidocs"]["rrf"]["RRF-MiniLM"]["N@10"])} / '
+      f'{f4(T["sensitivity"]["scidocs"]["rrf"]["RRF-BGE"]["N@10"])} on '
+      'SCIDOCS, '
+      f'{f4(T["sensitivity"]["scifact"]["rrf"]["RRF-MiniLM"]["N@10"])} / '
+      f'{f4(T["sensitivity"]["scifact"]["rrf"]["RRF-BGE"]["N@10"])} on '
+      'SciFact, '
+      f'{f4(T["sensitivity"]["nfcorpus"]["rrf"]["RRF-MiniLM"]["N@10"])} / '
+      f'{f4(T["sensitivity"]["nfcorpus"]["rrf"]["RRF-BGE"]["N@10"])} on '
+      'NFCorpus, and '
+      f'{f4(T["sensitivity"]["trec-covid"]["rrf"]["RRF-MiniLM"]["N@10"])} / '
+      f'{f4(T["sensitivity"]["trec-covid"]["rrf"]["RRF-BGE"]["N@10"])} on '
+      'TREC-COVID: no RRF variant is the best configuration on any dataset, '
+      'so the qualitative conclusions of Table 4 do not depend on the '
+      'min-max interpolation rule.')
+    rows = []
+    for ds in DS:
+        s = T['sensitivity'][ds]
+        rows.append([DS_NAME[ds],
+                     f4(s['bge_hybrid_N@10']),
+                     f4(avg(ds, 'BGE-Dense', 'N@10')),
+                     f4(avg(ds, 'BGE-CA-HR', 'N@10')),
+                     s['best_combo'].replace('beta=', '').replace('|gamma=', '/'),
+                     f4(s['best_N@10']),
+                     'yes' if s['any_significant_gain_after_holm'] else 'no',
+                     f4(s['rrf']['RRF-MiniLM']['N@10']),
+                     f4(s['rrf']['RRF-BGE']['N@10'])])
+    add_table(d,
+      ['Dataset', 'BGE-Hybrid', 'BGE-Dense', 'BGE-CA-HR (fixed)',
+       'Best grid beta/gamma', 'Best grid N@10', 'Sig. after Holm',
+       'RRF-MiniLM', 'RRF-BGE'], rows)
+    p(d, 'Table 6. BGE-backbone metadata-weight sensitivity (30-combination '
+         'grid per dataset; significance vs. BGE-Hybrid, one-sided Wilcoxon '
+         'with Holm correction) and RRF (k = 60) rank-fusion baselines; '
+         'NDCG@10.', italic=True, size=9)
+
+    h2(d, '6.5. Oracle headroom and learned routing')
+    p(d, 'Table 7. Per-query oracle, best single metadata-aware strategy, '
          'PAV Router-routed system, and router agreement.', italic=True,
       size=9)
     rows = []
@@ -737,7 +838,7 @@ def build_manuscript():
     add_table(d, ['Dataset', 'Best single', 'CA-HR', 'PAV Router',
                   'Oracle', 'Router acc.', "Cohen's κ"], rows)
     p(d,
-      'Table 5 and Fig. 5 quantify how much per-query adaptivity could ever '
+      'Table 7 and Fig. 5 quantify how much per-query adaptivity could ever '
       'buy. The oracle that picks the per-query best among the three '
       'metadata-aware strategies exceeds the best single strategy by only '
       f'+0.006 (SCIDOCS) and +0.008 (SciFact) NDCG@10; the headroom is '
@@ -756,8 +857,8 @@ def build_manuscript():
     p(d, 'Fig. 5. Oracle headroom vs. learned routing (NDCG@10).',
       italic=True, size=9)
 
-    h2(d, '6.5. Generation-side evaluation')
-    p(d, 'Table 6. End-to-end answer quality with DeepSeek generation on 200 '
+    h2(d, '6.6. Generation-side evaluation')
+    p(d, 'Table 8. End-to-end answer quality with DeepSeek generation on 200 '
          'paired queries (50 per dataset across the four benchmarks): '
          'LLM-judged relevance and faithfulness (1-5), citation precision '
          'against gold judgments, and relevant passages in the top-5 '
@@ -786,7 +887,7 @@ def build_manuscript():
       'seed), generated cited answers with DeepSeek (deepseek-chat, '
       'temperature 0.2, top-5 passages as context), and scored each answer '
       'for relevance and faithfulness with an LLM judge and for citation '
-      'precision against the gold judgments. Table 6 shows the backends are '
+      'precision against the gold judgments. Table 8 shows the backends are '
       'statistically indistinguishable on every measure (all p > 0.48): at '
       'top-5, the two systems surface nearly the same passages '
       f'({g["paired_n_rel_context"]["mean_CA-HR"]:.2f} vs. '
@@ -808,7 +909,7 @@ def build_manuscript():
       f'paired design controls for this bias, but absolute scores should be '
       f'read accordingly.')
 
-    h2(d, '6.6. Efficiency')
+    h2(d, '6.7. Efficiency')
     p(d,
       'All ten configurations are CPU-feasible. On the largest corpus '
       '(TREC-COVID, 171,332 documents) BM25 scoring averages 1,002 ms per '
@@ -838,7 +939,7 @@ def build_manuscript():
       'Two operational observations connect the deployment to the '
       'experimental findings. First, retrieval never appeared in the latency '
       'budget: user-perceived response time is dominated by the streamed LLM '
-      'tokens, consistent with Section 6.6, so the choice among the ten '
+      'tokens, consistent with Section 6.7, so the choice among the ten '
       'configurations is free from an engineering standpoint. Second, '
       'user-uploaded papers are often fresh preprints with no citation '
       'record—the production analogue of TREC-COVID\'s inverted '
@@ -855,7 +956,7 @@ def build_manuscript():
     p(d,
       'Taken together, the four-domain results support a simple '
       'domain-conditional policy grounded in bibliographic informativeness '
-      '(Table 2): (i) where citation authority strongly separates relevant '
+      '(Table 3): (i) where citation authority strongly separates relevant '
       'from non-relevant documents (computer science; citation-relevance '
       'AUC = 0.798), citation-aware signals contribute positively—uniform '
       'metadata augmentation (UMA-RAG) is the strongest metadata-aware '
@@ -869,14 +970,18 @@ def build_manuscript():
       'and, analogously, fresh user uploads with no citation record), '
       'metadata boosts are neutral-to-harmful regardless of coverage, and a '
       'stronger dense encoder such as BGE-small is the best single '
-      'investment; and (iv) per-query routing '
-      'among cheap strategies is not worth its complexity anywhere we '
-      'tested—configuration effort should be spent at domain level. Two '
+      'investment; and (iv) the tested surface-feature router does not '
+      'recover the available oracle headroom anywhere we tested—'
+      'configuration effort should be spent at domain level. Two '
       'qualifiers sharpen the policy. First, the metadata effects are '
-      'backbone-conditional: every metadata gain measured on the MiniLM '
-      'backbone disappeared or inverted on the stronger BGE-small backbone '
-      '(Section 6.1), so metadata re-ranking must be re-validated whenever '
-      'the underlying encoder is upgraded. Second, robustness under query '
+      'backbone- and weight-conditional: at CA-HR\'s fixed weights every '
+      'metadata gain measured on the MiniLM backbone disappeared or '
+      'inverted on the stronger BGE-small backbone (Section 6.1), and a '
+      '30-combination weight sweep shows the gain re-emerges only on the '
+      'citation-informative corpus (SCIDOCS) and only after raising the '
+      'citation weight (Section 6.4)—metadata re-ranking must therefore be '
+      're-validated and re-calibrated whenever the underlying encoder is '
+      'upgraded. Second, robustness under query '
       'corruption does not follow clean-query rankings—BM25 is the most '
       'noise-robust method on SCIDOCS while CA-HR is the most robust on '
       'TREC-COVID (Section 6.3)—so noise expectations should also enter the '
@@ -894,7 +999,9 @@ def build_manuscript():
       'controls relative bias, absolute judge scores may be inflated. (4) '
       'CA-HR\'s hyperparameters (alpha, beta, gamma, lambda, top-100 depth) '
       'were fixed a priori and not tuned per dataset, which is conservative '
-      'but may understate the method where metadata is rich. (5) The '
+      'but may understate the method where metadata is rich; the Section 6.4 '
+      'weight sweep bounds this effect directly, showing a reachable gain '
+      'only on SCIDOCS. (5) The '
       'deployment study is pilot-scale (6 users, one month); it '
       'demonstrates operability, not adoption.')
 
@@ -909,10 +1016,13 @@ def build_manuscript():
       'signal is genuinely informative about relevance—citation authority '
       'separates relevant from non-relevant documents on SCIDOCS '
       '(AUC = 0.798) but not on NFCorpus (AUC = 0.498) or TREC-COVID '
-      '(AUC = 0.461)—and when the underlying content retriever leaves '
-      'residual error for metadata to compensate, since the citation gain '
-      'observed with MiniLM vanishes on the stronger BGE-small backbone. '
-      'Per-query routing cannot recover even the modest oracle headroom, '
+      '(AUC = 0.461)—and requires re-calibration when the underlying content '
+      'retriever changes: under fixed hyperparameters the citation gain '
+      'observed with MiniLM vanishes on the stronger BGE-small backbone, and '
+      'a 30-combination weight sweep recovers it only on the '
+      'citation-informative corpus (SCIDOCS). A lightweight surface-feature '
+      'router does not '
+      'recover even the modest oracle headroom, '
       'generation-side quality is insensitive to the backend at top-5, and '
       'the whole pipeline runs on commodity CPU hardware in production. '
       'For practitioners, the actionable guidance is to '
@@ -953,6 +1063,10 @@ def build_manuscript():
         'S. Xiao, Z. Liu, P. Zhang, N. Muennighoff, et al., C-Pack: Packaged resources to advance general Chinese embedding, arXiv:2309.07597, 2023.',
         'DeepSeek-AI, DeepSeek-V3 technical report, arXiv:2412.19437, 2024.',
         'L. Zheng, W.-L. Chiang, Y. Sheng, et al., Judging LLM-as-a-judge with MT-Bench and Chatbot Arena, in: Proc. NeurIPS Datasets and Benchmarks, 2023.',
+        'T. Bao, M. T. Nayeem, D. Rafiei, C. Zhang, SurveyGen: Quality-aware scientific survey generation with large language models, in: Proc. EMNLP, 2025, pp. 2712-2736.',
+        'R. B. Yousuf, S. Xu, M. Sharma, et al., Utilizing metadata for better retrieval-augmented generation, arXiv:2601.11863, 2026.',
+        'H. Ding, Y. Zhao, T. Hu, et al., SciRAG: Adaptive, citation-aware, and outline-guided retrieval and synthesis for scientific literature, arXiv:2511.14362, 2025.',
+        'J. Hwang, J. Park, H. Park, et al., Retrieval-augmented generation with estimation of source reliability, in: Proc. EMNLP, 2025, pp. 34279-34303.',
     ]
     for i, r in enumerate(refs, 1):
         p(d, f'[{i}] {r}', size=10)

@@ -16,8 +16,9 @@ import os
 import numpy as np
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-V2 = os.path.join(ROOT, os.pardir, 'exp_v2')
 R3 = os.path.join(ROOT, 'results')
+
+import _layout as L
 
 METHODS7 = ['BM25', 'LSA-Dense', 'SBERT-Dense', 'Neural-Hybrid', 'UMA-RAG',
             'LP-RAG', 'CA-HR']
@@ -60,7 +61,7 @@ def cohend(a, b):
 def load_perquery(ds):
     """Return {method: {metric: np.array}} merging MiniLM-family and BGE."""
     if ds in ('scidocs', 'scifact'):
-        z = np.load(os.path.join(V2, f'{ds}_perquery.npz'), allow_pickle=True)
+        z = np.load(L.v2_perquery(ds), allow_pickle=True)
     else:
         z = np.load(os.path.join(R3, f'{ds}_perquery.npz'), allow_pickle=True)
     d = {m: {k: z[f'{m}||{k}'] for k in METRICS} for m in METHODS7}
@@ -131,10 +132,10 @@ def main():
 
     for ds in DS_META:
         if ds in ('scidocs', 'scifact'):
-            out['ablation'][ds] = json.load(open(os.path.join(V2, f'{ds}_ablation.json')))
-            out['robust'][ds] = json.load(open(os.path.join(V2, f'{ds}_robust.json')))
-            out['router'][ds] = json.load(open(os.path.join(V2, f'{ds}_router.json')))
-            out['latency'][ds] = json.load(open(os.path.join(V2, f'{ds}_latency.json')))
+            out['ablation'][ds] = json.load(open(L.v2_json(f'{ds}_ablation.json')))
+            out['robust'][ds] = json.load(open(L.v2_json(f'{ds}_robust.json')))
+            out['router'][ds] = json.load(open(L.v2_json(f'{ds}_router.json')))
+            out['latency'][ds] = json.load(open(L.v2_json(f'{ds}_latency.json')))
         else:
             out['ablation'][ds] = json.load(open(os.path.join(R3, f'{ds}_ablation.json')))
             out['robust'][ds] = json.load(open(os.path.join(R3, f'{ds}_robust.json')))
@@ -145,6 +146,13 @@ def main():
     # bibliographic metadata diagnostics (citation-relevance association etc.)
     out['diagnostics'] = json.load(
         open(os.path.join(R3, 'metadata_diagnostics.json')))
+
+    # BGE-backbone metadata-weight sensitivity grid + RRF baselines
+    sens = json.load(open(os.path.join(R3, 'bge_sensitivity.json')))
+    for ds in sens:
+        for combo in sens[ds]['grid'].values():
+            combo.pop('_pq', None)
+    out['sensitivity'] = sens
 
     # ---- primary comparison family with Holm-Bonferroni correction --------
     # Pre-specified primary tests (all NDCG@10):

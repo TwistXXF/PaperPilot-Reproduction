@@ -22,21 +22,14 @@ from reproduce import (ART, RES, ALPHA, BETA, GAMMA, TOPK, METRICS,
                        minmax)
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-V2 = os.path.join(ROOT, os.pardir, 'exp_v2')
+
+import _layout as L
 
 DS = ['scidocs', 'scifact', 'nfcorpus', 'trec-covid']
 
 
 def paths(ds):
-    if ds in ('scidocs', 'scifact'):
-        base = os.path.join(V2, ds)
-        prep = os.path.join(V2, f'{ds}_prep')
-        sm = os.path.join(V2, f'{ds}_scoremats.npz')
-    else:
-        base = os.path.join(ROOT, 'data', ds)
-        prep = os.path.join(ART, f'{ds}_prep')
-        sm = os.path.join(ART, f'{ds}_scoremats.npz')
-    return base, prep, sm
+    return L.raw_ds(ds), L.prep_dir(ds), L.scoremats(ds)
 
 
 def run(ds):
@@ -49,7 +42,7 @@ def run(ds):
     S_bm = z['S_bm']
 
     # BGE embeddings
-    emb_dir = os.path.join(ART, f'{ds}_bge_emb')
+    emb_dir = L.emb_dir(ds, bge=True)
     bge_ids = json.load(open(os.path.join(emb_dir, 'ids.json')))
     starts = sorted(int(f[6:-4]) for f in os.listdir(emb_dir)
                     if f.startswith('chunk_'))
@@ -63,8 +56,8 @@ def run(ds):
 
     qrels = load_qrels(os.path.join(base, 'qrels', 'test.tsv'))
     qids = sorted(qrels.keys())
-    q_emb = np.load(os.path.join(ART, f'{ds}_bge_qemb.npy'))
-    q_ids = json.load(open(os.path.join(ART, f'{ds}_bge_qids.json')))
+    q_emb = np.load(L.art_path(ds, f'{ds}_bge_qemb.npy'))
+    q_ids = json.load(open(L.art_path(ds, f'{ds}_bge_qids.json')))
     qmap = {q: q_emb[i] for i, q in enumerate(q_ids)}
     Qb = np.stack([qmap[q] for q in qids])
 

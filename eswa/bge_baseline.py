@@ -20,20 +20,15 @@ import numpy as np
 from reproduce import (ART, RES, load_jsonl, load_qrels, build_eval_arrays,
                        per_query_metrics)
 
+import _layout as L
+
 MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                          'models', 'bge-small')
 QUERY_INSTRUCTION = ('Represent this sentence for searching relevant '
                      'passages: ')
 
-V2 = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir,
-                  'exp_v2')
-DATASETS = {
-    'scidocs': os.path.join(V2, 'scidocs'),
-    'scifact': os.path.join(V2, 'scifact'),
-    'nfcorpus': os.path.join(os.path.dirname(V2), 'exp_v3', 'data', 'nfcorpus'),
-    'trec-covid': os.path.join(os.path.dirname(V2), 'exp_v3', 'data',
-                               'trec-covid'),
-}
+DATASETS = {ds: L.raw_ds(ds)
+            for ds in ('scidocs', 'scifact', 'nfcorpus', 'trec-covid')}
 
 
 def ds_paths(ds):
@@ -46,7 +41,7 @@ def ds_paths(ds):
 def encode_corpus(model, ds):
     corpus_path, queries_path, _ = ds_paths(ds)
     docs = load_jsonl(corpus_path)
-    out_dir = os.path.join(ART, f'{ds}_bge_emb')
+    out_dir = L.emb_dir(ds, bge=True)
     os.makedirs(out_dir, exist_ok=True)
     starts = sorted(int(f[6:-4]) for f in os.listdir(out_dir)
                     if f.startswith('chunk_') and f.endswith('.npy'))
@@ -74,16 +69,16 @@ def encode_corpus(model, ds):
     q_emb = model.encode([QUERY_INSTRUCTION + (q.get('text') or '') for q in qs],
                          batch_size=64, show_progress_bar=False,
                          normalize_embeddings=True).astype(np.float32)
-    np.save(os.path.join(ART, f'{ds}_bge_qemb.npy'), q_emb)
+    np.save(L.art_path(ds, f'{ds}_bge_qemb.npy'), q_emb)
     json.dump([str(q['_id']) for q in qs],
-              open(os.path.join(ART, f'{ds}_bge_qids.json'), 'w'))
+              open(L.art_path(ds, f'{ds}_bge_qids.json'), 'w'))
     print(ds, 'BGE encoded:', len(ids), 'docs,', len(qs), 'queries',
           flush=True)
     return ids
 
 
 def evaluate(ds):
-    out_dir = os.path.join(ART, f'{ds}_bge_emb')
+    out_dir = L.emb_dir(ds, bge=True)
     ids = json.load(open(os.path.join(out_dir, 'ids.json')))
     starts = sorted(int(f[6:-4]) for f in os.listdir(out_dir)
                     if f.startswith('chunk_') and f.endswith('.npy'))
@@ -95,8 +90,8 @@ def evaluate(ds):
     _, _, qrels_path = ds_paths(ds)
     qrels = load_qrels(qrels_path)
     qids = sorted(qrels.keys())
-    q_emb = np.load(os.path.join(ART, f'{ds}_bge_qemb.npy'))
-    q_emb_ids = json.load(open(os.path.join(ART, f'{ds}_bge_qids.json')))
+    q_emb = np.load(L.art_path(ds, f'{ds}_bge_qemb.npy'))
+    q_emb_ids = json.load(open(L.art_path(ds, f'{ds}_bge_qids.json')))
     qemb_map = {q: q_emb[i] for i, q in enumerate(q_emb_ids)}
     Q = np.stack([qemb_map[q] for q in qids])
 
@@ -116,13 +111,23 @@ def evaluate(ds):
               open(os.path.join(RES, f'bge_{ds}.json'), 'w'), indent=1)
 
 
-def main():
+def get_model():
+    """Load BGE-small-en-v1.5; download from HuggingFace on first use."""
     from sentence_transformers import SentenceTransformer
+    if os.path.exists(MODEL_DIR):
+        return SentenceTransformer(MODEL_DIR, device='cpu')
+    model = SentenceTransformer('BAAI/bge-small-en-v1.5', device='cpu')
+    os.makedirs(os.path.dirname(MODEL_DIR), exist_ok=True)
+    model.save(MODEL_DIR)
+    return model
+
+
+def main():
     targets = [sys.argv[1]] if len(sys.argv) > 1 else list(DATASETS)
-    model = SentenceTransformer(MODEL_DIR, device='cpu')
+    model = get_model()
     for ds in targets:
-        emb_dir = os.path.join(ART, f'{ds}_bge_emb')
-        done_file = os.path.join(ART, f'{ds}_bge_qemb.npy')
+        emb_dir = L.emb_dir(ds, bge=True)
+        done_file = L.art_path(ds, f'{ds}_bge_qemb.npy')
         if not os.path.exists(done_file):
             encode_corpus(model, ds)
         evaluate(ds)

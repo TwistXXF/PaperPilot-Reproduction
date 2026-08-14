@@ -8,36 +8,53 @@ Reproduces every number, table, and figure in:
    A Cross-Domain Evaluation with Real Citation Metadata"
 
 Usage:
-    python reproduce.py <stage>
+    python reproduce.py <stage> [dataset]
 
 Stages (in pipeline order):
-    download    Download SCIDOCS + SciFact raw data (skipped if data/ already present,
-                as in the distributed repository)
+    download    Download the four BEIR datasets (skipped if data/ already
+                present, as in the distributed repository)
     metadata    Fetch real citation metadata from the Semantic Scholar API
-                (skipped if data/metadata/ already present)
+                (skipped for datasets whose data/metadata/*.json ships with
+                the repository)
     encode      Encode corpora and queries with all-MiniLM-L6-v2 (CPU)
-    retrieval   BM25 / LSA / SBERT / hybrid / UMA-RAG / LP-RAG / CA-HR, per-query metrics
+    retrieval   BM25 / LSA / SBERT / hybrid / UMA-RAG / LP-RAG / CA-HR,
+                per-query metrics, all four datasets
+    bge         BGE-small dense baseline + BGE-backbone hybrids
     tables      Aggregate tables + significance tests (Wilcoxon + Cohen's d)
-    ablation    CA-HR component ablation, both datasets
+    ablation    CA-HR component ablation, all four datasets
     robust      Query word-drop noise robustness (10-40%)
     router      PAV-Agent 5-fold CV routing analysis
-    figures     Regenerate Fig. 1-4
-    all         Run everything (download .. figures)
+    sensitivity BGE-CA-HR beta x gamma grid + RRF baselines
+    diagnostics Bibliographic metadata diagnostics (citation-relevance AUC)
+    eswa_tables Consolidate everything into results/eswa_tables.json
+    eswa_figs   Regenerate the manuscript figures (Fig. 2-5)
+    generation  OPTIONAL generation-side evaluation; requires a DeepSeek
+                API key in ./.deepseek_key (not part of `all`, API cost)
+    all         Run everything except `generation`
+
+All scripts are layout-aware (see _layout.py): they run unchanged both in
+the public repository (repo/eswa/) and in the authors' development tree.
 
 Expected runtimes on a modern CPU-only workstation:
-    encode ~30-60 min (dominated by the 25,657-document SCIDOCS corpus);
-    everything else < 10 min total.
+    download ~10-30 min (TREC-COVID is ~171k documents);
+    encode ~1-2 h (MiniLM) + ~2-4 h (BGE), dominated by SCIDOCS/TREC-COVID;
+    everything else < 30 min total.
 """
 import json, os, re, sys, time
 import numpy as np
 
+import _layout as L
+
 ROOT = os.path.dirname(os.path.abspath(__file__))
-DATA = os.path.join(ROOT, 'data')
+DATA = os.path.join(L.PARENT, 'data') if L.REPO_LAYOUT \
+    else os.path.join(ROOT, 'data')
 META_DIR = os.path.join(DATA, 'metadata')
 ART = os.path.join(ROOT, 'artifacts')          # generated intermediates
 RES = os.path.join(ROOT, 'results')            # final published results
 FIG = os.path.join(ROOT, 'figures')
 MODEL_DIR = os.path.join(ROOT, 'models', 'minilm')
+
+ALL_DS = ('scidocs', 'scifact', 'nfcorpus', 'trec-covid')
 
 # ---- hyperparameters (identical to the paper) ----
 REF_YEAR = 2024
@@ -80,7 +97,7 @@ def load_qrels(path):
 
 
 def ds_paths(ds):
-    base = os.path.join(DATA, ds)
+    base = L.raw_ds(ds)
     return (os.path.join(base, 'corpus.jsonl'),
             os.path.join(base, 'queries.jsonl'),
             os.path.join(base, 'qrels', 'test.tsv'))
@@ -91,25 +108,21 @@ def ds_paths(ds):
 # =====================================================================
 def stage_download():
     """Download raw BEIR-format data if not already present.
-    SCIDOCS: mirrored from the mteb/scidocs HuggingFace dataset (BEIR format).
-    SciFact: official BEIR distribution (TU Darmstadt).
+    SCIDOCS / SciFact: mirrored from the mteb HuggingFace datasets (BEIR format).
     NFCorpus / TREC-COVID: official BEIR zips (TU Darmstadt)."""
     import urllib.request
     import zipfile
-    targets = [
-        ('https://huggingface.co/datasets/mteb/scidocs/resolve/main/corpus.jsonl',
-         os.path.join(DATA, 'scidocs', 'corpus.jsonl')),
-        ('https://huggingface.co/datasets/mteb/scidocs/resolve/main/queries.jsonl',
-         os.path.join(DATA, 'scidocs', 'queries.jsonl')),
-        ('https://huggingface.co/datasets/mteb/scidocs/resolve/main/qrels/test.tsv',
-         os.path.join(DATA, 'scidocs', 'qrels', 'test.tsv')),
-        ('https://huggingface.co/datasets/mteb/scifact/resolve/main/corpus.jsonl',
-         os.path.join(DATA, 'scifact', 'corpus.jsonl')),
-        ('https://huggingface.co/datasets/mteb/scifact/resolve/main/queries.jsonl',
-         os.path.join(DATA, 'scifact', 'queries.jsonl')),
-        ('https://huggingface.co/datasets/mteb/scifact/resolve/main/qrels/test.tsv',
-         os.path.join(DATA, 'scifact', 'qrels', 'test.tsv')),
-    ]
+    targets = []
+    for ds in ('scidocs', 'scifact'):
+        base = L.raw_ds(ds)
+        targets += [
+            (f'https://huggingface.co/datasets/mteb/{ds}/resolve/main/corpus.jsonl',
+             os.path.join(base, 'corpus.jsonl')),
+            (f'https://huggingface.co/datasets/mteb/{ds}/resolve/main/queries.jsonl',
+             os.path.join(base, 'queries.jsonl')),
+            (f'https://huggingface.co/datasets/mteb/{ds}/resolve/main/qrels/test.tsv',
+             os.path.join(base, 'qrels', 'test.tsv')),
+        ]
     for url, dst in targets:
         if os.path.exists(dst):
             print('present, skip:', dst)
@@ -122,7 +135,8 @@ def stage_download():
     # BEIR zip distributions for the two additional datasets
     beir = 'https://public.ukp.informatik.tu-darmstadt.de/thakur/BEIR/datasets/'
     for name in ('nfcorpus', 'trec-covid'):
-        if os.path.exists(os.path.join(DATA, name, 'corpus.jsonl')):
+        base = L.raw_ds(name)
+        if os.path.exists(os.path.join(base, 'corpus.jsonl')):
             print('present, skip:', name)
             continue
         zp = os.path.join(DATA, f'{name}.zip')
@@ -133,6 +147,7 @@ def stage_download():
             with urllib.request.urlopen(req, timeout=3600) as r, \
                     open(zp, 'wb') as f:
                 f.write(r.read())
+        os.makedirs(base, exist_ok=True)
         with zipfile.ZipFile(zp) as z:
             z.extractall(DATA)
         print('extracted', name)
@@ -145,18 +160,26 @@ def stage_download():
 def stage_metadata():
     """Fetch citationCount / year / venue for every document from the Semantic
     Scholar batch API. SCIDOCS ids are S2 sha1 paperIds; SciFact ids are S2ORC
-    CorpusIds. Checkpointed; respectful of the public rate limit."""
+    CorpusIds. NFCorpus / TREC-COVID metadata was collected with
+    fetch_metadata_new.py and ships with the repository. Checkpointed;
+    respectful of the public rate limit."""
     import requests
-    os.makedirs(META_DIR, exist_ok=True)
-    for ds, prefix in [('scidocs', ''), ('scifact', 'CorpusId:')]:
-        out_path = os.path.join(META_DIR, f'{ds}_metadata.json')
+    for ds in ALL_DS:
+        out_path = L.meta_file(ds)
+        if os.path.exists(out_path):
+            done = json.load(open(out_path, encoding='utf-8'))
+            print(ds, 'metadata present:', len(done), 'records, skip')
+            continue
+        if ds not in ('scidocs', 'scifact'):
+            print(ds, 'metadata file missing; run fetch_metadata_new.py first')
+            continue
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        prefix = '' if ds == 'scidocs' else 'CorpusId:'
         corpus_path, _, _ = ds_paths(ds)
         ids = [str(d['_id']) for d in load_jsonl(corpus_path)]
-        done = json.load(open(out_path, encoding='utf-8')) if os.path.exists(out_path) else {}
-        todo = [i for i in ids if i not in done]
-        print(ds, len(ids), 'docs,', len(done), 'cached,', len(todo), 'to fetch')
-        if not todo:
-            continue
+        done = {}
+        todo = list(ids)
+        print(ds, len(ids), 'docs,', len(todo), 'to fetch')
         B = 400
         for s in range(0, len(todo), B):
             batch = todo[s:s + B]
@@ -187,7 +210,7 @@ def stage_metadata():
 # =====================================================================
 # Stage: encode (real pretrained dense retriever)
 # =====================================================================
-def stage_encode(datasets=('scidocs', 'scifact')):
+def stage_encode(datasets=ALL_DS):
     """Encode all documents and queries with sentence-transformers
     all-MiniLM-L6-v2 (384-dim, L2-normalized). CPU, checkpointed chunks."""
     from sentence_transformers import SentenceTransformer
@@ -200,7 +223,7 @@ def stage_encode(datasets=('scidocs', 'scifact')):
     for ds in datasets:
         corpus_path, queries_path, _ = ds_paths(ds)
         docs = load_jsonl(corpus_path)
-        out_dir = os.path.join(ART, f'{ds}_emb')
+        out_dir = L.emb_dir(ds)
         os.makedirs(out_dir, exist_ok=True)
         # contiguous coverage already on disk (chunk size may vary)
         starts = sorted(int(f[6:-4]) for f in os.listdir(out_dir)
@@ -227,8 +250,9 @@ def stage_encode(datasets=('scidocs', 'scifact')):
         q_emb = model.encode([(q.get('text') or '') for q in qs], batch_size=64,
                              show_progress_bar=False,
                              normalize_embeddings=True).astype(np.float32)
-        np.save(os.path.join(ART, f'{ds}_qemb.npy'), q_emb)
-        json.dump([str(q['_id']) for q in qs], open(os.path.join(ART, f'{ds}_qids.json'), 'w'))
+        np.save(L.art_path(ds, f'{ds}_qemb.npy'), q_emb)
+        json.dump([str(q['_id']) for q in qs],
+                  open(L.art_path(ds, f'{ds}_qids.json'), 'w'))
         print(ds, 'encoded:', len(ids), 'docs,', len(qs), 'queries')
 
 
@@ -241,7 +265,7 @@ def prep(ds):
     from rank_bm25 import BM25Okapi
     from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.decomposition import TruncatedSVD
-    out = os.path.join(ART, f'{ds}_prep')
+    out = L.prep_dir(ds)
     os.makedirs(out, exist_ok=True)
     corpus_path, _, _ = ds_paths(ds)
     docs = load_jsonl(corpus_path)
@@ -286,9 +310,9 @@ def prep(ds):
         print(ds, 'svd loaded', flush=True)
     else:
         svd = TruncatedSVD(n_components=384, random_state=RANDOM_STATE)
-        L = svd.fit_transform(X).astype(np.float32)
-        L /= (np.linalg.norm(L, axis=1, keepdims=True) + 1e-9)
-        np.save(lsa_fp, L)
+        Lm = svd.fit_transform(X).astype(np.float32)
+        Lm /= (np.linalg.norm(Lm, axis=1, keepdims=True) + 1e-9)
+        np.save(lsa_fp, Lm)
         joblib.dump(svd, svd_fp)
         print(ds, 'svd done', flush=True)
     del X
@@ -299,7 +323,7 @@ def prep(ds):
             and os.path.exists(os.path.join(out, 'V.npy')):
         print(ds, 'metadata tensors loaded', flush=True)
     else:
-        meta = json.load(open(os.path.join(META_DIR, f'{ds}_metadata.json'), encoding='utf-8'))
+        meta = json.load(open(L.meta_file(ds), encoding='utf-8'))
         cits, years, venues = [], [], []
         for did in doc_ids:
             m = meta.get(did)
@@ -330,7 +354,7 @@ def prep(ds):
 
 
 def corpus_embeddings(ds):
-    d = os.path.join(ART, f'{ds}_emb')
+    d = L.emb_dir(ds)
     ids = json.load(open(os.path.join(d, 'ids.json')))
     chunks = []
     starts = sorted(int(f[6:-4]) for f in os.listdir(d) if f.startswith('chunk_'))
@@ -385,14 +409,14 @@ def build_eval_arrays(qrels, qids, didx, ndocs):
 # =====================================================================
 # Stage: retrieval (all seven methods, per-query metrics)
 # =====================================================================
-def stage_retrieval(datasets=('scidocs', 'scifact')):
+def stage_retrieval(datasets=ALL_DS):
     import joblib
     os.makedirs(RES, exist_ok=True)
     for ds in datasets:
         out = prep(ds)
         doc_ids = json.load(open(os.path.join(out, 'doc_ids.json')))
         didx = {d: i for i, d in enumerate(doc_ids)}
-        L = np.load(os.path.join(out, 'lsa.npy'))
+        Lm = np.load(os.path.join(out, 'lsa.npy'))
         C = np.load(os.path.join(out, 'C.npy'))
         Rr = np.load(os.path.join(out, 'R.npy'))
         V = np.load(os.path.join(out, 'V.npy'))
@@ -408,8 +432,8 @@ def stage_retrieval(datasets=('scidocs', 'scifact')):
         qrels = load_qrels(qrels_path)
         qids = sorted(qrels.keys())
         print(ds, 'test queries:', len(qids))
-        q_emb = np.load(os.path.join(ART, f'{ds}_qemb.npy'))
-        q_emb_ids = json.load(open(os.path.join(ART, f'{ds}_qids.json')))
+        q_emb = np.load(L.art_path(ds, f'{ds}_qemb.npy'))
+        q_emb_ids = json.load(open(L.art_path(ds, f'{ds}_qids.json')))
         qemb_map = {q: q_emb[i] for i, q in enumerate(q_emb_ids)}
         rel_list, gains_list = build_eval_arrays(qrels, qids, didx, len(doc_ids))
 
@@ -420,7 +444,7 @@ def stage_retrieval(datasets=('scidocs', 'scifact')):
         Qsbert = np.stack([qemb_map[q] for q in qids])
 
         # base score matrices (checkpointed)
-        sm_path = os.path.join(ART, f'{ds}_scoremats.npz')
+        sm_path = L.scoremats(ds)
         if os.path.exists(sm_path):
             z = np.load(sm_path)
             S_bm, S_sb, S_lsa = z['S_bm'], z['S_sb'], z['S_lsa']
@@ -429,7 +453,8 @@ def stage_retrieval(datasets=('scidocs', 'scifact')):
             S_bm = np.stack([np.asarray(bm25.get_scores(t), dtype=np.float32) for t in qtok])
             bm25_ms = (time.time() - t0) / len(qids) * 1000
             S_sb = (Qsbert @ E.T).astype(np.float32)
-            S_lsa = (Qlsa @ L.T).astype(np.float32)
+            S_lsa = (Qlsa @ Lm.T).astype(np.float32)
+            os.makedirs(os.path.dirname(sm_path), exist_ok=True)
             np.savez_compressed(sm_path, S_bm=S_bm, S_sb=S_sb, S_lsa=S_lsa)
             print(ds, 'BM25 scoring: %.1f ms/query' % bm25_ms)
 
@@ -471,6 +496,20 @@ def stage_retrieval(datasets=('scidocs', 'scifact')):
 
 
 # =====================================================================
+# Stage: BGE backbone (stronger dense baseline + hybrids)
+# =====================================================================
+def stage_bge(datasets=ALL_DS):
+    import bge_baseline
+    import bge_hybrid
+    model = bge_baseline.get_model()
+    for ds in datasets:
+        if not os.path.exists(L.art_path(ds, f'{ds}_bge_qemb.npy')):
+            bge_baseline.encode_corpus(model, ds)
+        bge_baseline.evaluate(ds)
+        bge_hybrid.run(ds)
+
+
+# =====================================================================
 # Stage: tables + significance
 # =====================================================================
 def load_perquery(ds):
@@ -494,7 +533,7 @@ def wilcoxon_greater(a, b):
     return float(sstats.wilcoxon(a, b, alternative='greater').pvalue)
 
 
-def stage_tables(datasets=('scidocs', 'scifact')):
+def stage_tables(datasets=ALL_DS):
     out = {}
     for ds in datasets:
         qids, d = load_perquery(ds)
@@ -547,7 +586,7 @@ def eval_orders(orders, qrels, qids, didx, ndocs):
 
 def load_common(ds):
     import joblib
-    out = os.path.join(ART, f'{ds}_prep')
+    out = L.prep_dir(ds)
     doc_ids = json.load(open(os.path.join(out, 'doc_ids.json')))
     didx = {d: i for i, d in enumerate(doc_ids)}
     C = np.load(os.path.join(out, 'C.npy'))
@@ -558,13 +597,13 @@ def load_common(ds):
     queries = {str(q['_id']): q.get('text') or '' for q in load_jsonl(queries_path)}
     qrels = load_qrels(qrels_path)
     qids = sorted(qrels.keys())
-    q_emb = np.load(os.path.join(ART, f'{ds}_qemb.npy'))
-    q_emb_ids = json.load(open(os.path.join(ART, f'{ds}_qids.json')))
+    q_emb = np.load(L.art_path(ds, f'{ds}_qemb.npy'))
+    q_emb_ids = json.load(open(L.art_path(ds, f'{ds}_qids.json')))
     qemb_map = {q: q_emb[i] for i, q in enumerate(q_emb_ids)}
     return doc_ids, didx, bm25, E, C, Rr, queries, qrels, qids, qemb_map
 
 
-def stage_ablation(datasets=('scidocs', 'scifact')):
+def stage_ablation(datasets=ALL_DS):
     variants = {
         'full': dict(alpha=ALPHA, beta=BETA, gamma=GAMMA),
         '-citation': dict(alpha=ALPHA, beta=0.0, gamma=GAMMA),
@@ -575,7 +614,7 @@ def stage_ablation(datasets=('scidocs', 'scifact')):
     }
     for ds in datasets:
         (doc_ids, didx, bm25, E, C, Rr, queries, qrels, qids, qemb_map) = load_common(ds)
-        sm_path = os.path.join(ART, f'{ds}_scoremats.npz')
+        sm_path = L.scoremats(ds)
         S_bm = S_sb = None
         if os.path.exists(sm_path):
             z = np.load(sm_path)
@@ -604,7 +643,7 @@ def stage_ablation(datasets=('scidocs', 'scifact')):
 # =====================================================================
 # Stage: robustness
 # =====================================================================
-def stage_robust(datasets=('scidocs', 'scifact')):
+def stage_robust(datasets=ALL_DS):
     from sentence_transformers import SentenceTransformer
     model = SentenceTransformer(MODEL_DIR, device='cpu')
     for ds in datasets:
@@ -679,7 +718,7 @@ def query_features(text):
     ]
 
 
-def stage_router(datasets=('scidocs', 'scifact')):
+def stage_router(datasets=ALL_DS):
     from sklearn.linear_model import LogisticRegression
     from sklearn.model_selection import StratifiedKFold
     from sklearn.preprocessing import StandardScaler
@@ -723,7 +762,54 @@ def stage_router(datasets=('scidocs', 'scifact')):
 
 
 # =====================================================================
-# Stage: figures
+# Stage: sensitivity grid + RRF baselines
+# =====================================================================
+def stage_sensitivity(datasets=ALL_DS):
+    import sensitivity_rrf
+    out = {}
+    sens_fp = os.path.join(RES, 'bge_sensitivity.json')
+    if os.path.exists(sens_fp):
+        out = json.load(open(sens_fp))
+    for ds in datasets:
+        out[ds] = sensitivity_rrf.run(ds)
+        json.dump(out, open(sens_fp, 'w'), indent=1)
+    print('sensitivity stage saved')
+
+
+# =====================================================================
+# Stage: metadata diagnostics
+# =====================================================================
+def stage_diagnostics():
+    import metadata_diagnostics
+    metadata_diagnostics.main()
+
+
+# =====================================================================
+# Stage: consolidated ESWA tables json
+# =====================================================================
+def stage_eswa_tables():
+    import make_eswa_tables
+    make_eswa_tables.main()
+
+
+# =====================================================================
+# Stage: manuscript figures (Fig. 2-5)
+# =====================================================================
+def stage_eswa_figs():
+    import make_eswa_figs  # noqa: F401  (module-level code draws the figures)
+
+
+# =====================================================================
+# Stage: OPTIONAL generation-side evaluation (DeepSeek API cost)
+# =====================================================================
+def stage_generation():
+    import gen_eval
+    gen_eval.main()
+    gen_eval.summarize()
+
+
+# =====================================================================
+# Stage: legacy two-dataset figures (first conference version)
 # =====================================================================
 def stage_figures():
     import matplotlib
@@ -813,18 +899,27 @@ STAGES = {
     'metadata': stage_metadata,
     'encode': stage_encode,
     'retrieval': stage_retrieval,
+    'bge': stage_bge,
     'tables': stage_tables,
     'ablation': stage_ablation,
     'robust': stage_robust,
     'router': stage_router,
+    'sensitivity': stage_sensitivity,
+    'diagnostics': stage_diagnostics,
+    'eswa_tables': stage_eswa_tables,
+    'eswa_figs': stage_eswa_figs,
+    'generation': stage_generation,
     'figures': stage_figures,
 }
-ORDER = ['download', 'metadata', 'encode', 'retrieval', 'tables',
-         'ablation', 'robust', 'router', 'figures']
+ORDER = ['download', 'metadata', 'encode', 'retrieval', 'bge', 'tables',
+         'ablation', 'robust', 'router', 'sensitivity', 'diagnostics',
+         'eswa_tables', 'eswa_figs']
 
 if __name__ == '__main__':
     os.makedirs(ART, exist_ok=True)
     os.makedirs(RES, exist_ok=True)
+    if L.REPO_LAYOUT:
+        os.makedirs(os.path.join(L.PARENT, 'artifacts'), exist_ok=True)
     stage = sys.argv[1] if len(sys.argv) > 1 else 'all'
     if stage == 'all':
         for s in ORDER:
@@ -833,8 +928,9 @@ if __name__ == '__main__':
     else:
         # optional extra arg: restrict to one dataset, e.g.
         #   python reproduce.py robust scidocs
-        if len(sys.argv) > 2 and stage in ('encode', 'retrieval', 'tables',
-                                           'ablation', 'robust', 'router'):
+        if len(sys.argv) > 2 and stage in ('encode', 'retrieval', 'bge',
+                                           'tables', 'ablation', 'robust',
+                                           'router', 'sensitivity'):
             STAGES[stage](datasets=(sys.argv[2],))
         else:
             STAGES[stage]()

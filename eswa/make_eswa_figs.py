@@ -6,13 +6,17 @@ import os
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(sys.executable).parent.parent.parent))
-from daimon_runtime import setup_plot  # noqa: E402
-
 import numpy as np  # noqa: E402
+import matplotlib  # noqa: E402
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt  # noqa: E402
 
-setup_plot()
+try:
+    sys.path.insert(0, str(Path(sys.executable).parent.parent.parent))
+    from daimon_runtime import setup_plot  # noqa: E402
+    setup_plot()
+except Exception:  # plain matplotlib outside the managed runtime
+    matplotlib.rcParams['font.family'] = 'DejaVu Sans'
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(ROOT, 'figures')
@@ -86,8 +90,8 @@ save(fig, 'Fig3_ablation')
 # SCIDOCS noise study uses a fixed 300-query subsample (seed 7); use the
 # subsample's clean scores as the noise=0 point so the curves are consistent.
 import numpy as _np
-_pq = _np.load(os.path.join(ROOT, os.pardir, 'exp_v2',
-                            'scidocs_perquery.npz'), allow_pickle=True)
+import _layout as L  # noqa: E402
+_pq = _np.load(L.v2_perquery('scidocs'), allow_pickle=True)
 _qids = _pq['qids'].tolist()
 _sub = sorted(_np.random.RandomState(7).choice(_qids, size=300,
                                                replace=False).tolist())
