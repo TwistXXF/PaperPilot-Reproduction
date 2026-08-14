@@ -394,7 +394,7 @@ def build_manuscript():
       [
         ['SurveyGen [28]', 'EMNLP 2025', 'Citations, author, venue',
          'Quality filter for survey generation', 'No', 'No'],
-        ['Yousuf et al. [29]', 'arXiv 2026', 'Structural fields (SEC)',
+        ['Yousuf et al. [29]', 'ECIR 2026', 'Structural fields (SEC)',
          'Embedding/fusion strategies', 'Single corpus', 'No'],
         ['SciRAG [30]', 'EACL 2026', 'Citation graph',
          'Evidence organisation & attribution', 'No', 'No'],
@@ -1073,7 +1073,7 @@ def build_manuscript():
         'DeepSeek-AI, DeepSeek-V3 technical report, arXiv:2412.19437, 2024.',
         'L. Zheng, W.-L. Chiang, Y. Sheng, et al., Judging LLM-as-a-judge with MT-Bench and Chatbot Arena, in: Proc. NeurIPS Datasets and Benchmarks, 2023.',
         'T. Bao, M. T. Nayeem, D. Rafiei, C. Zhang, SurveyGen: Quality-aware scientific survey generation with large language models, in: Proc. EMNLP, 2025, pp. 2712-2736.',
-        'R. B. Yousuf, S. Xu, M. Sharma, et al., Utilizing metadata for better retrieval-augmented generation, arXiv:2601.11863, 2026.',
+        'R. B. Yousuf, S. Xu, M. Sharma, et al., Utilizing metadata for better retrieval-augmented generation, in: Proc. ECIR, 2026, pp. 305-319.',
         'H. Ding, Y. Zhao, T. Hu, Z. Wang, M. Patwardhan, A. Cohan, SciRAG: Adaptive, citation-aware, and outline-guided retrieval and synthesis for scientific literature, in: Proc. EACL (Volume 1: Long Papers), Rabat, Morocco, 2026, pp. 6440-6460.',
         'J. Hwang, J. Park, H. Park, et al., Retrieval-augmented generation with estimation of source reliability, in: Proc. EMNLP, 2025, pp. 34279-34303.',
     ]

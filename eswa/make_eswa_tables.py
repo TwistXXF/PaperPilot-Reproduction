@@ -29,10 +29,10 @@ METRICS = ['R@1', 'R@5', 'R@10', 'N@10', 'MRR']
 DS_META = {
     'scidocs': {'name': 'SCIDOCS', 'domain': 'computer science',
                 'n_docs': 25657, 'n_queries': 1000,
-                'meta_cov': {'citations': 0.997, 'year': 0.997, 'venue': 0.997}},
+                'meta_cov': {'citations': 0.997, 'year': 0.987, 'venue': 0.843}},
     'scifact': {'name': 'SciFact', 'domain': 'biomedical claims',
                 'n_docs': 5183, 'n_queries': 300,
-                'meta_cov': {'citations': 0.941, 'year': 0.941, 'venue': 0.941}},
+                'meta_cov': {'citations': 0.941, 'year': 0.938, 'venue': 0.905}},
     'nfcorpus': {'name': 'NFCorpus', 'domain': 'nutrition / medicine',
                  'n_docs': 3633, 'n_queries': 323,
                  'meta_cov': {'citations': 0.940, 'year': 0.940, 'venue': 0.940}},
