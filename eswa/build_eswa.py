@@ -349,8 +349,9 @@ def build_manuscript():
       'generation step; our router analysis asks a sharper question—given a '
       'portfolio of cheap retrieval strategies, how much could perfect '
       'per-query selection possibly gain, and can surface query features '
-      'recover it? On four datasets the answer is consistently negative, '
-      'which constrains where agentic adaptivity is worth its cost.')
+      'recover it? On four datasets the answer for the tested surface-feature '
+      'router is consistently negative, which constrains where this '
+      'lightweight form of adaptivity is worth its cost.')
     h2(d, '2.4. Evaluating the generation side')
     p(d,
       'Retrieval metrics do not directly measure what users read. We '
@@ -395,7 +396,7 @@ def build_manuscript():
          'Quality filter for survey generation', 'No', 'No'],
         ['Yousuf et al. [29]', 'arXiv 2026', 'Structural fields (SEC)',
          'Embedding/fusion strategies', 'Single corpus', 'No'],
-        ['SciRAG [30]', 'arXiv 2025', 'Citation graph',
+        ['SciRAG [30]', 'EACL 2026', 'Citation graph',
          'Evidence organisation & attribution', 'No', 'No'],
         ['RA-RAG [31]', 'EMNLP 2025', 'Source reliability',
          'Source selection & voting', 'No', 'No'],
@@ -853,9 +854,10 @@ def build_manuscript():
       f'{min(T["router"][d]["kappa"] for d in DS):.3f} and '
       f'{max(T["router"][d]["kappa"] for d in DS):.3f} across the four '
       f'datasets), and the routed system never exceeds simply always '
-      f'choosing CA-HR. We replicate this negative result on all four '
-      f'domains: in scientific retrieval, adaptivity pays off at the domain '
-      f'level, not at the per-query level.')
+      f'choosing CA-HR. Across the four datasets, the tested surface-feature '
+      f'router fails to recover the available per-query oracle headroom, '
+      f'suggesting that domain-level configuration is a stronger default '
+      f'than this lightweight form of query-level adaptation.')
     p(d, 'Fig. 5. Oracle headroom vs. learned routing (NDCG@10).',
       italic=True, size=9)
 
@@ -990,7 +992,7 @@ def build_manuscript():
       'per-domain choice.')
     h2(d, '8.2. Limitations')
     p(d,
-      'Five limitations qualify our claims. (1) TREC-COVID has only 50 test '
+      'Six limitations qualify our claims. (1) TREC-COVID has only 50 test '
       'queries, so per-dataset rankings there carry wider confidence '
       'intervals; the cross-domain pattern, however, is consistent across '
       '1,673 queries in total. (2) Metadata coverage is below 100% by '
@@ -1005,7 +1007,12 @@ def build_manuscript():
       'weight sweep bounds this effect directly, showing a reachable gain '
       'only on SCIDOCS. (5) The '
       'deployment study is pilot-scale (6 users, one month); it '
-      'demonstrates operability, not adoption.')
+      'demonstrates operability, not adoption. (6) The benchmark experiments '
+      'operate on document-level representations (title and abstract), '
+      'whereas the deployed PaperPilot pipeline retrieves passage-level '
+      'chunks of uploaded papers; the deployment demonstrates engineering '
+      'transferability but does not establish that all document-level '
+      'ranking effects reproduce identically at passage level.')
 
     # ---- 9. Conclusion ------------------------------------------------------
     h1(d, '9. Conclusion')
@@ -1067,7 +1074,7 @@ def build_manuscript():
         'L. Zheng, W.-L. Chiang, Y. Sheng, et al., Judging LLM-as-a-judge with MT-Bench and Chatbot Arena, in: Proc. NeurIPS Datasets and Benchmarks, 2023.',
         'T. Bao, M. T. Nayeem, D. Rafiei, C. Zhang, SurveyGen: Quality-aware scientific survey generation with large language models, in: Proc. EMNLP, 2025, pp. 2712-2736.',
         'R. B. Yousuf, S. Xu, M. Sharma, et al., Utilizing metadata for better retrieval-augmented generation, arXiv:2601.11863, 2026.',
-        'H. Ding, Y. Zhao, T. Hu, et al., SciRAG: Adaptive, citation-aware, and outline-guided retrieval and synthesis for scientific literature, arXiv:2511.14362, 2025.',
+        'H. Ding, Y. Zhao, T. Hu, Z. Wang, M. Patwardhan, A. Cohan, SciRAG: Adaptive, citation-aware, and outline-guided retrieval and synthesis for scientific literature, in: Proc. EACL (Volume 1: Long Papers), Rabat, Morocco, 2026, pp. 6440-6460.',
         'J. Hwang, J. Park, H. Park, et al., Retrieval-augmented generation with estimation of source reliability, in: Proc. EMNLP, 2025, pp. 34279-34303.',
     ]
     for i, r in enumerate(refs, 1):
