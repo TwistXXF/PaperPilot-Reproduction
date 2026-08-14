@@ -356,7 +356,7 @@ def build_manuscript():
     p(d,
       'Retrieval metrics do not directly measure what users read. We '
       'therefore add a generation-side study in which the same questions are '
-      'answered by a fixed LLM (DeepSeek-V3, deepseek-chat [26]) conditioned '
+      'answered by a fixed LLM (DeepSeek, deepseek-chat [26]) conditioned '
       'on contexts produced by two competing backends, scored for relevance '
       'and faithfulness with an LLM judge [27] and for citation precision '
       'against the gold relevance judgments. This closes the loop between '
