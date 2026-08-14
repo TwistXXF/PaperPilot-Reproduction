@@ -2363,5 +2363,189 @@
     }
    }
   }
- }
+ },
+ "diagnostics": {
+  "scidocs": {
+   "n_docs": 25657,
+   "coverage": 0.9970768211404295,
+   "median_citations": 92.0,
+   "mean_citations": 645.4944101321241,
+   "pct_zero_citation": 0.023844890938941442,
+   "median_age": 11.0,
+   "rel_docs": 4008,
+   "nonrel_docs": 22054,
+   "rel_median_citations": 566.5,
+   "nonrel_median_citations": 71.0,
+   "rel_mean_citations": 2427.3400698602795,
+   "nonrel_mean_citations": 360.70440736374354,
+   "cit_rel_auc": 0.7975022624108815,
+   "cit_rel_mwu_p": 0.0,
+   "nonrel_source": "judged non-relevant"
+  },
+  "scifact": {
+   "n_docs": 5183,
+   "coverage": 0.9413467103993826,
+   "median_citations": 181.0,
+   "mean_citations": 731.7474892395983,
+   "pct_zero_citation": 0.0004099200655872105,
+   "median_age": 15.0,
+   "rel_docs": 264,
+   "nonrel_docs": 2830,
+   "rel_median_citations": 253.5,
+   "nonrel_median_citations": 179.0,
+   "rel_mean_citations": 430.094696969697,
+   "nonrel_mean_citations": 799.9858657243816,
+   "cit_rel_auc": 0.5816870114573295,
+   "cit_rel_mwu_p": 5.500718919249588e-06,
+   "nonrel_source": "seeded background sample (no explicit non-relevant qrels)"
+  },
+  "nfcorpus": {
+   "n_docs": 3633,
+   "coverage": 0.9402697495183044,
+   "median_citations": 6.0,
+   "mean_citations": 23.393735362997656,
+   "pct_zero_citation": 0.273711943793911,
+   "median_age": 48.0,
+   "rel_docs": 2943,
+   "nonrel_docs": 473,
+   "rel_median_citations": 6.0,
+   "nonrel_median_citations": 5.0,
+   "rel_mean_citations": 23.477743798844717,
+   "nonrel_mean_citations": 22.87103594080338,
+   "cit_rel_auc": 0.49820694678812877,
+   "cit_rel_mwu_p": 0.5504278461254463,
+   "nonrel_source": "seeded background sample (no explicit non-relevant qrels)"
+  },
+  "trec-covid": {
+   "n_docs": 171332,
+   "coverage": 0.6980423972170989,
+   "median_citations": 10.0,
+   "mean_citations": 55.45397824107581,
+   "pct_zero_citation": 0.346607755702379,
+   "median_age": 5.0,
+   "rel_docs": 17537,
+   "nonrel_docs": 24878,
+   "rel_median_citations": 6.0,
+   "nonrel_median_citations": 16.0,
+   "rel_mean_citations": 126.46724069111022,
+   "nonrel_mean_citations": 111.17372779162312,
+   "cit_rel_auc": 0.4607071767223538,
+   "cit_rel_mwu_p": 1.0,
+   "nonrel_source": "judged non-relevant"
+  }
+ },
+ "primary_tests": [
+  {
+   "dataset": "scidocs",
+   "test": "CA-HR vs BM25 | N@10",
+   "p_raw": 6.690501972335169e-48,
+   "d": 0.4752999979127741,
+   "p_holm": 1.070480315573627e-46
+  },
+  {
+   "dataset": "scidocs",
+   "test": "CA-HR vs SBERT-Dense | N@10",
+   "p_raw": 0.9999999941306923,
+   "d": -0.1868183014016634,
+   "p_holm": 1.0
+  },
+  {
+   "dataset": "scidocs",
+   "test": "CA-HR vs Neural-Hybrid | N@10",
+   "p_raw": 0.9977908088828512,
+   "d": -0.09788378350956063,
+   "p_holm": 1.0
+  },
+  {
+   "dataset": "scidocs",
+   "test": "BGE-CA-HR vs BGE-Hybrid | N@10",
+   "p_raw": 0.9240994963660204,
+   "d": -0.05873021535883005,
+   "p_holm": 1.0
+  },
+  {
+   "dataset": "scifact",
+   "test": "CA-HR vs BM25 | N@10",
+   "p_raw": 1.282765896415287e-09,
+   "d": 0.345458487093915,
+   "p_holm": 1.9241488446229305e-08
+  },
+  {
+   "dataset": "scifact",
+   "test": "CA-HR vs SBERT-Dense | N@10",
+   "p_raw": 0.0001309700431852326,
+   "d": 0.20134839818388534,
+   "p_holm": 0.0014406704750375586
+  },
+  {
+   "dataset": "scifact",
+   "test": "CA-HR vs Neural-Hybrid | N@10",
+   "p_raw": 0.84614899883436,
+   "d": -0.04828107699808995,
+   "p_holm": 1.0
+  },
+  {
+   "dataset": "scifact",
+   "test": "BGE-CA-HR vs BGE-Hybrid | N@10",
+   "p_raw": 0.563000137611143,
+   "d": -0.0069985637497967075,
+   "p_holm": 1.0
+  },
+  {
+   "dataset": "nfcorpus",
+   "test": "CA-HR vs BM25 | N@10",
+   "p_raw": 3.179075880526528e-09,
+   "d": 0.31797976730795957,
+   "p_holm": 4.4507062327371394e-08
+  },
+  {
+   "dataset": "nfcorpus",
+   "test": "CA-HR vs SBERT-Dense | N@10",
+   "p_raw": 0.13582351623570077,
+   "d": 0.09299354458482653,
+   "p_holm": 1.0
+  },
+  {
+   "dataset": "nfcorpus",
+   "test": "CA-HR vs Neural-Hybrid | N@10",
+   "p_raw": 0.9997777153396615,
+   "d": -0.17676184224798053,
+   "p_holm": 1.0
+  },
+  {
+   "dataset": "nfcorpus",
+   "test": "BGE-CA-HR vs BGE-Hybrid | N@10",
+   "p_raw": 0.9999774406379054,
+   "d": -0.21342819571474356,
+   "p_holm": 1.0
+  },
+  {
+   "dataset": "trec-covid",
+   "test": "CA-HR vs BM25 | N@10",
+   "p_raw": 1.3670815556920957e-05,
+   "d": 0.6653288968450869,
+   "p_holm": 0.00017772060223997244
+  },
+  {
+   "dataset": "trec-covid",
+   "test": "CA-HR vs SBERT-Dense | N@10",
+   "p_raw": 2.6189793389587792e-05,
+   "d": 0.6961756258880134,
+   "p_holm": 0.0003142775206750535
+  },
+  {
+   "dataset": "trec-covid",
+   "test": "CA-HR vs Neural-Hybrid | N@10",
+   "p_raw": 0.8472005294725982,
+   "d": -0.19534574132337224,
+   "p_holm": 1.0
+  },
+  {
+   "dataset": "trec-covid",
+   "test": "BGE-CA-HR vs BGE-Hybrid | N@10",
+   "p_raw": 0.9598330895547084,
+   "d": -0.2890024779697928,
+   "p_holm": 1.0
+  }
+ ]
 }

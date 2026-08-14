@@ -142,9 +142,39 @@ def main():
 
     out['generation'] = json.load(open(os.path.join(R3, 'gen_eval_summary.json')))
 
+    # bibliographic metadata diagnostics (citation-relevance association etc.)
+    out['diagnostics'] = json.load(
+        open(os.path.join(R3, 'metadata_diagnostics.json')))
+
+    # ---- primary comparison family with Holm-Bonferroni correction --------
+    # Pre-specified primary tests (all NDCG@10):
+    #   per dataset: CA-HR vs {BM25, SBERT-Dense, Neural-Hybrid}  (12 tests)
+    #   per dataset: BGE-CA-HR vs BGE-Hybrid                      (4 tests)
+    primary = []
+    for ds in DS_META:
+        for base in ('BM25', 'SBERT-Dense', 'Neural-Hybrid'):
+            t = out['main'][ds]['tests_vs_cahr'][f'CA-HR vs {base} | N@10']
+            primary.append({'dataset': ds, 'test': f'CA-HR vs {base} | N@10',
+                            'p_raw': t['p_one_sided'], 'd': t['d']})
+        t = out['main'][ds]['bge_tests']['BGE-CA-HR vs BGE-Hybrid | N@10']
+        primary.append({'dataset': ds, 'test': 'BGE-CA-HR vs BGE-Hybrid | N@10',
+                        'p_raw': t['p_one_sided'], 'd': t['d']})
+    m = len(primary)
+    order = sorted(range(m), key=lambda i: primary[i]['p_raw'])
+    prev = 0.0
+    for rank, i in enumerate(order):
+        adj = min(1.0, (m - rank) * primary[i]['p_raw'])
+        prev = max(prev, adj)
+        primary[i]['p_holm'] = prev
+    out['primary_tests'] = primary
+
     fp = os.path.join(R3, 'eswa_tables.json')
     json.dump(out, open(fp, 'w'), indent=1)
     print('saved', fp)
+    for t in primary:
+        sig = '*' if t['p_holm'] < 0.05 else ' '
+        print(f"  {sig} {t['dataset']:11s} {t['test']:34s} "
+              f"raw={t['p_raw']:.4g} holm={t['p_holm']:.4g} d={t['d']:+.3f}")
     for ds in DS_META:
         a = out['main'][ds]['avg']
         print(f"{ds:11s} best={out['main'][ds]['best_single_N@10']:14s} "

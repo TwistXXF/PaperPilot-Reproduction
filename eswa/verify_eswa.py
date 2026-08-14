@@ -108,13 +108,19 @@ for s in ['10 July 2026', '2 vCPU', '1.6 GB', 'Node.js 20.20.2',
           '63 messages', '6 registered users']:
     expect(f'deployment {s}', s)
 
-# 8. p-value strings quoted in text
+# 8. p-value strings quoted in text (Holm-adjusted primary family)
 for ds, key in [('scidocs', 'CA-HR vs BM25 | N@10'),
                 ('trec-covid', 'CA-HR vs BM25 | N@10'),
                 ('scifact', 'CA-HR vs SBERT-Dense | N@10')]:
-    pv = T['main'][ds]['tests_vs_cahr'][key]['p_one_sided']
-    if pv < 0.001:
-        expect(f'pval {ds} {key}', 'p < 0.001')
+    pv = [t['p_holm'] for t in T['primary_tests']
+          if t['dataset'] == ds and t['test'] == key][0]
+    expect(f'holm pval {ds} {key}',
+           'p < 0.001' if pv < 0.001 else 'p = %.3f' % pv)
+
+# 9. bibliographic diagnostics (Section 5.2, Table 2)
+for s in ['0.798', '0.582', '0.498', '0.461', '566', '254', '179',
+          '27.4%', '34.7%', '6 vs. 16', 'Mann-Whitney p = 0.55']:
+    expect(f'diagnostic {s}', s)
 
 fails = []
 for label, value in checks:
@@ -127,7 +133,11 @@ for bad in ['Information Processing', 'IP&M', 'two benchmarks',
             'two datasets', 'PAV-Agent', 'eight retrieval configurations',
             'Eight retrieval configurations', 'eight methods',
             'eight configurations', '100 paired', '100 test queries',
-            'all p > 0.17',
+            'all p > 0.17', 'when—and only when',
+            'where metadata coverage is thinner',
+            'metadata coverage is thin or',
+            'best metadata-aware choice',
+            'The stronger BGE-small encoder is the best single',
             'SCIDOCS (computer science; 25,657 documents, '
             '1,000 queries) and SciFact (biomedical;']:
     if bad in TEXT:
