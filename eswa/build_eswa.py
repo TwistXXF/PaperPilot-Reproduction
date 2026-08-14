@@ -135,8 +135,7 @@ def build_title_page():
     p(d, AFFIL)
     p(d, f'E-mail: {EMAIL}')
     p(d, f'ORCID: {ORCID}')
-    p(d, 'Telephone: +86-XXXXXXXXXXX  (to be completed by the corresponding '
-         'author at submission)')
+    p(d, 'Telephone: +86-XXXXXXXXXXX  (completed in the submission copy)')
     d.add_paragraph()
     p(d, f'Corresponding author: {AUTHOR} ({EMAIL})')
     d.add_paragraph()
