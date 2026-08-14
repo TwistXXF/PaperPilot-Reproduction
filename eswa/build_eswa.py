@@ -135,10 +135,13 @@ def build_title_page():
     p(d, AFFIL)
     p(d, f'E-mail: {EMAIL}')
     p(d, f'ORCID: {ORCID}')
+    p(d, 'Telephone: +86-XXXXXXXXXXX  (to be completed by the corresponding '
+         'author at submission)')
     d.add_paragraph()
     p(d, f'Corresponding author: {AUTHOR} ({EMAIL})')
     d.add_paragraph()
     p(d, 'Declarations of interest: none.')
+    p(d, 'Acknowledgements: None.')
     p(d, f'Data and code availability: all data, code, and per-query result '
          f'files are publicly available at {REPO} '
          f'(archived at https://doi.org/{DOI}).')
@@ -152,18 +155,13 @@ def build_highlights():
     d = new_doc()
     p(d, 'Highlights', bold=True, size=13)
     hl = [
-        'Ten retrieval configurations on two dense backbones are compared '
-        'on four scientific benchmarks with real bibliographic metadata.',
-        'The best retrieval strategy is domain-dependent; a stronger dense '
-        'encoder (BGE-small) leads on three of four domains.',
-        'Citation-aware reranking helps only on the citation-rich '
-        'computer-science corpus, and the gain does not transfer to the '
-        'stronger BGE backbone.',
-        'Per-query routing has small oracle headroom and a learned router '
-        'does not exceed majority-class behaviour on any dataset.',
-        'Answer quality on 200 paired queries is insensitive to the '
-        'retrieval backend; the pipeline is deployed in the live PaperPilot '
-        'system.',
+        'Ten retrieval configurations are evaluated across four scientific '
+        'domains.',
+        'BGE-based retrieval leads on three domains, but no method wins '
+        'everywhere.',
+        'Citation priors help only when citation counts predict relevance.',
+        'A surface-feature router fails to recover per-query oracle gains.',
+        'Answer quality is stable across backends on 200 paired queries.',
     ]
     for x in hl:
         par = d.add_paragraph(style='List Bullet')
@@ -183,37 +181,37 @@ def build_manuscript():
     g = T['generation']
     h1(d, 'Abstract')
     p(d,
-      'Retrieval-augmented generation (RAG) systems for scientific literature '
-      'usually ship a single static retrieval configuration, yet whether one '
-      'configuration is optimal across research domains—and whether '
-      'bibliographic metadata should influence ranking—remains '
-      'insufficiently quantified. We evaluate ten retrieval configurations '
-      '(BM25; latent-semantic analysis; two pretrained dense encoders; '
-      'equal-weight hybrid fusion; and metadata-aware variants—UMA-RAG, '
-      'LP-RAG, and a citation- and recency-aware re-ranker, CA-HR—on both '
-      'dense backbones) on SCIDOCS, SciFact, NFCorpus, and TREC-COVID '
-      '(171,332 to 3,633 documents; 1,673 queries in total), using real '
-      'citation counts, publication years, and venue statistics from the '
-      'Semantic Scholar and OpenAlex APIs (coverage 69.8%-99.7%). Three '
-      'findings emerge. First, the optimal strategy is decisively '
-      'domain-dependent: no configuration wins everywhere. Second, '
-      'citation-aware re-ranking helps only where citation authority is '
-      'informative about relevance (on SCIDOCS, relevant documents carry a '
-      'median of 566 citations versus 71 for non-relevant ones; AUC 0.798), '
-      'is neutral where the association is weak, and is mildly harmful where '
-      'citations are uninformative or inversely associated with relevance '
-      '(AUC approximately 0.50 and 0.46); the gain observed on the weaker '
-      'MiniLM backbone does not transfer to the stronger BGE backbone under '
-      'fixed hyperparameters; a 30-combination weight sweep recovers it only '
-      'on the citation-informative corpus. Third, per-query strategy selection offers '
-      'little recoverable headroom: a lightweight 12-feature logistic router '
-      '(PAV Router) does not exceed majority-class behaviour on any dataset '
-      '(Cohen\'s kappa approximately 0). A generation-side study (200 paired '
-      'queries) finds answer relevance and faithfulness statistically '
-      'indistinguishable between the hybrid and metadata-aware backends. The '
-      'pipeline is deployed in PaperPilot, a live academic writing '
-      'assistant, and we report a one-month pilot deployment. All data, '
-      'code, and per-query results are publicly released.')
+      'Retrieval-augmented generation (RAG) systems for scientific '
+      'literature often ship a single static retrieval configuration, yet '
+      'whether one configuration is optimal across research domains—and '
+      'whether bibliographic metadata should influence ranking—remains '
+      'insufficiently quantified. We evaluate ten retrieval '
+      'configurations—BM25, latent semantic analysis, two pretrained dense '
+      'encoders, equal-weight hybrid fusion, and metadata-aware variants '
+      '(UMA-RAG, LP-RAG, and a citation- and recency-aware re-ranker, '
+      'CA-HR)—on SCIDOCS, SciFact, NFCorpus, and '
+      'TREC-COVID (3,633 to 171,332 documents; 1,673 queries), using real '
+      'citation counts, years, and venues from the Semantic '
+      'Scholar and OpenAlex APIs (coverage 69.8%-99.7%). Three findings '
+      'emerge. First, the optimal strategy is domain-dependent: '
+      'no configuration wins everywhere. Second, citation-aware signals '
+      'help only where citation authority predicts relevance (on SCIDOCS, '
+      'relevant documents carry a median of 566 citations versus 71 for '
+      'non-relevant ones; AUC 0.798), are neutral where the association is '
+      'weak, mildly harmful where citations are uninformative or '
+      'inversely associated with relevance (AUC 0.498 and 0.461); the gain '
+      'on the weaker MiniLM backbone does not transfer to the stronger BGE '
+      'backbone under fixed hyperparameters, and a 30-combination weight '
+      'sweep recovers it only on the citation-informative corpus. Third, '
+      'per-query strategy selection offers little recoverable headroom: a '
+      '12-feature logistic router does not exceed majority-class behaviour '
+      'on any dataset (Cohen\'s kappa near 0). On 200 paired '
+      'queries, answer relevance and faithfulness are statistically '
+      'indistinguishable between the hybrid and metadata-aware backends. '
+      'The pipeline is deployed in a live academic writing assistant '
+      '(anonymized for review); we report a one-month pilot '
+      'deployment. All data, code, and per-query results are released '
+      'through an anonymized public repository.')
     p(d, 'Keywords: retrieval-augmented generation; scientific information '
          'retrieval; hybrid retrieval; bibliographic metadata; citation-aware '
          'ranking; query routing; expert systems',
@@ -227,7 +225,7 @@ def build_manuscript():
       'retrieval-augmented generation (RAG): a user question is first '
       'grounded in passages retrieved from a scholarly corpus, and a large '
       'language model then composes an answer conditioned on those passages '
-      '[1]. The retrieval stage is the dominant determinant of end-to-end '
+      '(Lewis et al., 2020). The retrieval stage is the dominant determinant of end-to-end '
       'quality, because passages that are never retrieved cannot be cited. '
       'Yet most deployed scientific RAG systems adopt one fixed retrieval '
       'configuration—typically BM25 or a pretrained dense encoder—chosen '
@@ -255,8 +253,8 @@ def build_manuscript():
       'terms, (iii) an oracle-and-router analysis that measures how much '
       'per-query adaptivity could ever buy, (iv) a generation-side study that '
       'asks whether backend differences survive into the final answer, and '
-      '(v) a deployment case study in PaperPilot, a live academic writing '
-      'assistant used by real users.')
+      '(v) a deployment case study in a live academic writing assistant '
+      'used by real users (system anonymized for review).')
     p(d,
       'Rather than proposing yet another retrieval algorithm, we frame the '
       'study around three research questions:')
@@ -286,7 +284,9 @@ def build_manuscript():
         '(biomedical claims), mildly harmful where it is absent or inverted '
         '(nutrition, pandemic medicine)—and backbone-conditional: '
         'the citation gain observed on the weaker MiniLM backbone does not '
-        'transfer to the stronger BGE backbone (RQ1, RQ2);',
+        'transfer to the stronger BGE backbone under fixed a-priori '
+        'weights; a weight sweep recovers it only on the '
+        'citation-informative corpus (RQ1, RQ2);',
         'A replicated negative result on per-query routing: oracle headroom '
         'is small and a lightweight feature-based router (PAV Router) '
         'collapses to majority-class behaviour on all four datasets, '
@@ -296,15 +296,16 @@ def build_manuscript():
         'indistinguishable across the two leading retrieval backends, '
         'together with a citation-precision analysis of LLM answers (RQ3);',
         'A deployment feasibility case study of the full pipeline in the '
-        'live PaperPilot system, with architecture, cost, and one month of '
+        'live system, with architecture, cost, and one month of '
         'real usage statistics (RQ3). All code, data, and per-query results '
-        f'are released at {REPO} (archived at https://doi.org/{DOI}).',
+        'are released through an anonymized public repository (link '
+        'withheld for anonymous review).',
     ]:
         par = d.add_paragraph(style='List Bullet')
         par.add_run(c)
     p(d,
       'The remainder of the paper is organised as follows. Section 2 reviews '
-      'related work. Section 3 describes the PaperPilot system. Section 4 '
+      'related work. Section 3 describes the deployed system. Section 4 '
       'formalises the ten retrieval configurations and the router. Section 5 '
       'details datasets, metadata acquisition, and evaluation protocol. '
       'Section 6 reports results. Section 7 presents the deployment case '
@@ -315,23 +316,35 @@ def build_manuscript():
     h1(d, '2. Related work')
     h2(d, '2.1. Retrieval for scientific text')
     p(d,
-      'Sparse lexical retrieval with BM25 [7] remains a strong baseline on '
-      'scientific corpora. Dense passage retrieval [2] and its scientific '
-      'specialisations—SPECTER [5], which exploits citation links during '
-      'pre-training, and neighborhood-contrastive approaches [10]—improve '
-      'semantic matching. Benchmarks such as BEIR [4] and SciRepEval [11] '
+      'Sparse lexical retrieval with BM25 (Robertson & Zaragoza, 2009) '
+      'remains a strong baseline on '
+      'scientific corpora. Dense passage retrieval (Karpukhin et al., 2020) '
+      'and its scientific '
+      'specialisations—SPECTER (Cohan et al., 2020), which exploits '
+      'citation links during '
+      'pre-training, and neighborhood-contrastive approaches (Ostendorff et '
+      'al., 2022)—improve '
+      'semantic matching. Benchmarks such as BEIR (Thakur et al., 2021) and '
+      'SciRepEval (Singh et al., 2023) '
       'have shown that no single retriever dominates across domains, a '
       'finding our study sharpens for RAG-oriented pipelines. Sentence-level '
-      'encoders such as Sentence-BERT [19] and the distilled MiniLM family '
-      '[20] make dense retrieval cheap enough for CPU-only deployment, which '
-      'is the regime our deployed system operates in; E5 [8] and the BGE '
-      'family [9] push the same efficiency-quality frontier further.')
+      'encoders such as Sentence-BERT (Reimers & Gurevych, 2019) and the '
+      'distilled MiniLM family '
+      '(Wang et al., 2020) make dense retrieval cheap enough for CPU-only '
+      'deployment, which '
+      'is the regime our deployed system operates in; E5 (Wang et al., '
+      '2022) and the BGE '
+      'family (Chen et al., 2024) push the same efficiency-quality frontier '
+      'further.')
     h2(d, '2.2. Hybrid and metadata-aware ranking')
     p(d,
-      'Hybrid systems interpolate sparse and dense scores [3], [12]. '
+      'Hybrid systems interpolate sparse and dense scores (Lin, 2021; Qu '
+      'et al., 2021). '
       'Re-ranking with cross-encoders or sequence-to-sequence models '
-      '(monoT5 [13]) and zero-shot LLM rankers such as setwise prompting '
-      '[14] improve top-of-ranking quality at additional inference cost; '
+      '(monoT5; Nogueira et al., 2020) and zero-shot LLM rankers such as '
+      'setwise prompting '
+      '(Zhuang et al., 2024) improve top-of-ranking quality at additional '
+      'inference cost; '
       'these methods re-rank by content only. CA-HR instead re-ranks by '
       'combining content scores with citation-authority and recency signals '
       'derived from real bibliographic metadata, in the spirit of '
@@ -341,10 +354,14 @@ def build_manuscript():
       'respectively) and serve as strong in-family baselines.')
     h2(d, '2.3. Adaptive and agentic RAG')
     p(d,
-      'Recent systems make retrieval adaptive: Self-RAG [15] learns when to '
-      'retrieve, ITER-RETGEN [16] interleaves retrieval and generation, and '
-      'agent-based assistants [17] plan multi-step retrieval. OpenScholar '
-      '[18] synthesises scientific literature with retrieval-augmented '
+      'Recent systems make retrieval adaptive: Self-RAG (Asai et al., '
+      '2024b) learns when to '
+      'retrieve, ITER-RETGEN (Shao et al., 2023) interleaves retrieval and '
+      'generation, and '
+      'agent-based assistants (Wang et al., 2024) plan multi-step '
+      'retrieval. OpenScholar '
+      '(Asai et al., 2024a) synthesises scientific literature with '
+      'retrieval-augmented '
       'models. These approaches adapt retrieval decisions per query or per '
       'generation step; our router analysis asks a sharper question—given a '
       'portfolio of cheap retrieval strategies, how much could perfect '
@@ -356,28 +373,35 @@ def build_manuscript():
     p(d,
       'Retrieval metrics do not directly measure what users read. We '
       'therefore add a generation-side study in which the same questions are '
-      'answered by a fixed LLM (DeepSeek, deepseek-chat [26]) conditioned '
+      'answered by a fixed LLM (DeepSeek, deepseek-chat; DeepSeek-AI, '
+      '2024) conditioned '
       'on contexts produced by two competing backends, scored for relevance '
-      'and faithfulness with an LLM judge [27] and for citation precision '
+      'and faithfulness with an LLM judge (Zheng et al., 2023) and for '
+      'citation precision '
       'against the gold relevance judgments. This closes the loop between '
       'retrieval evaluation and deployed answer quality.')
     h2(d, '2.5. Recent metadata-aware scientific RAG and positioning')
     p(d,
       'The RAG literature has moved quickly, and several 2025-2026 studies '
-      'are closest to our problem. SurveyGen [28] builds a large-scale '
+      'are closest to our problem. SurveyGen (Bao et al., 2025) builds a '
+      'large-scale '
       'scientific survey dataset and a quality-aware framework (QUAL-SG) '
       'that injects citation counts, author influence, and venue reputation '
-      'into literature retrieval for survey generation; it demonstrates that '
+      'into literature retrieval for survey generation; it demonstrates '
+      'that '
       'quality metadata helps its generation pipeline but does not isolate '
-      'when or why the retrieval-level gain occurs. Yousuf et al. [29] '
+      'when or why the retrieval-level gain occurs. Yousuf et al. (2026) '
       'systematically compare metadata-as-text, dual-encoder, and '
       'reformulation strategies on SEC filings and show that moderate '
-      'metadata weights help on structured financial corpora; their metadata '
+      'metadata weights help on structured financial corpora; their '
+      'metadata '
       'is structural (company, form, section), not bibliometric. SciRAG '
-      '[30] couples adaptive retrieval with citation-graph symbolic '
+      '(Ding et al., 2026) couples adaptive retrieval with citation-graph '
+      'symbolic '
       'reasoning and outline-guided synthesis for scientific question '
       'answering, using citations to organise evidence rather than as a '
-      'ranking prior. RA-RAG [31] estimates per-source reliability by '
+      'ranking prior. RA-RAG (Hwang et al., 2025) estimates per-source '
+      'reliability by '
       'cross-checking and retrieves only from reliable sources in '
       'multi-source QA. Table 1 summarises the positioning. Our work is '
       'complementary and, to our knowledge, the first to (i) quantify, '
@@ -392,13 +416,13 @@ def build_manuscript():
       ['Study', 'Venue', 'Metadata signal', 'Role of metadata',
        'Cross-domain analysis', 'Deployment'],
       [
-        ['SurveyGen [28]', 'EMNLP 2025', 'Citations, author, venue',
+        ['Bao et al. (2025)', 'EMNLP 2025', 'Citations, author, venue',
          'Quality filter for survey generation', 'No', 'No'],
-        ['Yousuf et al. [29]', 'ECIR 2026', 'Structural fields (SEC)',
+        ['Yousuf et al. (2026)', 'ECIR 2026', 'Structural fields (SEC)',
          'Embedding/fusion strategies', 'Single corpus', 'No'],
-        ['SciRAG [30]', 'EACL 2026', 'Citation graph',
+        ['Ding et al. (2026)', 'EACL 2026', 'Citation graph',
          'Evidence organisation & attribution', 'No', 'No'],
-        ['RA-RAG [31]', 'EMNLP 2025', 'Source reliability',
+        ['Hwang et al. (2025)', 'EMNLP 2025', 'Source reliability',
          'Source selection & voting', 'No', 'No'],
         ['This paper', '—', 'Citations, recency, venue (real APIs)',
          'Ranking prior; informativeness-gated', 'Four domains', 'Live system'],
@@ -406,15 +430,16 @@ def build_manuscript():
     p(d, 'Table 1. Positioning against recent (2025-2026) metadata-aware and '
          'citation-aware RAG studies.', italic=True, size=9)
 
-    # ---- 3. PaperPilot system ----------------------------------------------
-    h1(d, '3. The PaperPilot system')
+    # ---- 3. Deployed system ------------------------------------------------
+    h1(d, '3. The deployed academic writing assistant')
     p(d,
-      'PaperPilot is a web-based academic reading and writing assistant that '
-      'operationalises the retrieval stack studied in this paper. Users '
+      'The system under study is a web-based academic reading and writing '
+      'assistant (name and URL withheld for anonymous review) that '
+      'operationalises the retrieval stack evaluated in this paper. Users '
       'upload papers, chat with an AI assistant grounded in their library, '
       'manage highlights and AI-generated summaries, and draft writing '
-      'projects with citation support. The system serves real users at '
-      f'{SITE}.')
+      'projects with citation support. The system serves real users in '
+      'production.')
     p(d,
       'Fig. 1 shows the architecture. A React 18 single-page application '
       'communicates over HTTPS with an Nginx 1.18 reverse proxy that serves '
@@ -425,7 +450,8 @@ def build_manuscript():
       'orchestration layer chunks uploaded papers, embeds passages, runs the '
       'hybrid retrieval and metadata re-ranking pipeline evaluated here, and '
       'assembles a cited context of five passages that is streamed to the '
-      'DeepSeek chat model (deepseek-chat [26]) for answer generation.')
+      'DeepSeek chat model (deepseek-chat; DeepSeek-AI, 2024) for answer '
+      'generation.')
     p(d,
       'Two deployment constraints shaped the retrieval design. First, the '
       'production server is a commodity virtual machine (2 vCPU, 1.6 GB RAM) '
@@ -434,20 +460,27 @@ def build_manuscript():
       'Second, answers must stream interactively, so retrieval plus '
       're-ranking must stay well under one second—satisfied by all ten '
       'configurations (Section 6.7).')
-    p(d, 'Fig. 1. PaperPilot system architecture and deployment boundary.',
+    d.add_picture(os.path.join(BASE, 'figures', 'system_architecture.png'),
+                  width=Inches(6.0))
+    p(d, 'Fig. 1. Architecture and deployment boundary of the deployed '
+         'academic writing assistant (system anonymized for review).',
       italic=True, size=9)
 
     # ---- 4. Methods ---------------------------------------------------------
     h1(d, '4. Retrieval configurations and routing')
     h2(d, '4.1. Content-based retrieval')
     p(d,
-      'BM25 [7] scores documents with k1 = 1.5, b = 0.75 over whitespace- and '
+      'BM25 (Robertson & Zaragoza, 2009) scores documents with k1 = 1.5, '
+      'b = 0.75 over whitespace- and '
       'punctuation-tokenised title-plus-abstract text. LSA-Dense projects a '
       '50,000-feature TF-IDF space to 384 dimensions with truncated SVD '
-      '(probabilistic LSI [21]). SBERT-Dense encodes the same text with '
-      'all-MiniLM-L6-v2 [19], [20] (384-dim, L2-normalised, inner-product '
+      '(latent semantic analysis; Deerwester et al., 1990). SBERT-Dense '
+      'encodes the same text with '
+      'all-MiniLM-L6-v2 (Reimers & Gurevych, 2019; Wang et al., 2020) '
+      '(384-dim, L2-normalised, inner-product '
       'similarity). BGE-Dense replaces the encoder with BGE-small-en-v1.5 '
-      '[25], a 12-layer 384-dim model roughly twice the depth of MiniLM, '
+      '(Xiao et al., 2023), a 12-layer 384-dim model roughly twice the '
+      'depth of MiniLM, '
       'used with its official query instruction prefix. Neural-Hybrid '
       'fuses BM25 and SBERT-Dense with equal weights on min-max-normalised '
       'scores, and BGE-Hybrid is the same equal-weight fusion on the BGE '
@@ -503,10 +536,14 @@ def build_manuscript():
               ['Dataset', 'Domain', 'Docs', 'Queries', 'Citation cov.',
                'Year cov.', 'Venue cov.'], rows)
     p(d,
-      'We use four public benchmarks in BEIR format [4]: SCIDOCS (computer '
-      'science [5]), SciFact (biomedical claim verification [6]), NFCorpus '
-      '(nutrition and medicine [23]), and TREC-COVID (COVID-19 biomedicine '
-      '[24]). They span two orders of magnitude in corpus size (3.6k-171k '
+      'We use four public benchmarks in BEIR format (Thakur et al., 2021): '
+      'SCIDOCS (computer '
+      'science; Cohan et al., 2020), SciFact (biomedical claim '
+      'verification; Wadden et al., 2020), NFCorpus '
+      '(nutrition and medicine; Boteva et al., 2016), and TREC-COVID '
+      '(COVID-19 biomedicine; '
+      'Voorhees et al., 2021). They span two orders of magnitude in corpus '
+      'size (3.6k-171k '
       'documents) and four distinct domains, and—critically—differ in '
       'metadata coverage (Table 2): SCIDOCS is nearly complete (99.7%), '
       'SciFact and NFCorpus are high (94%), while TREC-COVID is genuinely '
@@ -562,7 +599,8 @@ def build_manuscript():
       'through the Semantic Scholar batch endpoint (94.0% matched). For '
       'TREC-COVID, CORD-19 identifiers were resolved through the official '
       'metadata file to DOIs and PubMed identifiers, then enriched through '
-      'the OpenAlex API [22], reaching 69.8% citation, 96.4% year, and 92.5% '
+      'the OpenAlex API (Priem et al., 2022), reaching 69.8% citation, '
+      '96.4% year, and 92.5% '
       'venue coverage. No metadata value is synthetic; unmatched documents '
       'receive neutral defaults (zero citations, corpus-median year) exactly '
       'as they would in production.')
@@ -579,7 +617,8 @@ def build_manuscript():
       'vs. BM25, SBERT-Dense, and Neural-Hybrid, and BGE-CA-HR vs. '
       'BGE-Hybrid, all on NDCG@10); quoted primary p-values are '
       'Holm-Bonferroni-adjusted within this family. Ablation, robustness, '
-      'routing, and generation-side comparisons are reported as exploratory '
+      'routing, metadata-weight sensitivity, and generation-side '
+      'comparisons are reported as exploratory '
       'analyses with unadjusted two-sided p-values. All retrieval runs use '
       'a single '
       'CPU-only workstation. Measured per-query cost on the largest corpus '
@@ -622,7 +661,7 @@ def build_manuscript():
       f'({f4(avg("scifact", "BGE-Dense", "N@10"))}) and TREC-COVID '
       f'({f4(avg("trec-covid", "BGE-Dense", "N@10"))}), the '
       f'latter consistent with its published BEIR reference score '
-      f'(approximately 0.76 [25]), and BGE-Hybrid '
+      f'(approximately 0.76; Xiao et al., 2023), and BGE-Hybrid '
       f'on NFCorpus ({f4(avg("nfcorpus", "BGE-Hybrid", "N@10"))})—yet '
       f'BGE-Dense trails '
       f'SBERT-Dense on SCIDOCS '
@@ -632,9 +671,13 @@ def build_manuscript():
     p(d,
       'CA-HR, the citation- and recency-aware configuration, sits in the '
       'middle of the hybrid family overall: it significantly outperforms '
-      'BM25 and LSA-Dense on all four datasets '
-      f'(e.g., SCIDOCS {pval(holm("scidocs", "CA-HR vs BM25 | N@10"))}, '
+      'BM25 on all four datasets '
+      f'(Holm-adjusted within the primary family; e.g., SCIDOCS '
+      f'{pval(holm("scidocs", "CA-HR vs BM25 | N@10"))}, '
       f'TREC-COVID {pval(holm("trec-covid", "CA-HR vs BM25 | N@10"))}), '
+      'and it also exceeds LSA-Dense on all four datasets, an exploratory '
+      'comparison outside the primary family (unadjusted one-sided '
+      'Wilcoxon p < 0.001 on every dataset), '
       'but it does not beat the plain dense or plain hybrid baselines except '
       'on SciFact, where it significantly exceeds SBERT-Dense '
       f'({pval(holm("scifact", "CA-HR vs SBERT-Dense | N@10"))}, '
@@ -674,6 +717,8 @@ def build_manuscript():
       'backbone on SCIDOCS does not transfer to a stronger encoder: the '
       'observed metadata benefit is backbone-dependent rather than '
       'additive (Section 6.4 tests whether any metadata weight rescues it).')
+    d.add_picture(os.path.join(BASE, 'figures', 'Fig2_main_results.png'),
+                  width=Inches(6.0))
     p(d, 'Fig. 2. Retrieval effectiveness (NDCG@10) across four domains.',
       italic=True, size=9)
 
@@ -710,7 +755,7 @@ def build_manuscript():
       f'removing the citation boost improves NDCG@10 on NFCorpus '
       f'({f4(abl("nfcorpus", "full"))} → {f4(abl("nfcorpus", "-citation"))}) '
       f'and on TREC-COVID '
-      f'({f4(abl("trec-covid", "full"))} → {f4(abl("trec-covid", "-citation"))}), '
+      f'({f4(abl("trec-covid", "full"))} → {f4(abl("trec-covid", "-citation"))}). '
       f'The sign flip tracks the bibliographic-informativeness diagnostics '
       f'(Table 3), not coverage: NFCorpus and TREC-COVID are exactly the '
       f'corpora where citation counts carry no (AUC = '
@@ -722,6 +767,8 @@ def build_manuscript():
       f'performance almost everywhere, except that a pure dense '
       f'configuration is best on SCIDOCS, consistent with dense dominance '
       f'on computer science.')
+    d.add_picture(os.path.join(BASE, 'figures', 'Fig3_ablation.png'),
+                  width=Inches(6.0))
     p(d, 'Fig. 3. CA-HR ablation (NDCG@10; dashed line = full model).',
       italic=True, size=9)
 
@@ -753,6 +800,8 @@ def build_manuscript():
       'Neural-Hybrid), indicating that where dense representations dominate '
       'on clean queries they are also the most fragile to lexical '
       'corruption.')
+    d.add_picture(os.path.join(BASE, 'figures', 'Fig4_robustness.png'),
+                  width=Inches(6.0))
     p(d, 'Fig. 4. Robustness to query corruption (NDCG@10 vs. word-drop '
          'noise).', italic=True, size=9)
 
@@ -767,7 +816,10 @@ def build_manuscript():
       '30-combination grid (beta in {0, 0.05, 0.10, 0.15, 0.20, 0.30}, '
       'gamma in {0, 0.05, 0.10, 0.15, 0.20}) and test each combination '
       'against BGE-Hybrid with one-sided Wilcoxon tests, Holm-corrected '
-      'within each dataset. The metadata gain re-emerges only on SCIDOCS: '
+      'within each dataset. Because the grid is selected on the test '
+      'judgments, we report this sweep strictly as an exploratory '
+      'sensitivity analysis, not as confirmatory evidence. The metadata '
+      'gain re-emerges only on SCIDOCS: '
       f'{T["sensitivity"]["scidocs"]["best_combo"].replace("beta=", "beta = ").replace("|gamma=", ", gamma = ")} '
       f'attains {f4(T["sensitivity"]["scidocs"]["best_N@10"])} NDCG@10, '
       'significantly above BGE-Hybrid '
@@ -858,6 +910,8 @@ def build_manuscript():
       f'router fails to recover the available per-query oracle headroom, '
       f'suggesting that domain-level configuration is a stronger default '
       f'than this lightweight form of query-level adaptation.')
+    d.add_picture(os.path.join(BASE, 'figures', 'Fig5_routing.png'),
+                  width=Inches(6.0))
     p(d, 'Fig. 5. Oracle headroom vs. learned routing (NDCG@10).',
       italic=True, size=9)
 
@@ -891,7 +945,13 @@ def build_manuscript():
       'seed), generated cited answers with DeepSeek (deepseek-chat, '
       'temperature 0.2, top-5 passages as context), and scored each answer '
       'for relevance and faithfulness with an LLM judge and for citation '
-      'precision against the gold judgments. Table 8 shows the backends are '
+      'precision against the gold judgments. The judge is the same '
+      'DeepSeek chat model prompted with a fixed rubric (1-5 relevance; '
+      '1-5 faithfulness conditioned on the retrieved context; the exact '
+      'prompts are released with the code). Each answer was judged once, '
+      'in randomised backend order with backend labels hidden from the '
+      'judge; no human verification subsample was performed, which we flag '
+      'as a limitation (Section 8.2). Table 8 shows the backends are '
       'statistically indistinguishable on every measure (all p > 0.48): at '
       'top-5, the two systems surface nearly the same passages '
       f'({g["paired_n_rel_context"]["mean_CA-HR"]:.2f} vs. '
@@ -909,7 +969,8 @@ def build_manuscript():
       f'judgments are sparse; the model frequently cites plausible but not '
       f'gold-relevant passages, a failure mode invisible to retrieval '
       f'metrics and a target for future citation verification. We caveat '
-      f'that the judge shares the generator\'s model family [27]; the '
+      f'that the judge shares the generator\'s model family (Zheng et al., '
+      f'2023); the '
       f'paired design controls for this bias, but absolute scores should be '
       f'read accordingly.')
 
@@ -927,8 +988,10 @@ def build_manuscript():
     # ---- 7. Deployment feasibility case study -------------------------------
     h1(d, '7. Deployment feasibility case study')
     p(d,
-      'The full pipeline has been deployed in PaperPilot since 10 July 2026 '
-      f'at {SITE}, on a single Aliyun ECS instance (2 vCPU, 1.6 GB RAM, '
+      'The full pipeline has been deployed in the production assistant '
+      'since 10 July 2026 '
+      '(system name and URL withheld for anonymous review), on a single '
+      'Aliyun ECS instance (2 vCPU, 1.6 GB RAM, '
       '40 GB disk, Ubuntu 22.04) with Node.js 20.20.2, MySQL 8.0.46, '
       'Nginx 1.18 terminating TLS (Let\'s Encrypt, auto-renewed), and PM2 '
       'supervision. Over the first month of operation the service recorded 6 '
@@ -1000,7 +1063,8 @@ def build_manuscript():
       'neutral defaults and disclosed coverage per field, but matched and '
       'unmatched documents may differ systematically. (3) The generation '
       'judge shares the generator\'s model family; the paired design '
-      'controls relative bias, absolute judge scores may be inflated. (4) '
+      'controls relative bias, absolute judge scores may be inflated, and '
+      'no human verification subsample was performed. (4) '
       'CA-HR\'s hyperparameters (alpha, beta, gamma, lambda, top-100 depth) '
       'were fixed a priori and not tuned per dataset, which is conservative '
       'but may understate the method where metadata is rich; the Section 6.4 '
@@ -1009,7 +1073,7 @@ def build_manuscript():
       'deployment study is pilot-scale (6 users, one month); it '
       'demonstrates operability, not adoption. (6) The benchmark experiments '
       'operate on document-level representations (title and abstract), '
-      'whereas the deployed PaperPilot pipeline retrieves passage-level '
+      'whereas the deployed pipeline retrieves passage-level '
       'chunks of uploaded papers; the deployment demonstrates engineering '
       'transferability but does not establish that all document-level '
       'ranking effects reproduce identically at passage level.')
@@ -1042,43 +1106,52 @@ def build_manuscript():
       '(embedding-space and corpus-statistic signals), and scaling the '
       'deployment study to a larger user base.')
 
-    # ---- References ----------------------------------------------------------
+    # ---- Declaration of generative AI (required before references) --------
+    h1(d, 'Declaration of generative AI and AI-assisted technologies in '
+          'the writing process')
+    p(d,
+      'During the preparation of this work the author used Kimi (Moonshot '
+      'AI) for code debugging and language polishing. After using this '
+      'tool, the author reviewed and edited the content as needed and '
+      'takes full responsibility for the content of the published article.')
+
+    # ---- References (APA, author-year, alphabetical) -----------------------
     h1(d, 'References')
     refs = [
-        'P. Lewis, E. Perez, A. Piktus, et al., Retrieval-augmented generation for knowledge-intensive NLP tasks, in: Proc. NeurIPS, 2020, pp. 9459-9474.',
-        'V. Karpukhin, B. Oguz, S. Min, et al., Dense passage retrieval for open-domain question answering, in: Proc. EMNLP, 2020, pp. 6769-6781.',
-        'J. Lin, A proposed conceptual framework for a representational approach to information retrieval, ACM SIGIR Forum 55 (2) (2021).',
-        'N. Thakur, N. Reimers, A. Rücklé, et al., BEIR: A heterogeneous benchmark for zero-shot evaluation of information retrieval models, in: Proc. NeurIPS Datasets and Benchmarks, 2021.',
-        'A. Cohan, S. Feldman, I. Beltagy, et al., SPECTER: Document-level representation learning using citation-informed transformers, in: Proc. ACL, 2020, pp. 2270-2282.',
-        'D. Wadden, S. Lin, K. Lo, et al., Fact or fiction: Verifying scientific claims, in: Proc. EMNLP, 2020, pp. 7534-7550.',
-        'S. Robertson, H. Zaragoza, The probabilistic relevance framework: BM25 and beyond, Foundations and Trends in Information Retrieval 3 (4) (2009) 333-389.',
-        'L. Wang, N. Yang, X. Huang, et al., Text embeddings by weakly-supervised contrastive pre-training, arXiv:2212.03533, 2022.',
-        'J. Chen, S. Xiao, P. Zhang, et al., BGE M3-Embedding: Multi-lingual, multi-functionality, multi-granularity text embeddings through self-knowledge distillation, arXiv:2402.03216, 2024.',
-        'M. Ostendorff, N. Rethmeier, I. Augenstein, et al., Neighborhood contrastive learning for scientific document representations with citation embeddings, in: Proc. EMNLP, 2022, pp. 11670-11688.',
-        'A. Singh, M. D\'Arcy, A. Cohan, et al., SciRepEval: A multi-format benchmark for scientific document representations, in: Proc. EMNLP, 2023, pp. 5548-5566.',
-        'Y. Qu, Y. Ding, J. Liu, et al., RocketQA: An optimized training approach to dense passage retrieval, in: Proc. NAACL, 2021, pp. 5835-5847.',
-        'R. Nogueira, Z. Jiang, R. Pradeep, J. Lin, Document ranking with a pretrained sequence-to-sequence model, in: Findings of EMNLP, 2020, pp. 708-718.',
-        'S. Zhuang, H. Zhuang, B. Koopman, G. Zuccon, A setwise approach for effective and highly efficient zero-shot ranking with large language models, in: Proc. SIGIR, 2024, pp. 38-47.',
-        'A. Asai, Z. Wu, Y. Wang, et al., Self-RAG: Learning to retrieve, generate, and critique through self-reflection, in: Proc. ICLR, 2024.',
-        'Z. Shao, Y. Gong, Y. Shen, et al., Enhancing retrieval-augmented large language models with iterative retrieval-generation synergy, in: Findings of EMNLP, 2023, pp. 9248-9274.',
-        'L. Wang, C. Ma, X. Feng, et al., A survey on large language model based autonomous agents, Frontiers of Computer Science 18 (6) (2024) 186345.',
-        'A. Asai, J. He, R. Shao, et al., OpenScholar: Synthesizing scientific literature with retrieval-augmented language models, arXiv:2411.14199, 2024.',
-        'N. Reimers, I. Gurevych, Sentence-BERT: Sentence embeddings using Siamese BERT-networks, in: Proc. EMNLP-IJCNLP, 2019, pp. 3982-3992.',
-        'W. Wang, F. Wei, L. Dong, et al., MiniLM: Deep self-attention distillation for task-agnostic compression of pre-trained transformers, in: Proc. NeurIPS, 2020.',
-        'T. Hofmann, Probabilistic latent semantic indexing, in: Proc. SIGIR, 1999, pp. 50-57.',
-        'J. Priem, H. Piwowar, R. Orr, OpenAlex: A fully-open index of scholarly works, authors, venues, institutions, and concepts, arXiv:2205.01833, 2022.',
-        'V. Boteva, D. Gholipour, A. Sokolov, S. Riezler, A full-text learning to rank dataset for medical information retrieval, in: Proc. ECIR, 2016, pp. 716-722.',
-        'E. Voorhees, T. Alam, S. Bedrick, et al., TREC-COVID: Constructing a pandemic information retrieval test collection, ACM SIGIR Forum 54 (1) (2021) 1-12.',
-        'S. Xiao, Z. Liu, P. Zhang, N. Muennighoff, et al., C-Pack: Packaged resources to advance general Chinese embedding, arXiv:2309.07597, 2023.',
-        'DeepSeek-AI, DeepSeek-V3 technical report, arXiv:2412.19437, 2024.',
-        'L. Zheng, W.-L. Chiang, Y. Sheng, et al., Judging LLM-as-a-judge with MT-Bench and Chatbot Arena, in: Proc. NeurIPS Datasets and Benchmarks, 2023.',
-        'T. Bao, M. T. Nayeem, D. Rafiei, C. Zhang, SurveyGen: Quality-aware scientific survey generation with large language models, in: Proc. EMNLP, 2025, pp. 2712-2736.',
-        'R. B. Yousuf, S. Xu, M. Sharma, et al., Utilizing metadata for better retrieval-augmented generation, in: Proc. ECIR, 2026, pp. 305-319.',
-        'H. Ding, Y. Zhao, T. Hu, Z. Wang, M. Patwardhan, A. Cohan, SciRAG: Adaptive, citation-aware, and outline-guided retrieval and synthesis for scientific literature, in: Proc. EACL (Volume 1: Long Papers), Rabat, Morocco, 2026, pp. 6440-6460.',
-        'J. Hwang, J. Park, H. Park, et al., Retrieval-augmented generation with estimation of source reliability, in: Proc. EMNLP, 2025, pp. 34279-34303.',
+        'Asai, A., He, J., Shao, R., et al. (2024a). OpenScholar: Synthesizing scientific literature with retrieval-augmented language models. arXiv:2411.14199.',
+        'Asai, A., Wu, Z., Wang, Y., et al. (2024b). Self-RAG: Learning to retrieve, generate, and critique through self-reflection. In Proceedings of ICLR.',
+        'Bao, T., Nayeem, M. T., Rafiei, D., & Zhang, C. (2025). SurveyGen: Quality-aware scientific survey generation with large language models. In Proceedings of EMNLP (pp. 2712-2736).',
+        'Boteva, V., Gholipour, D., Sokolov, A., & Riezler, S. (2016). A full-text learning to rank dataset for medical information retrieval. In Proceedings of ECIR (pp. 716-722).',
+        'Chen, J., Xiao, S., Zhang, P., et al. (2024). BGE M3-Embedding: Multi-lingual, multi-functionality, multi-granularity text embeddings through self-knowledge distillation. arXiv:2402.03216.',
+        'Cohan, A., Feldman, S., Beltagy, I., et al. (2020). SPECTER: Document-level representation learning using citation-informed transformers. In Proceedings of ACL (pp. 2270-2282).',
+        'Deerwester, S., Dumais, S. T., Furnas, G. W., Landauer, T. K., & Harshman, R. (1990). Indexing by latent semantic analysis. Journal of the American Society for Information Science, 41(6), 391-407.',
+        'DeepSeek-AI. (2024). DeepSeek-V3 technical report. arXiv:2412.19437.',
+        'Ding, H., Zhao, Y., Hu, T., Wang, Z., Patwardhan, M., & Cohan, A. (2026). SciRAG: Adaptive, citation-aware, and outline-guided retrieval and synthesis for scientific literature. In Proceedings of EACL (Volume 1: Long Papers) (pp. 6440-6460).',
+        'Hwang, J., Park, J., Park, H., et al. (2025). Retrieval-augmented generation with estimation of source reliability. In Proceedings of EMNLP (pp. 34279-34303).',
+        'Karpukhin, V., Oguz, B., Min, S., et al. (2020). Dense passage retrieval for open-domain question answering. In Proceedings of EMNLP (pp. 6769-6781).',
+        'Lewis, P., Perez, E., Piktus, A., et al. (2020). Retrieval-augmented generation for knowledge-intensive NLP tasks. In Proceedings of NeurIPS (pp. 9459-9474).',
+        'Lin, J. (2021). A proposed conceptual framework for a representational approach to information retrieval. ACM SIGIR Forum, 55(2).',
+        'Nogueira, R., Jiang, Z., Pradeep, R., & Lin, J. (2020). Document ranking with a pretrained sequence-to-sequence model. In Findings of EMNLP (pp. 708-718).',
+        'Ostendorff, M., Rethmeier, N., Augenstein, I., et al. (2022). Neighborhood contrastive learning for scientific document representations with citation embeddings. In Proceedings of EMNLP (pp. 11670-11688).',
+        'Priem, J., Piwowar, H., & Orr, R. (2022). OpenAlex: A fully-open index of scholarly works, authors, venues, institutions, and concepts. arXiv:2205.01833.',
+        'Qu, Y., Ding, Y., Liu, J., et al. (2021). RocketQA: An optimized training approach to dense passage retrieval. In Proceedings of NAACL (pp. 5835-5847).',
+        'Reimers, N., & Gurevych, I. (2019). Sentence-BERT: Sentence embeddings using Siamese BERT-networks. In Proceedings of EMNLP-IJCNLP (pp. 3982-3992).',
+        'Robertson, S., & Zaragoza, H. (2009). The probabilistic relevance framework: BM25 and beyond. Foundations and Trends in Information Retrieval, 3(4), 333-389.',
+        'Shao, Z., Gong, Y., Shen, Y., et al. (2023). Enhancing retrieval-augmented large language models with iterative retrieval-generation synergy. In Findings of EMNLP (pp. 9248-9274).',
+        'Singh, A., D\'Arcy, M., Cohan, A., et al. (2023). SciRepEval: A multi-format benchmark for scientific document representations. In Proceedings of EMNLP (pp. 5548-5566).',
+        'Thakur, N., Reimers, N., Rücklé, A., et al. (2021). BEIR: A heterogeneous benchmark for zero-shot evaluation of information retrieval models. In Proceedings of NeurIPS Datasets and Benchmarks.',
+        'Voorhees, E., Alam, T., Bedrick, S., et al. (2021). TREC-COVID: Constructing a pandemic information retrieval test collection. ACM SIGIR Forum, 54(1), 1-12.',
+        'Wadden, D., Lin, S., Lo, K., et al. (2020). Fact or fiction: Verifying scientific claims. In Proceedings of EMNLP (pp. 7534-7550).',
+        'Wang, L., Yang, N., Huang, X., et al. (2022). Text embeddings by weakly-supervised contrastive pre-training. arXiv:2212.03533.',
+        'Wang, L., Ma, C., Feng, X., et al. (2024). A survey on large language model based autonomous agents. Frontiers of Computer Science, 18(6), 186345.',
+        'Wang, W., Wei, F., Dong, L., et al. (2020). MiniLM: Deep self-attention distillation for task-agnostic compression of pre-trained transformers. In Proceedings of NeurIPS.',
+        'Xiao, S., Liu, Z., Zhang, P., Muennighoff, N., et al. (2023). C-Pack: Packaged resources to advance general Chinese embedding. arXiv:2309.07597.',
+        'Yousuf, R. B., Xu, S., Sharma, M., et al. (2026). Utilizing metadata for better retrieval-augmented generation. In Proceedings of ECIR (pp. 305-319).',
+        'Zheng, L., Chiang, W.-L., Sheng, Y., et al. (2023). Judging LLM-as-a-judge with MT-Bench and Chatbot Arena. In Proceedings of NeurIPS Datasets and Benchmarks.',
+        'Zhuang, S., Zhuang, H., Koopman, B., & Zuccon, G. (2024). A setwise approach for effective and highly efficient zero-shot ranking with large language models. In Proceedings of SIGIR (pp. 38-47).',
     ]
-    for i, r in enumerate(refs, 1):
-        p(d, f'[{i}] {r}', size=10)
+    for r in refs:
+        p(d, r, size=10)
 
     d.save(os.path.join(OUT, '01_Manuscript_ESWA.docx'))
 
@@ -1111,17 +1184,6 @@ def build_cover_letter():
       f'available at {REPO} (archived at https://doi.org/{DOI}) '
       'for full reproducibility.')
     p(d,
-      'An earlier two-dataset version of the retrieval evaluation was '
-      'submitted to Information Processing & Management and declined at '
-      'desk screening. The present manuscript is substantially extended: '
-      'two additional benchmarks (NFCorpus and TREC-COVID, the latter '
-      '171,332 documents), a stronger dense baseline (BGE-small) together '
-      'with a backbone-transfer experiment showing that the metadata gains '
-      'do not survive the stronger encoder, a generation-side evaluation '
-      'doubled to 200 paired queries across all four domains, and a new '
-      'system deployment case study; the title, abstract, and discussion '
-      'have been rewritten accordingly.')
-    p(d,
       'The manuscript is original, is not under consideration elsewhere, '
       'and is approved by the author. The author declares no competing '
       'interests.')
@@ -1152,8 +1214,12 @@ def build_declarations():
     d = new_doc()
     p(d, 'Declarations', bold=True, size=14)
     h2(d, 'Ethics approval and consent to participate')
-    p(d, 'Not applicable. The study uses only public benchmark data and '
-         'aggregated, non-personal system usage counts.')
+    p(d, 'Not applicable. The study uses only public benchmark datasets '
+         'and aggregated, non-personal operational counts from the deployed '
+         'system (registered users, uploaded papers, conversations, '
+         'messages, restarts, response times). No user content, no personal '
+         'data, and no human subjects were involved; no ethics committee '
+         'approval was required.')
     h2(d, 'Consent for publication')
     p(d, 'Not applicable.')
     h2(d, 'Declaration of competing interest')
@@ -1172,10 +1238,10 @@ def build_declarations():
       f'available at {REPO} (archived at https://doi.org/{DOI}).')
     h2(d, 'Use of AI in the writing process')
     p(d,
-      'During the preparation of this work the author used an AI assistant '
-      'for code debugging and language polishing. The author reviewed and '
-      'edited all content and takes full responsibility for the integrity '
-      'of the publication.')
+      'During the preparation of this work the author used Kimi (Moonshot '
+      'AI) for code debugging and language polishing. The author reviewed '
+      'and edited all content and takes full responsibility for the '
+      'integrity of the publication.')
     d.save(os.path.join(OUT, '04_Declarations.docx'))
 
 
