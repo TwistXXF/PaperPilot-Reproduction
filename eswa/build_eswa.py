@@ -135,7 +135,7 @@ def build_title_page():
     p(d, AFFIL)
     p(d, f'E-mail: {EMAIL}')
     p(d, f'ORCID: {ORCID}')
-    p(d, 'Telephone: +86-XXXXXXXXXXX  (completed in the submission copy)')
+    p(d, 'Telephone: +86-18032173019')
     d.add_paragraph()
     p(d, f'Corresponding author: {AUTHOR} ({EMAIL})')
     d.add_paragraph()
@@ -1188,6 +1188,12 @@ def build_cover_letter():
       'The manuscript is original, is not under consideration elsewhere, '
       'and is approved by the author. The author declares no competing '
       'interests.')
+    p(d,
+      'Regarding the journal\'s institutional e-mail requirement: the '
+      'corresponding author is an undergraduate researcher at Sanya '
+      'University, which does not provide institutional e-mail accounts to '
+      'undergraduate students. The personal e-mail address given above and '
+      'in the submission system is therefore used for all correspondence.')
     d.add_paragraph()
     p(d, 'Suggested reviewers (no conflicts of interest):')
     for r in [
