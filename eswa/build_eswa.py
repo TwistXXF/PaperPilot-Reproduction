@@ -586,7 +586,8 @@ def build_manuscript():
       f'result on three of the four datasets—BGE-Dense on SciFact '
       f'({f4(avg("scifact", "BGE-Dense", "N@10"))}) and TREC-COVID '
       f'({f4(avg("trec-covid", "BGE-Dense", "N@10"))}), the '
-      f'latter matching its published BEIR reference score, and BGE-Hybrid '
+      f'latter consistent with its published BEIR reference score '
+      f'(approximately 0.76 [25]), and BGE-Hybrid '
       f'on NFCorpus ({f4(avg("nfcorpus", "BGE-Hybrid", "N@10"))})—yet '
       f'BGE-Dense trails '
       f'SBERT-Dense on SCIDOCS '
@@ -934,22 +935,22 @@ def build_manuscript():
         'S. Robertson, H. Zaragoza, The probabilistic relevance framework: BM25 and beyond, Foundations and Trends in Information Retrieval 3 (4) (2009) 333-389.',
         'L. Wang, N. Yang, X. Huang, et al., Text embeddings by weakly-supervised contrastive pre-training, arXiv:2212.03533, 2022.',
         'J. Chen, S. Xiao, P. Zhang, et al., BGE M3-Embedding: Multi-lingual, multi-functionality, multi-granularity text embeddings through self-knowledge distillation, arXiv:2402.03216, 2024.',
-        'M. Ostendorff, N. Rethmeier, I. Augenstein, et al., Neighborhood contrastive learning for scientific document representations, in: Findings of EMNLP, 2022.',
-        'A. Singh, M. D\'Arcy, A. Cohan, et al., SciRepEval: A multi-format benchmark for scientific document representations, in: Proc. EMNLP, 2023.',
-        'R. Ren, Y. Qu, J. Liu, et al., RocketQA: An optimized training approach to dense passage retrieval, in: Proc. NAACL, 2021, pp. 583-593.',
+        'M. Ostendorff, N. Rethmeier, I. Augenstein, et al., Neighborhood contrastive learning for scientific document representations with citation embeddings, in: Proc. EMNLP, 2022, pp. 11670-11688.',
+        'A. Singh, M. D\'Arcy, A. Cohan, et al., SciRepEval: A multi-format benchmark for scientific document representations, in: Proc. EMNLP, 2023, pp. 5548-5566.',
+        'Y. Qu, Y. Ding, J. Liu, et al., RocketQA: An optimized training approach to dense passage retrieval, in: Proc. NAACL, 2021, pp. 5835-5847.',
         'R. Nogueira, Z. Jiang, R. Pradeep, J. Lin, Document ranking with a pretrained sequence-to-sequence model, in: Findings of EMNLP, 2020, pp. 708-718.',
         'S. Zhuang, H. Zhuang, B. Koopman, G. Zuccon, A setwise approach for effective and highly efficient zero-shot ranking with large language models, in: Proc. SIGIR, 2024, pp. 38-47.',
         'A. Asai, Z. Wu, Y. Wang, et al., Self-RAG: Learning to retrieve, generate, and critique through self-reflection, in: Proc. ICLR, 2024.',
-        'Z. Shao, Y. Gong, Y. Shen, et al., Enhancing retrieval-augmented large language models with iterative retrieval-generation synergy, in: Findings of EMNLP, 2023.',
-        'L. Wang, C. Ma, X. Feng, et al., A survey on large language model based autonomous agents, Frontiers of Computer Science 18 (6) (2024).',
+        'Z. Shao, Y. Gong, Y. Shen, et al., Enhancing retrieval-augmented large language models with iterative retrieval-generation synergy, in: Findings of EMNLP, 2023, pp. 9248-9274.',
+        'L. Wang, C. Ma, X. Feng, et al., A survey on large language model based autonomous agents, Frontiers of Computer Science 18 (6) (2024) 186345.',
         'A. Asai, J. He, R. Shao, et al., OpenScholar: Synthesizing scientific literature with retrieval-augmented language models, arXiv:2411.14199, 2024.',
         'N. Reimers, I. Gurevych, Sentence-BERT: Sentence embeddings using Siamese BERT-networks, in: Proc. EMNLP-IJCNLP, 2019, pp. 3982-3992.',
         'W. Wang, F. Wei, L. Dong, et al., MiniLM: Deep self-attention distillation for task-agnostic compression of pre-trained transformers, in: Proc. NeurIPS, 2020.',
         'T. Hofmann, Probabilistic latent semantic indexing, in: Proc. SIGIR, 1999, pp. 50-57.',
-        'J. Priem, H. Piwowar, R. Orr, OpenAlex: A fully-open index of scholarly works, venues, authors, and concepts, Quantitative Science Studies 3 (3) (2022) 679-693.',
+        'J. Priem, H. Piwowar, R. Orr, OpenAlex: A fully-open index of scholarly works, authors, venues, institutions, and concepts, arXiv:2205.01833, 2022.',
         'V. Boteva, D. Gholipour, A. Sokolov, S. Riezler, A full-text learning to rank dataset for medical information retrieval, in: Proc. ECIR, 2016, pp. 716-722.',
-        'E. Voorhees, T. Alam, S. Bedrick, et al., TREC-COVID: Constructing a pandemic information retrieval test collection, ACM SIGIR Forum 54 (1) (2021).',
-        'S. Xiao, Z. Liu, P. Zhang, N. Muennighoff, C-Pack: Packaged resources to advance general Chinese embedding, arXiv:2309.07597, 2023.',
+        'E. Voorhees, T. Alam, S. Bedrick, et al., TREC-COVID: Constructing a pandemic information retrieval test collection, ACM SIGIR Forum 54 (1) (2021) 1-12.',
+        'S. Xiao, Z. Liu, P. Zhang, N. Muennighoff, et al., C-Pack: Packaged resources to advance general Chinese embedding, arXiv:2309.07597, 2023.',
         'DeepSeek-AI, DeepSeek-V3 technical report, arXiv:2412.19437, 2024.',
         'L. Zheng, W.-L. Chiang, Y. Sheng, et al., Judging LLM-as-a-judge with MT-Bench and Chatbot Arena, in: Proc. NeurIPS Datasets and Benchmarks, 2023.',
     ]
