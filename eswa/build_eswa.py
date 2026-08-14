@@ -39,6 +39,7 @@ AFFIL = ('Department of Computer Science and Technology, Sanya University, '
 EMAIL = '3353854381@qq.com'
 ORCID = '0009-0008-5491-3370'
 REPO = 'https://github.com/TwistXXF/PaperPilot-Reproduction'
+DOI = '10.5281/zenodo.21930729'
 SITE = 'https://xxfpaperpilot.cn'
 
 TITLE = ('When does bibliographic metadata help scientific retrieval-augmented '
@@ -139,7 +140,8 @@ def build_title_page():
     d.add_paragraph()
     p(d, 'Declarations of interest: none.')
     p(d, f'Data and code availability: all data, code, and per-query result '
-         f'files are publicly available at {REPO}.')
+         f'files are publicly available at {REPO} '
+         f'(archived at https://doi.org/{DOI}).')
     d.save(os.path.join(OUT, '00_Title_Page.docx'))
 
 
@@ -296,7 +298,7 @@ def build_manuscript():
         'A deployment feasibility case study of the full pipeline in the '
         'live PaperPilot system, with architecture, cost, and one month of '
         'real usage statistics (RQ3). All code, data, and per-query results '
-        f'are released at {REPO}.',
+        f'are released at {REPO} (archived at https://doi.org/{DOI}).',
     ]:
         par = d.add_paragraph(style='List Bullet')
         par.add_run(c)
@@ -1099,7 +1101,8 @@ def build_cover_letter():
       'writing assistant running on commodity hardware. The study yields an '
       'actionable, domain-conditional configuration policy for scientific '
       'RAG systems, and all data, code, and per-query results are publicly '
-      f'available at {REPO} for full reproducibility.')
+      f'available at {REPO} (archived at https://doi.org/{DOI}) '
+      'for full reproducibility.')
     p(d,
       'An earlier two-dataset version of the retrieval evaluation was '
       'submitted to Information Processing & Management and declined at '
@@ -1159,7 +1162,7 @@ def build_declarations():
       'All four benchmarks are public (BEIR format). Bibliographic metadata '
       'was obtained from the public Semantic Scholar and OpenAlex APIs. All '
       f'code, fetched metadata, and per-query result files are publicly '
-      f'available at {REPO}.')
+      f'available at {REPO} (archived at https://doi.org/{DOI}).')
     h2(d, 'Use of AI in the writing process')
     p(d,
       'During the preparation of this work the author used an AI assistant '

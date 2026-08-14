@@ -1,5 +1,7 @@
 # PaperPilot-Reproduction
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21930729.svg)](https://doi.org/10.5281/zenodo.21930729)
+
 Reproduction package for the manuscript:
 
 > **When does bibliographic metadata help scientific retrieval-augmented
