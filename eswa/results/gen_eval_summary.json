@@ -1,0 +1,83 @@
+{
+ "n_records": 200,
+ "n_scored": 200,
+ "n_paired": 100,
+ "CA-HR": {
+  "relevance": {
+   "mean": 4.11,
+   "std": 1.4275503493747603,
+   "n": 100
+  },
+  "faithfulness": {
+   "mean": 4.86,
+   "std": 0.44766058571198786,
+   "n": 100
+  },
+  "citation_precision": {
+   "mean": 0.3572164948453609,
+   "std": 0.3736059020987455,
+   "n": 97
+  },
+  "rel_docs_in_context": {
+   "mean": 0.81,
+   "std": 0.7168681887209113,
+   "n": 100
+  },
+  "n_citations": {
+   "mean": 3.27,
+   "std": 1.690295832095672,
+   "n": 100
+  }
+ },
+ "Neural-Hybrid": {
+  "relevance": {
+   "mean": 4.22,
+   "std": 1.3826062346163495,
+   "n": 100
+  },
+  "faithfulness": {
+   "mean": 4.94,
+   "std": 0.27640549922170504,
+   "n": 100
+  },
+  "citation_precision": {
+   "mean": 0.3596219931271478,
+   "std": 0.3685505730872577,
+   "n": 97
+  },
+  "rel_docs_in_context": {
+   "mean": 0.83,
+   "std": 0.7078841713161835,
+   "n": 100
+  },
+  "n_citations": {
+   "mean": 3.42,
+   "std": 1.6981166037701887,
+   "n": 100
+  }
+ },
+ "paired_relevance": {
+  "n": 100,
+  "mean_CA-HR": 4.11,
+  "mean_Neural-Hybrid": 4.22,
+  "wilcoxon_p_two_sided": 0.4407029210702854
+ },
+ "paired_faithfulness": {
+  "n": 100,
+  "mean_CA-HR": 4.86,
+  "mean_Neural-Hybrid": 4.94,
+  "wilcoxon_p_two_sided": 0.1748046875
+ },
+ "paired_citation_precision": {
+  "n": 96,
+  "mean_CA-HR": 0.3609375000000001,
+  "mean_Neural-Hybrid": 0.36336805555555557,
+  "wilcoxon_p_two_sided": 0.6810855635403779
+ },
+ "paired_n_rel_context": {
+  "n": 100,
+  "mean_CA-HR": 0.81,
+  "mean_Neural-Hybrid": 0.83,
+  "wilcoxon_p_two_sided": 0.6875
+ }
+}

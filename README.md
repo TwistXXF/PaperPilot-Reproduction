@@ -1,5 +1,13 @@
 # PaperPilot-Reproduction
 
+> **Update (2026-08): ESWA extension in `eswa/`** — the study has been
+> extended to **four datasets** (adding NFCorpus and TREC-COVID), a stronger
+> dense baseline (**BGE-small-en-v1.5**), a **generation-side evaluation**
+> (100 paired queries, DeepSeek answers with citations), and a **deployment
+> case study** of the live PaperPilot system. See
+> [eswa/README section](#eswa-extension-four-datasets) below. The revised
+> manuscript targets *Expert Systems with Applications*.
+
 Official reproduction package for the paper:
 
 > **PaperPilot: Metadata-Aware Hybrid Retrieval and Personalized Routing for
@@ -163,3 +171,50 @@ raw data (including encoding) takes under one hour.
 
 Code is released under the MIT License (see `LICENSE`). The datasets remain
 under their original licenses (SCIDOCS: CC BY-NC-SA; SciFact: CC BY-NC).
+
+---
+
+## ESWA extension (four datasets)
+
+The `eswa/` directory contains the extended study targeting *Expert Systems
+with Applications*:
+
+> **When does bibliographic metadata help scientific retrieval-augmented
+> generation? A four-domain evaluation of metadata-aware hybrid retrieval
+> with a deployed academic writing assistant**
+
+### What is added
+
+| Component | File | Contents |
+|---|---|---|
+| Extended pipeline | `eswa/reproduce.py` | All original stages plus NFCorpus / TREC-COVID support, checkpointed at 1000-doc granularity |
+| BGE baseline | `eswa/bge_baseline.py` | BGE-small-en-v1.5 dense retrieval on all four datasets (official query instruction) |
+| Generation eval | `eswa/gen_eval.py` | 100 paired queries (50 SCIDOCS + 50 SciFact), DeepSeek `deepseek-chat` answers, LLM-judged relevance/faithfulness + citation precision vs. gold judgments |
+| Consolidation | `eswa/make_eswa_tables.py` | Merges every result into `results/eswa_tables.json` (single source of truth) |
+| Figures | `eswa/make_eswa_figs.py`, `eswa/make_arch_fig.py` | Fig. 1-5 (architecture, main results, ablation, robustness, routing) |
+| Manuscript | `eswa/build_eswa.py` | Generates the full ESWA submission package with numbers injected from `eswa_tables.json` |
+| Audit | `eswa/verify_eswa.py` | 141 checks: every manuscript number must match the result files |
+
+### Key files
+
+- `eswa/results/eswa_tables.json` — consolidated tables (main, ablation,
+  robustness, router, oracle, generation) for all four datasets
+- `eswa/metadata/{nfcorpus,trec-covid}_metadata.json` — real citation
+  metadata (NFCorpus 94.0% via Semantic Scholar batch API; TREC-COVID
+  69.8% citations / 96.4% years / 92.5% venues via CORD-19 → DOI →
+  OpenAlex)
+- `eswa/results/gen_eval_ckpt.jsonl` — all 200 generation records with
+  answers and judge scores
+- Raw NFCorpus / TREC-COVID corpora are downloaded by
+  `python eswa/reproduce.py download` (official BEIR zips, TU Darmstadt)
+
+### Running the generation evaluation
+
+`gen_eval.py` requires a DeepSeek API key placed in `eswa/.deepseek_key`
+(a single line with the key; the file is git-ignored and never committed).
+
+### Audit
+
+```
+python eswa/verify_eswa.py     # -> "checks: 141, failed: 0, stale: 0"
+```
