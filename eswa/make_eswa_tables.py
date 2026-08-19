@@ -154,19 +154,30 @@ def main():
             combo.pop('_pq', None)
     out['sensitivity'] = sens
 
+    # Pessimistic, five-fold cross-fitted metadata intervention results.
+    bg = json.load(open(os.path.join(R3, 'biblioguard_results.json')))
+    out['biblioguard'] = bg
+
     # ---- primary comparison family with Holm-Bonferroni correction --------
-    # Pre-specified primary tests (all NDCG@10):
-    #   per dataset: CA-HR vs {BM25, SBERT-Dense, Neural-Hybrid}  (12 tests)
-    #   per dataset: BGE-CA-HR vs BGE-Hybrid                      (4 tests)
+    # Pre-specified revised-paper family: BiblioGuard vs. the training-fold
+    # selected strong content fallback on NDCG@10, once per dataset.
     primary = []
     for ds in DS_META:
-        for base in ('BM25', 'SBERT-Dense', 'Neural-Hybrid'):
-            t = out['main'][ds]['tests_vs_cahr'][f'CA-HR vs {base} | N@10']
-            primary.append({'dataset': ds, 'test': f'CA-HR vs {base} | N@10',
-                            'p_raw': t['p_one_sided'], 'd': t['d']})
-        t = out['main'][ds]['bge_tests']['BGE-CA-HR vs BGE-Hybrid | N@10']
-        primary.append({'dataset': ds, 'test': 'BGE-CA-HR vs BGE-Hybrid | N@10',
-                        'p_raw': t['p_one_sided'], 'd': t['d']})
+        row = bg['results'][ds]
+        archive = np.load(os.path.join(R3, f'{ds}_biblioguard_perquery.npz'),
+                          allow_pickle=True)
+        difference = (archive['BiblioGuard||N@10'].astype(float)
+                      - archive['Fallback||N@10'].astype(float))
+        sd = float(difference.std(ddof=1))
+        primary.append({
+            'dataset': ds,
+            'test': 'BiblioGuard vs strong fallback | N@10',
+            'p_raw': row['wilcoxon_p_two_sided'],
+            'd': float(difference.mean() / sd) if sd > 1e-12 else 0.0,
+            'biblioguard': row['biblioguard_N@10'],
+            'base': row['fallback_N@10'],
+            'selection_rate': row['selection_rate'],
+        })
     m = len(primary)
     order = sorted(range(m), key=lambda i: primary[i]['p_raw'])
     prev = 0.0

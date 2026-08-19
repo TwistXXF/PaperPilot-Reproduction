@@ -18,7 +18,7 @@ import sys
 import numpy as np
 
 from reproduce import (ART, RES, load_jsonl, load_qrels, build_eval_arrays,
-                       per_query_metrics)
+                       minmax, per_query_metrics)
 
 import _layout as L
 
@@ -57,7 +57,8 @@ def encode_corpus(model, ds):
         part = docs[s:s + SUB]
         texts = [(d.get('title') or '') + ' ' + (d.get('text') or '')
                  for d in part]
-        emb = model.encode(texts, batch_size=64, show_progress_bar=False,
+        batch_size = 256 if str(model.device).startswith('cuda') else 64
+        emb = model.encode(texts, batch_size=batch_size, show_progress_bar=False,
                            normalize_embeddings=True).astype(np.float32)
         tmp = os.path.join(out_dir, f'chunk_{s}.tmp.npy')
         np.save(tmp, emb)
@@ -66,8 +67,9 @@ def encode_corpus(model, ds):
     json.dump(ids, open(os.path.join(out_dir, 'ids.json'), 'w'))
 
     qs = load_jsonl(queries_path)
+    batch_size = 256 if str(model.device).startswith('cuda') else 64
     q_emb = model.encode([QUERY_INSTRUCTION + (q.get('text') or '') for q in qs],
-                         batch_size=64, show_progress_bar=False,
+                         batch_size=batch_size, show_progress_bar=False,
                          normalize_embeddings=True).astype(np.float32)
     np.save(L.art_path(ds, f'{ds}_bge_qemb.npy'), q_emb)
     json.dump([str(q['_id']) for q in qs],
@@ -95,8 +97,14 @@ def evaluate(ds):
     qemb_map = {q: q_emb[i] for i, q in enumerate(q_emb_ids)}
     Q = np.stack([qemb_map[q] for q in qids])
 
-    S = (Q @ E.T).astype(np.float64)
-    orders = [np.argsort(-S[qi])[:100] for qi in range(len(qids))]
+    # Use the same per-query arithmetic and partial top-k construction as the
+    # metadata-action generator. This avoids BLAS/tie differences between a
+    # batched Q@E.T product and individual E@q products.
+    orders = []
+    for qi in range(len(qids)):
+        scores = minmax((E @ Q[qi]).astype(np.float64))
+        candidate = np.argpartition(-scores, 100)[:100]
+        orders.append(candidate[np.argsort(-scores[candidate])])
     rel_list, gains_list = build_eval_arrays(qrels, qids, didx, len(ids))
     res = per_query_metrics(orders, rel_list, gains_list)
     avg = {k: float(np.mean(v)) for k, v in res.items()}
@@ -114,9 +122,12 @@ def evaluate(ds):
 def get_model():
     """Load BGE-small-en-v1.5; download from HuggingFace on first use."""
     from sentence_transformers import SentenceTransformer
+    import torch
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    print('BGE device:', device, flush=True)
     if os.path.exists(MODEL_DIR):
-        return SentenceTransformer(MODEL_DIR, device='cpu')
-    model = SentenceTransformer('BAAI/bge-small-en-v1.5', device='cpu')
+        return SentenceTransformer(MODEL_DIR, device=device)
+    model = SentenceTransformer('BAAI/bge-small-en-v1.5', device=device)
     os.makedirs(os.path.dirname(MODEL_DIR), exist_ok=True)
     model.save(MODEL_DIR)
     return model

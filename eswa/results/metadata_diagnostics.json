@@ -7,14 +7,22 @@
   "pct_zero_citation": 0.023844890938941442,
   "median_age": 11.0,
   "rel_docs": 4008,
-  "nonrel_docs": 22054,
+  "nonrel_docs": 21574,
   "rel_median_citations": 566.5,
-  "nonrel_median_citations": 71.0,
+  "nonrel_median_citations": 68.0,
   "rel_mean_citations": 2427.3400698602795,
-  "nonrel_mean_citations": 360.70440736374354,
-  "cit_rel_auc": 0.7975022624108815,
+  "nonrel_mean_citations": 314.4645870028738,
+  "cit_rel_auc": 0.8039235564284428,
+  "cit_rel_auc_95ci": [
+   0.7954420429852483,
+   0.8124050698716373
+  ],
+  "cit_rel_auc_ci_method": "Hanley-McNeil large-sample approximation",
   "cit_rel_mwu_p": 0.0,
-  "nonrel_source": "judged non-relevant"
+  "nonrel_source": "seeded background sample from documents without positive test qrels; ratio<=10:1, cap=25000",
+  "deduplication": "unique document IDs in positive and background sets",
+  "background_seed": 7,
+  "metadata_snapshot": "frozen repository snapshot collected during 2025-2026"
  },
  "scifact": {
   "n_docs": 5183,
@@ -24,14 +32,22 @@
   "pct_zero_citation": 0.0004099200655872105,
   "median_age": 15.0,
   "rel_docs": 264,
-  "nonrel_docs": 2830,
+  "nonrel_docs": 2640,
   "rel_median_citations": 253.5,
-  "nonrel_median_citations": 179.0,
+  "nonrel_median_citations": 173.0,
   "rel_mean_citations": 430.094696969697,
-  "nonrel_mean_citations": 799.9858657243816,
-  "cit_rel_auc": 0.5816870114573295,
-  "cit_rel_mwu_p": 5.500718919249588e-06,
-  "nonrel_source": "seeded background sample (no explicit non-relevant qrels)"
+  "nonrel_mean_citations": 717.1193181818181,
+  "cit_rel_auc": 0.588535927456382,
+  "cit_rel_auc_95ci": [
+   0.5510031080517074,
+   0.6260687468610565
+  ],
+  "cit_rel_auc_ci_method": "Hanley-McNeil large-sample approximation",
+  "cit_rel_mwu_p": 2.02918195636951e-06,
+  "nonrel_source": "seeded background sample from documents without positive test qrels; ratio<=10:1, cap=25000",
+  "deduplication": "unique document IDs in positive and background sets",
+  "background_seed": 7,
+  "metadata_snapshot": "frozen repository snapshot collected during 2025-2026"
  },
  "nfcorpus": {
   "n_docs": 3633,
@@ -47,8 +63,16 @@
   "rel_mean_citations": 23.477743798844717,
   "nonrel_mean_citations": 22.87103594080338,
   "cit_rel_auc": 0.49820694678812877,
-  "cit_rel_mwu_p": 0.5504278461254463,
-  "nonrel_source": "seeded background sample (no explicit non-relevant qrels)"
+  "cit_rel_auc_95ci": [
+   0.4701504290880725,
+   0.5262634644881851
+  ],
+  "cit_rel_auc_ci_method": "Hanley-McNeil large-sample approximation",
+  "cit_rel_mwu_p": 0.8991844908592945,
+  "nonrel_source": "seeded background sample from documents without positive test qrels; ratio<=10:1, cap=25000",
+  "deduplication": "unique document IDs in positive and background sets",
+  "background_seed": 7,
+  "metadata_snapshot": "frozen repository snapshot collected during 2025-2026"
  },
  "trec-covid": {
   "n_docs": 171332,
@@ -58,13 +82,21 @@
   "pct_zero_citation": 0.346607755702379,
   "median_age": 5.0,
   "rel_docs": 17537,
-  "nonrel_docs": 24878,
+  "nonrel_docs": 25000,
   "rel_median_citations": 6.0,
-  "nonrel_median_citations": 16.0,
+  "nonrel_median_citations": 10.0,
   "rel_mean_citations": 126.46724069111022,
-  "nonrel_mean_citations": 111.17372779162312,
-  "cit_rel_auc": 0.4607071767223538,
-  "cit_rel_mwu_p": 1.0,
-  "nonrel_source": "judged non-relevant"
+  "nonrel_mean_citations": 46.947,
+  "cit_rel_auc": 0.4989860226948737,
+  "cit_rel_auc_95ci": [
+   0.4934134759165015,
+   0.5045585694732458
+  ],
+  "cit_rel_auc_ci_method": "Hanley-McNeil large-sample approximation",
+  "cit_rel_mwu_p": 0.7136496524193794,
+  "nonrel_source": "seeded background sample from documents without positive test qrels; ratio<=10:1, cap=25000",
+  "deduplication": "unique document IDs in positive and background sets",
+  "background_seed": 7,
+  "metadata_snapshot": "frozen repository snapshot collected during 2025-2026"
  }
 }

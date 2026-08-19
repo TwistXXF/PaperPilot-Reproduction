@@ -1,12 +1,9 @@
 # PaperPilot-Reproduction
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21930729.svg)](https://doi.org/10.5281/zenodo.21930729)
-
 Reproduction package for the manuscript:
 
-> **When does bibliographic metadata help scientific retrieval-augmented
-> generation? A four-domain evaluation of metadata-aware hybrid retrieval
-> with a deployed academic writing assistant**
+> **BiblioGuard: Selective bibliographic metadata intervention for
+> multi-domain scientific retrieval-augmented generation**
 > (submitted to *Expert Systems with Applications*)
 
 This repository contains **all code, raw data, cached metadata, and final
@@ -33,12 +30,16 @@ PaperPilot-Reproduction/
 │   ├── bge_baseline.py        # BGE-small dense baseline, four datasets
 │   ├── bge_hybrid.py          # BGE-Hybrid / BGE-CA-HR backbone transfer
 │   ├── sensitivity_rrf.py     # beta x gamma grid + RRF(k=60) baselines
+│   ├── biblioguard_actions.py # same-content atomic metadata outcomes
+│   ├── biblioguard.py         # pessimistic paired-effect intervention policy
+│   ├── biblioguard_transfer.py# official train-to-test validation
 │   ├── metadata_diagnostics.py# citation-relevance association diagnostics
 │   ├── gen_eval.py            # generation-side eval (needs DeepSeek key)
 │   ├── make_eswa_tables.py    # consolidates results/eswa_tables.json
-│   ├── make_eswa_figs.py      # manuscript Fig. 2-5 (PDF + PNG)
-│   ├── build_eswa.py          # regenerates the submission package
-│   ├── verify_eswa.py         # 208-check manuscript audit
+│   ├── make_biblioguard_figs.py # revised result figures
+│   ├── build_biblioguard_revision.py # revised submission package
+│   ├── verify_biblioguard.py  # independent algorithm/result integrity audit
+│   ├── verify_eswa.py         # manuscript/result consistency audit
 │   ├── results/               # exact published result files
 │   └── figures/               # manuscript figures
 ├── data/
@@ -99,6 +100,9 @@ This runs, in order:
 | `robust` | Query word-drop noise robustness (10-40%) | ~10 min |
 | `router` | PAV-Agent 5-fold CV routing analysis | < 1 min |
 | `sensitivity` | BGE-CA-HR beta x gamma grid (30 combos x 4 datasets, Holm-corrected) + RRF(k=60) baselines on both encoders | ~15 min |
+| `biblioguard_actions` | Build nine metadata-only actions without changing the content score, fusion, or top-100 candidate set | ~5-20 min after encoding |
+| `biblioguard` | Strong-fallback cross-fitting, routing baselines, repeated seeds, bootstrap intervals, and risk–coverage analysis | ~2 min |
+| `biblioguard_transfer` | Official train-to-test evaluation on SciFact and NFCorpus | < 1 min |
 | `diagnostics` | Bibliographic-metadata diagnostics (citation-relevance AUC) | ~2 min |
 | `eswa_tables` | Consolidate everything into `results/eswa_tables.json` | < 1 min |
 | `eswa_figs` | Regenerate the manuscript figures into `figures/` | < 1 min |
@@ -107,6 +111,9 @@ Any stage can be run individually, optionally restricted to one dataset:
 
 ```bash
 python reproduce.py sensitivity scidocs
+python reproduce.py biblioguard_actions scidocs
+python reproduce.py biblioguard
+python reproduce.py biblioguard_transfer
 ```
 
 The **generation-side evaluation is optional** and not part of `all`
@@ -131,6 +138,12 @@ All result files it would produce (`results/gen_eval_ckpt.jsonl`,
 | LP-RAG | length-prior scaling eta=0.2, mu=5000 |
 | RRF baselines | k=60 |
 | Sensitivity grid | beta in {0,.05,.10,.15,.20,.30}, gamma in {0,.05,.10,.15,.20} |
+| BiblioGuard fallback | Training-fold best content-only candidate among available SBERT-Dense, BGE-Dense, Neural-Hybrid, and BGE-Hybrid models |
+| BiblioGuard actions | 9 single-signal configurations: citation beta in {.05,.10,.15,.20,.30}; recency gamma in {.05,.10,.15,.20}; every action preserves the selected fallback's content score, fusion weights, and top-100 candidates |
+| BiblioGuard representation | word TF-IDF (1-2 grams) + character TF-IDF (3-5 grams), trained inside each fold |
+| BiblioGuard neighbourhood | cosine-weighted k nearest training queries; k=ceil(sqrt(n_train)) |
+| BiblioGuard gate | weighted mean paired effect minus a one-sided Student-t penalty, alpha=.05 Bonferroni-corrected over 9 actions; otherwise content fallback. This is an operational pessimistic score, not a formal confidence bound |
+| Repeated evaluation | primary seed 42; fold seeds 0-9; 10,000 paired-query bootstrap resamples (seed 2026); two-sided Wilcoxon + Holm across domains |
 | Recency decay | exponential, lambda=0.1 per year, reference year 2024 |
 | Robustness | query word-drop noise {10,20,30,40}% (seed 42); SCIDOCS on a fixed 300-query subsample (seed 7) |
 | Router | logistic regression on 12 surface features, 5-fold stratified CV (seed 42) |
@@ -138,17 +151,31 @@ All result files it would produce (`results/gen_eval_ckpt.jsonl`,
 
 ## 6. Verifying the numbers
 
-`eswa/verify_eswa.py` audits the manuscript itself: every number that
-appears in `manuscript/01_Manuscript_ESWA.docx` (all table cells, all
-in-text statistics, significance values, effect sizes, the sensitivity
-grid, RRF baselines, dataset sizes, metadata coverage) is checked against
-`results/eswa_tables.json`, plus staleness checks for leftover phrasing:
+`eswa/verify_biblioguard.py` checks the strong fallback selection, action
+alignment, gate/fallback logic, per-query outcomes, recomputed means,
+two-sided tests, repeated-seed summaries, and official train-to-test files:
+
+```bash
+cd eswa
+python verify_biblioguard.py
+# -> all revised BiblioGuard checks pass
+```
+
+`eswa/verify_eswa.py` then audits the revised manuscript against the JSON and
+NPZ artifacts and rejects stale claims such as “cross-domain”, “confidence
+bound”, the old weak fallback, or the previous manuscript title:
 
 ```bash
 cd eswa
 python verify_eswa.py
-# -> "checks: 208, failed: 0, stale: 0"
+# -> all numerical and stale-claim checks pass
 ```
+
+The revised cross-fitted result improves the strong SCIDOCS SBERT-Dense
+fallback, while the corrected policy abstains on the other three domains.
+Official train-to-test tests on SciFact and NFCorpus also show near-complete
+abstention. Risk–coverage and per-query harm counts are reported explicitly;
+these are empirical benchmark results, not a distribution-free guarantee.
 
 `results/` contains the **exact files** from which every table was
 typeset. Per-query scores in `*_perquery.npz` let you recompute any mean
@@ -156,8 +183,8 @@ and any significance test:
 
 ```python
 import numpy as np
-d = np.load("results/scidocs_bge_hybrid_perquery.npz", allow_pickle=True)
-print(d["BGE-Hybrid||N@10"].mean())   # -> 0.1832 (Table 2)
+d = np.load("results/scidocs_biblioguard_perquery.npz", allow_pickle=True)
+print(d["Fallback||N@10"].mean(), d["BiblioGuard||N@10"].mean())
 ```
 
 ## 7. Data sources and citations
@@ -176,11 +203,14 @@ print(d["BGE-Hybrid||N@10"].mean())   # -> 0.1832 (Table 2)
 
 ## 8. Hardware / runtime notes
 
-All experiments were run on a single CPU-only workstation (no GPU
-required). With the shipped caches, re-running `retrieval` through
-`eswa_figs` takes well under one hour; a from-scratch run including both
-encoders takes roughly half a day, dominated by BGE encoding of
-TREC-COVID (171k documents).
+No GPU is required. The BGE stage automatically uses CUDA when available and
+otherwise runs on CPU. With shipped caches, the policy and verification stages
+finish in minutes; a from-scratch run is dominated by encoding the 171k-document
+TREC-COVID corpus.
+
+The badge/DOI from the earlier manuscript version is intentionally not used
+for this revision. A new version-specific archival DOI must be created only
+after the revised branch is merged and released.
 
 ## 9. License
 

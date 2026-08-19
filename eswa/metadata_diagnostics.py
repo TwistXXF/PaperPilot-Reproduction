@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """Bibliographic metadata diagnostics per dataset.
 
-Explains WHY citation priors help on some corpora and not others, beyond
-raw coverage: citation distribution, zero-citation share, document age, and
-crucially the citation-relevance association (do relevant documents carry
-higher citation counts than judged non-relevant ones?).
+Quantifies citation-relevance association without treating it as a causal
+explanation. Positive and background document IDs are deduplicated. Every
+dataset uses the same seeded background-sampling rule, and the AUC diagnostic
+is accompanied by an approximate 95% interval and explicit sample sizes.
 
 Output: results/metadata_diagnostics.json
 """
@@ -29,6 +29,10 @@ DATASETS = {
 }
 
 T_REF = 2024  # same reference year as the CA-HR recency prior
+BACKGROUND_SEED = 7
+BACKGROUND_RATIO = 10
+BACKGROUND_CAP = 25_000
+METADATA_SNAPSHOT = 'frozen repository snapshot collected during 2025-2026'
 
 
 def load_qrels(path):
@@ -57,28 +61,35 @@ def diagnose(ds, cfg):
     years = np.array([m.get('year') for m in meta.values()
                       if m.get('year')], dtype=float)
 
-    rel, nonrel = load_qrels(cfg['qrels'])
+    rel, _ = load_qrels(cfg['qrels'])
     rel_c = np.array([cit_of[d] for d in rel if d in cit_of], dtype=float)
-    nonrel_note = 'judged non-relevant'
-    if nonrel:
-        nonrel_c = np.array([cit_of[d] for d in nonrel if d in cit_of],
-                            dtype=float)
-    else:
-        # No explicit non-relevant judgments (SciFact, NFCorpus): use a
-        # seeded random background sample of unjudged corpus documents.
-        nonrel_note = 'seeded background sample (no explicit non-relevant qrels)'
-        corpus_ids = []
-        with open(cfg['corpus'], encoding='utf-8') as f:
-            for line in f:
-                corpus_ids.append(json.loads(line)['_id'])
-        pool = [d for d in corpus_ids if d not in rel and d in cit_of]
-        rng = np.random.default_rng(7)
-        take = rng.choice(len(pool), size=min(10 * len(rel), len(pool)),
-                          replace=False)
-        nonrel_c = np.array([cit_of[pool[i]] for i in take], dtype=float)
+    corpus_ids = []
+    with open(cfg['corpus'], encoding='utf-8') as f:
+        for line in f:
+            corpus_ids.append(str(json.loads(line)['_id']))
+    pool = [d for d in corpus_ids if d not in rel and d in cit_of]
+    rng = np.random.default_rng(BACKGROUND_SEED)
+    sample_size = min(BACKGROUND_RATIO * len(rel_c), len(pool), BACKGROUND_CAP)
+    take = rng.choice(len(pool), size=sample_size, replace=False)
+    nonrel_c = np.array([cit_of[pool[i]] for i in take], dtype=float)
+    nonrel_note = (
+        'seeded background sample from documents without positive test qrels; '
+        f'ratio<={BACKGROUND_RATIO}:1, cap={BACKGROUND_CAP}'
+    )
     # rank-biserial AUC: P(citation_rel > citation_nonrel) + 0.5*P(tie)
-    u, p = mannwhitneyu(rel_c, nonrel_c, alternative='greater')
+    u, p = mannwhitneyu(rel_c, nonrel_c, alternative='two-sided')
     auc = u / (len(rel_c) * len(nonrel_c))
+    # Hanley-McNeil large-sample approximation for an interpretable interval.
+    q1 = auc / (2.0 - auc)
+    q2 = 2.0 * auc * auc / (1.0 + auc)
+    variance = (
+        auc * (1.0 - auc)
+        + (len(rel_c) - 1) * (q1 - auc * auc)
+        + (len(nonrel_c) - 1) * (q2 - auc * auc)
+    ) / (len(rel_c) * len(nonrel_c))
+    standard_error = float(np.sqrt(max(variance, 0.0)))
+    auc_ci = [max(0.0, auc - 1.96 * standard_error),
+              min(1.0, auc + 1.96 * standard_error)]
 
     out = {
         'n_docs': n_docs,
@@ -94,8 +105,13 @@ def diagnose(ds, cfg):
         'rel_mean_citations': float(rel_c.mean()),
         'nonrel_mean_citations': float(nonrel_c.mean()),
         'cit_rel_auc': float(auc),
+        'cit_rel_auc_95ci': [float(value) for value in auc_ci],
+        'cit_rel_auc_ci_method': 'Hanley-McNeil large-sample approximation',
         'cit_rel_mwu_p': float(p),
         'nonrel_source': nonrel_note,
+        'deduplication': 'unique document IDs in positive and background sets',
+        'background_seed': BACKGROUND_SEED,
+        'metadata_snapshot': METADATA_SNAPSHOT,
     }
     print(f"{ds}: cov={out['coverage']:.3f} medcit={out['median_citations']:.0f} "
           f"zero={out['pct_zero_citation']:.1%} age={out['median_age']:.0f}y "

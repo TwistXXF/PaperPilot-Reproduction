@@ -1,0 +1,276 @@
+{
+  "method": "BiblioGuard",
+  "protocol": "official train-to-test transfer",
+  "bootstrap_repetitions": 10000,
+  "results": {
+    "scifact": {
+      "dataset": "scifact",
+      "protocol": "official train-to-test; test qrels used only for final evaluation",
+      "n_train": 809,
+      "n_test": 300,
+      "selected_content_base": "BGE-Dense",
+      "neighbour_count": 29,
+      "n_actions": 9,
+      "fallback_N@10": 0.7127069247605036,
+      "biblioguard_N@10": 0.7127069247605036,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "wilcoxon_p_two_sided": 1.0,
+      "paired_bootstrap_95ci": [
+        0.0,
+        0.0
+      ],
+      "comparisons": {
+        "global_best": {
+          "N@10": 0.7085921007554494,
+          "gain_N@10": -0.004114824005054196,
+          "selection_rate": 1.0,
+          "outcomes_all": {
+            "improved": 13,
+            "unchanged": 259,
+            "harmed": 28
+          },
+          "outcomes_active": {
+            "improved": 13,
+            "unchanged": 259,
+            "harmed": 28
+          },
+          "wilcoxon_p_two_sided": 0.09179184621804529,
+          "selected_counts": {
+            "BGE-Dense::recency:0.10": 300
+          }
+        },
+        "local_mean": {
+          "N@10": 0.7137753678734933,
+          "gain_N@10": 0.0010684431129896962,
+          "selection_rate": 0.9,
+          "outcomes_all": {
+            "improved": 19,
+            "unchanged": 265,
+            "harmed": 16
+          },
+          "outcomes_active": {
+            "improved": 19,
+            "unchanged": 235,
+            "harmed": 16
+          },
+          "wilcoxon_p_two_sided": 0.6817088325602101,
+          "selected_counts": {
+            "fallback": 30,
+            "BGE-Dense::citation:0.10": 33,
+            "BGE-Dense::recency:0.10": 35,
+            "BGE-Dense::citation:0.05": 16,
+            "BGE-Dense::citation:0.20": 17,
+            "BGE-Dense::recency:0.20": 48,
+            "BGE-Dense::recency:0.15": 30,
+            "BGE-Dense::citation:0.15": 44,
+            "BGE-Dense::citation:0.30": 5,
+            "BGE-Dense::recency:0.05": 42
+          }
+        },
+        "uncorrected": {
+          "N@10": 0.714675858460404,
+          "gain_N@10": 0.0019689336999004757,
+          "selection_rate": 0.08,
+          "outcomes_all": {
+            "improved": 4,
+            "unchanged": 295,
+            "harmed": 1
+          },
+          "outcomes_active": {
+            "improved": 4,
+            "unchanged": 19,
+            "harmed": 1
+          },
+          "wilcoxon_p_two_sided": 0.13801073756865956,
+          "selected_counts": {
+            "fallback": 276,
+            "BGE-Dense::citation:0.10": 7,
+            "BGE-Dense::recency:0.10": 5,
+            "BGE-Dense::recency:0.15": 4,
+            "BGE-Dense::recency:0.20": 2,
+            "BGE-Dense::recency:0.05": 1,
+            "BGE-Dense::citation:0.15": 2,
+            "BGE-Dense::citation:0.20": 2,
+            "BGE-Dense::citation:0.05": 1
+          }
+        },
+        "empirical_bernstein": {
+          "N@10": 0.7127069247605036,
+          "gain_N@10": 0.0,
+          "selection_rate": 0.0,
+          "outcomes_all": {
+            "improved": 0,
+            "unchanged": 300,
+            "harmed": 0
+          },
+          "outcomes_active": {
+            "improved": 0,
+            "unchanged": 0,
+            "harmed": 0
+          },
+          "wilcoxon_p_two_sided": 1.0,
+          "selected_counts": {
+            "fallback": 300
+          }
+        },
+        "biblioguard": {
+          "N@10": 0.7127069247605036,
+          "gain_N@10": 0.0,
+          "selection_rate": 0.0,
+          "outcomes_all": {
+            "improved": 0,
+            "unchanged": 300,
+            "harmed": 0
+          },
+          "outcomes_active": {
+            "improved": 0,
+            "unchanged": 0,
+            "harmed": 0
+          },
+          "wilcoxon_p_two_sided": 1.0,
+          "selected_counts": {
+            "fallback": 300
+          },
+          "paired_bootstrap_95ci": [
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "nfcorpus": {
+      "dataset": "nfcorpus",
+      "protocol": "official train-to-test; test qrels used only for final evaluation",
+      "n_train": 2590,
+      "n_test": 323,
+      "selected_content_base": "BGE-Hybrid",
+      "neighbour_count": 51,
+      "n_actions": 9,
+      "fallback_N@10": 0.34874124949613544,
+      "biblioguard_N@10": 0.34874124949613544,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0030959752321981426,
+      "wilcoxon_p_two_sided": 1.0,
+      "paired_bootstrap_95ci": [
+        0.0,
+        0.0
+      ],
+      "comparisons": {
+        "global_best": {
+          "N@10": 0.3488007769076277,
+          "gain_N@10": 5.9527411492250885e-05,
+          "selection_rate": 1.0,
+          "outcomes_all": {
+            "improved": 3,
+            "unchanged": 319,
+            "harmed": 1
+          },
+          "outcomes_active": {
+            "improved": 3,
+            "unchanged": 319,
+            "harmed": 1
+          },
+          "wilcoxon_p_two_sided": 0.27332167829229814,
+          "selected_counts": {
+            "BGE-Hybrid::recency:0.05": 323
+          }
+        },
+        "local_mean": {
+          "N@10": 0.34829356187847355,
+          "gain_N@10": -0.0004476876176618847,
+          "selection_rate": 0.8359133126934984,
+          "outcomes_all": {
+            "improved": 37,
+            "unchanged": 251,
+            "harmed": 35
+          },
+          "outcomes_active": {
+            "improved": 37,
+            "unchanged": 198,
+            "harmed": 35
+          },
+          "wilcoxon_p_two_sided": 0.9284558411268367,
+          "selected_counts": {
+            "BGE-Hybrid::citation:0.15": 41,
+            "BGE-Hybrid::citation:0.05": 50,
+            "fallback": 53,
+            "BGE-Hybrid::recency:0.05": 37,
+            "BGE-Hybrid::citation:0.20": 16,
+            "BGE-Hybrid::recency:0.20": 43,
+            "BGE-Hybrid::recency:0.10": 8,
+            "BGE-Hybrid::citation:0.10": 41,
+            "BGE-Hybrid::recency:0.15": 19,
+            "BGE-Hybrid::citation:0.30": 15
+          }
+        },
+        "uncorrected": {
+          "N@10": 0.34903770117075317,
+          "gain_N@10": 0.00029645167461766624,
+          "selection_rate": 0.05263157894736842,
+          "outcomes_all": {
+            "improved": 5,
+            "unchanged": 315,
+            "harmed": 3
+          },
+          "outcomes_active": {
+            "improved": 5,
+            "unchanged": 9,
+            "harmed": 3
+          },
+          "wilcoxon_p_two_sided": 0.6744240722352938,
+          "selected_counts": {
+            "fallback": 306,
+            "BGE-Hybrid::citation:0.05": 7,
+            "BGE-Hybrid::citation:0.15": 3,
+            "BGE-Hybrid::citation:0.10": 4,
+            "BGE-Hybrid::recency:0.20": 3
+          }
+        },
+        "empirical_bernstein": {
+          "N@10": 0.34874124949613544,
+          "gain_N@10": 0.0,
+          "selection_rate": 0.0,
+          "outcomes_all": {
+            "improved": 0,
+            "unchanged": 323,
+            "harmed": 0
+          },
+          "outcomes_active": {
+            "improved": 0,
+            "unchanged": 0,
+            "harmed": 0
+          },
+          "wilcoxon_p_two_sided": 1.0,
+          "selected_counts": {
+            "fallback": 323
+          }
+        },
+        "biblioguard": {
+          "N@10": 0.34874124949613544,
+          "gain_N@10": 0.0,
+          "selection_rate": 0.0030959752321981426,
+          "outcomes_all": {
+            "improved": 0,
+            "unchanged": 323,
+            "harmed": 0
+          },
+          "outcomes_active": {
+            "improved": 0,
+            "unchanged": 1,
+            "harmed": 0
+          },
+          "wilcoxon_p_two_sided": 1.0,
+          "selected_counts": {
+            "fallback": 322,
+            "BGE-Hybrid::citation:0.05": 1
+          },
+          "paired_bootstrap_95ci": [
+            0.0,
+            0.0
+          ]
+        }
+      }
+    }
+  }
+}

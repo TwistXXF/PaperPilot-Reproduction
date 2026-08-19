@@ -1724,142 +1724,46 @@
  "robust": {
   "scidocs": {
    "0.1": {
-    "BM25": {
-     "R@10": 0.1365,
-     "N@10": 0.13696413123803156,
-     "MRR": 0.26188657463572246
-    },
-    "Neural-Hybrid": {
-     "R@10": 0.123,
-     "N@10": 0.11612801600906371,
-     "MRR": 0.21375107562395027
-    },
-    "CA-HR": {
-     "R@10": 0.14166666666666664,
-     "N@10": 0.1368568011097233,
-     "MRR": 0.2537588821884836
-    }
+    "BM25": 0.1365,
+    "Neural-Hybrid": 0.19133333333333333,
+    "CA-HR": 0.186
    },
    "0.2": {
-    "BM25": {
-     "R@10": 0.13349999999999998,
-     "N@10": 0.13005955382138681,
-     "MRR": 0.24492180318018672
-    },
-    "Neural-Hybrid": {
-     "R@10": 0.10866666666666668,
-     "N@10": 0.10496027561033307,
-     "MRR": 0.1943603657944289
-    },
-    "CA-HR": {
-     "R@10": 0.12983333333333336,
-     "N@10": 0.1256826661560943,
-     "MRR": 0.2351171438094217
-    }
+    "BM25": 0.13349999999999998,
+    "Neural-Hybrid": 0.18016666666666667,
+    "CA-HR": 0.177
    },
    "0.3": {
-    "BM25": {
-     "R@10": 0.12083333333333333,
-     "N@10": 0.11787142564278855,
-     "MRR": 0.22395502491070288
-    },
-    "Neural-Hybrid": {
-     "R@10": 0.1165,
-     "N@10": 0.1064738431154719,
-     "MRR": 0.19047814480651817
-    },
-    "CA-HR": {
-     "R@10": 0.13516666666666666,
-     "N@10": 0.12385998958169182,
-     "MRR": 0.21864317620123255
-    }
+    "BM25": 0.12083333333333333,
+    "Neural-Hybrid": 0.15877777777777777,
+    "CA-HR": 0.15783333333333333
    },
    "0.4": {
-    "BM25": {
-     "R@10": 0.1185,
-     "N@10": 0.11145588252530957,
-     "MRR": 0.20506154683333475
-    },
-    "Neural-Hybrid": {
-     "R@10": 0.09899999999999999,
-     "N@10": 0.08873470971943934,
-     "MRR": 0.16673230445336354
-    },
-    "CA-HR": {
-     "R@10": 0.11816666666666666,
-     "N@10": 0.10792893081842668,
-     "MRR": 0.20266925816125655
-    }
+    "BM25": 0.1185,
+    "Neural-Hybrid": 0.15449999999999997,
+    "CA-HR": 0.15216666666666667
    }
   },
   "scifact": {
    "0.1": {
-    "BM25": {
-     "R@10": 0.7547222222222222,
-     "N@10": 0.6159572612814718,
-     "MRR": 0.5829609219916853
-    },
-    "Neural-Hybrid": {
-     "R@10": 0.8081666666666666,
-     "N@10": 0.680526106888215,
-     "MRR": 0.6510453280973753
-    },
-    "CA-HR": {
-     "R@10": 0.8053888888888889,
-     "N@10": 0.6705252271806579,
-     "MRR": 0.639782258696758
-    }
+    "BM25": 0.7547222222222222,
+    "Neural-Hybrid": 0.8081666666666666,
+    "CA-HR": 0.8053888888888889
    },
    "0.2": {
-    "BM25": {
-     "R@10": 0.7241666666666666,
-     "N@10": 0.5898503779136686,
-     "MRR": 0.5564749707308656
-    },
-    "Neural-Hybrid": {
-     "R@10": 0.7742777777777778,
-     "N@10": 0.641851672840083,
-     "MRR": 0.6107187299582726
-    },
-    "CA-HR": {
-     "R@10": 0.7652777777777778,
-     "N@10": 0.6336031739113354,
-     "MRR": 0.6023893481222755
-    }
+    "BM25": 0.7241666666666666,
+    "Neural-Hybrid": 0.7742777777777778,
+    "CA-HR": 0.7652777777777778
    },
    "0.3": {
-    "BM25": {
-     "R@10": 0.7017777777777777,
-     "N@10": 0.5697005260658775,
-     "MRR": 0.541030459287199
-    },
-    "Neural-Hybrid": {
-     "R@10": 0.7557777777777779,
-     "N@10": 0.6207510713992764,
-     "MRR": 0.5898709117676414
-    },
-    "CA-HR": {
-     "R@10": 0.7509444444444444,
-     "N@10": 0.6212253741425148,
-     "MRR": 0.592993398972385
-    }
+    "BM25": 0.7017777777777777,
+    "Neural-Hybrid": 0.7557777777777779,
+    "CA-HR": 0.7509444444444444
    },
    "0.4": {
-    "BM25": {
-     "R@10": 0.6696666666666666,
-     "N@10": 0.5305286219551832,
-     "MRR": 0.4955656363288896
-    },
-    "Neural-Hybrid": {
-     "R@10": 0.7072777777777778,
-     "N@10": 0.5690782569830105,
-     "MRR": 0.5347702162767909
-    },
-    "CA-HR": {
-     "R@10": 0.6922777777777778,
-     "N@10": 0.5639554462707986,
-     "MRR": 0.5325617032896471
-    }
+    "BM25": 0.6696666666666666,
+    "Neural-Hybrid": 0.7072777777777778,
+    "CA-HR": 0.6922777777777778
    }
   },
   "nfcorpus": {
@@ -2373,14 +2277,22 @@
    "pct_zero_citation": 0.023844890938941442,
    "median_age": 11.0,
    "rel_docs": 4008,
-   "nonrel_docs": 22054,
+   "nonrel_docs": 21574,
    "rel_median_citations": 566.5,
-   "nonrel_median_citations": 71.0,
+   "nonrel_median_citations": 68.0,
    "rel_mean_citations": 2427.3400698602795,
-   "nonrel_mean_citations": 360.70440736374354,
-   "cit_rel_auc": 0.7975022624108815,
+   "nonrel_mean_citations": 314.4645870028738,
+   "cit_rel_auc": 0.8039235564284428,
+   "cit_rel_auc_95ci": [
+    0.7954420429852483,
+    0.8124050698716373
+   ],
+   "cit_rel_auc_ci_method": "Hanley-McNeil large-sample approximation",
    "cit_rel_mwu_p": 0.0,
-   "nonrel_source": "judged non-relevant"
+   "nonrel_source": "seeded background sample from documents without positive test qrels; ratio<=10:1, cap=25000",
+   "deduplication": "unique document IDs in positive and background sets",
+   "background_seed": 7,
+   "metadata_snapshot": "frozen repository snapshot collected during 2025-2026"
   },
   "scifact": {
    "n_docs": 5183,
@@ -2390,14 +2302,22 @@
    "pct_zero_citation": 0.0004099200655872105,
    "median_age": 15.0,
    "rel_docs": 264,
-   "nonrel_docs": 2830,
+   "nonrel_docs": 2640,
    "rel_median_citations": 253.5,
-   "nonrel_median_citations": 179.0,
+   "nonrel_median_citations": 173.0,
    "rel_mean_citations": 430.094696969697,
-   "nonrel_mean_citations": 799.9858657243816,
-   "cit_rel_auc": 0.5816870114573295,
-   "cit_rel_mwu_p": 5.500718919249588e-06,
-   "nonrel_source": "seeded background sample (no explicit non-relevant qrels)"
+   "nonrel_mean_citations": 717.1193181818181,
+   "cit_rel_auc": 0.588535927456382,
+   "cit_rel_auc_95ci": [
+    0.5510031080517074,
+    0.6260687468610565
+   ],
+   "cit_rel_auc_ci_method": "Hanley-McNeil large-sample approximation",
+   "cit_rel_mwu_p": 2.02918195636951e-06,
+   "nonrel_source": "seeded background sample from documents without positive test qrels; ratio<=10:1, cap=25000",
+   "deduplication": "unique document IDs in positive and background sets",
+   "background_seed": 7,
+   "metadata_snapshot": "frozen repository snapshot collected during 2025-2026"
   },
   "nfcorpus": {
    "n_docs": 3633,
@@ -2413,8 +2333,16 @@
    "rel_mean_citations": 23.477743798844717,
    "nonrel_mean_citations": 22.87103594080338,
    "cit_rel_auc": 0.49820694678812877,
-   "cit_rel_mwu_p": 0.5504278461254463,
-   "nonrel_source": "seeded background sample (no explicit non-relevant qrels)"
+   "cit_rel_auc_95ci": [
+    0.4701504290880725,
+    0.5262634644881851
+   ],
+   "cit_rel_auc_ci_method": "Hanley-McNeil large-sample approximation",
+   "cit_rel_mwu_p": 0.8991844908592945,
+   "nonrel_source": "seeded background sample from documents without positive test qrels; ratio<=10:1, cap=25000",
+   "deduplication": "unique document IDs in positive and background sets",
+   "background_seed": 7,
+   "metadata_snapshot": "frozen repository snapshot collected during 2025-2026"
   },
   "trec-covid": {
    "n_docs": 171332,
@@ -2424,14 +2352,22 @@
    "pct_zero_citation": 0.346607755702379,
    "median_age": 5.0,
    "rel_docs": 17537,
-   "nonrel_docs": 24878,
+   "nonrel_docs": 25000,
    "rel_median_citations": 6.0,
-   "nonrel_median_citations": 16.0,
+   "nonrel_median_citations": 10.0,
    "rel_mean_citations": 126.46724069111022,
-   "nonrel_mean_citations": 111.17372779162312,
-   "cit_rel_auc": 0.4607071767223538,
-   "cit_rel_mwu_p": 1.0,
-   "nonrel_source": "judged non-relevant"
+   "nonrel_mean_citations": 46.947,
+   "cit_rel_auc": 0.4989860226948737,
+   "cit_rel_auc_95ci": [
+    0.4934134759165015,
+    0.5045585694732458
+   ],
+   "cit_rel_auc_ci_method": "Hanley-McNeil large-sample approximation",
+   "cit_rel_mwu_p": 0.7136496524193794,
+   "nonrel_source": "seeded background sample from documents without positive test qrels; ratio<=10:1, cap=25000",
+   "deduplication": "unique document IDs in positive and background sets",
+   "background_seed": 7,
+   "metadata_snapshot": "frozen repository snapshot collected during 2025-2026"
   }
  },
  "sensitivity": {
@@ -3316,117 +3252,1574 @@
    }
   }
  },
+ "biblioguard": {
+  "method": "BiblioGuard",
+  "protocol": "five-fold cross-fitted selective metadata intervention",
+  "primary_seed": 42,
+  "repeat_seeds": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9
+  ],
+  "bootstrap_repetitions": 10000,
+  "results": {
+   "scidocs": {
+    "dataset": "scidocs",
+    "n_queries": 1000,
+    "n_splits": 5,
+    "family_alpha": 0.05,
+    "n_actions": 9,
+    "actions": [
+     "citation:0.05",
+     "citation:0.10",
+     "citation:0.15",
+     "citation:0.20",
+     "citation:0.30",
+     "recency:0.05",
+     "recency:0.10",
+     "recency:0.15",
+     "recency:0.20"
+    ],
+    "available_content_bases": [
+     "Neural-Hybrid",
+     "SBERT-Dense"
+    ],
+    "fallback_selection": "training-fold best content-only retriever",
+    "fallback_counts": {
+     "SBERT-Dense": 1000
+    },
+    "feature_mode": "word+char",
+    "neighbour_rule": "ceil(sqrt(n_training_queries))",
+    "decision_rule": "mean effect minus Bonferroni t penalty; activate iff positive",
+    "decision_score_caveat": "operational pessimistic score, not a formal confidence bound",
+    "fallback_N@10": 0.2164015556505212,
+    "biblioguard_N@10": 0.2342867645875933,
+    "gain_N@10": 0.0178852089370721,
+    "selection_rate": 0.493,
+    "wilcoxon_p_two_sided": 6.871541895436006e-20,
+    "paired_bootstrap_95ci": [
+     0.013931055490003801,
+     0.021848260155464046
+    ],
+    "comparisons": {
+     "global_best": {
+      "N@10": 0.26334264026202664,
+      "gain_N@10": 0.04694108461150542,
+      "selection_rate": 1.0,
+      "selected_counts": {
+       "SBERT-Dense::citation:0.30": 1000
+      },
+      "outcomes_all": {
+       "improved": 474,
+       "unchanged": 380,
+       "harmed": 146
+      },
+      "outcomes_active": {
+       "improved": 474,
+       "unchanged": 380,
+       "harmed": 146
+      },
+      "wilcoxon_p_two_sided": 1.3598991270295634e-44
+     },
+     "local_mean": {
+      "N@10": 0.26074093094421913,
+      "gain_N@10": 0.044339375293697976,
+      "selection_rate": 1.0,
+      "selected_counts": {
+       "SBERT-Dense::citation:0.30": 852,
+       "SBERT-Dense::citation:0.15": 51,
+       "SBERT-Dense::citation:0.20": 88,
+       "SBERT-Dense::citation:0.10": 8,
+       "SBERT-Dense::recency:0.15": 1
+      },
+      "outcomes_all": {
+       "improved": 461,
+       "unchanged": 401,
+       "harmed": 138
+      },
+      "outcomes_active": {
+       "improved": 461,
+       "unchanged": 401,
+       "harmed": 138
+      },
+      "wilcoxon_p_two_sided": 2.048375388955871e-43
+     },
+     "uncorrected": {
+      "N@10": 0.2529965096328687,
+      "gain_N@10": 0.03659495398234751,
+      "selection_rate": 0.885,
+      "selected_counts": {
+       "SBERT-Dense::citation:0.30": 573,
+       "SBERT-Dense::citation:0.15": 126,
+       "SBERT-Dense::citation:0.20": 136,
+       "fallback": 115,
+       "SBERT-Dense::citation:0.05": 13,
+       "SBERT-Dense::citation:0.10": 37
+      },
+      "outcomes_all": {
+       "improved": 404,
+       "unchanged": 477,
+       "harmed": 119
+      },
+      "outcomes_active": {
+       "improved": 404,
+       "unchanged": 362,
+       "harmed": 119
+      },
+      "wilcoxon_p_two_sided": 3.0027288414816785e-38
+     },
+     "empirical_bernstein": {
+      "N@10": 0.2164015556505212,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+       "fallback": 1000
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 1000,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0
+     },
+     "biblioguard": {
+      "N@10": 0.2342867645875933,
+      "gain_N@10": 0.0178852089370721,
+      "selection_rate": 0.493,
+      "selected_counts": {
+       "SBERT-Dense::citation:0.30": 282,
+       "fallback": 507,
+       "SBERT-Dense::citation:0.20": 85,
+       "SBERT-Dense::citation:0.15": 98,
+       "SBERT-Dense::citation:0.10": 27,
+       "SBERT-Dense::citation:0.05": 1
+      },
+      "outcomes_all": {
+       "improved": 214,
+       "unchanged": 724,
+       "harmed": 62
+      },
+      "outcomes_active": {
+       "improved": 214,
+       "unchanged": 217,
+       "harmed": 62
+      },
+      "wilcoxon_p_two_sided": 6.871541895436006e-20,
+      "paired_bootstrap_95ci": [
+       0.013931055490003801,
+       0.021848260155464046
+      ]
+     }
+    },
+    "repeated_seeds": {
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+     ],
+     "runs": [
+      {
+       "seed": 0,
+       "fallback_N@10": 0.2164015556505212,
+       "biblioguard_N@10": 0.23473299768458866,
+       "gain_N@10": 0.01833144203406746,
+       "selection_rate": 0.517
+      },
+      {
+       "seed": 1,
+       "fallback_N@10": 0.2164015556505212,
+       "biblioguard_N@10": 0.23394288989586107,
+       "gain_N@10": 0.017541334245339865,
+       "selection_rate": 0.503
+      },
+      {
+       "seed": 2,
+       "fallback_N@10": 0.2164015556505212,
+       "biblioguard_N@10": 0.23455436843226152,
+       "gain_N@10": 0.018152812781740323,
+       "selection_rate": 0.502
+      },
+      {
+       "seed": 3,
+       "fallback_N@10": 0.2164015556505212,
+       "biblioguard_N@10": 0.23507286636381286,
+       "gain_N@10": 0.018671310713291676,
+       "selection_rate": 0.48
+      },
+      {
+       "seed": 4,
+       "fallback_N@10": 0.2164015556505212,
+       "biblioguard_N@10": 0.2345060732479258,
+       "gain_N@10": 0.018104517597404602,
+       "selection_rate": 0.492
+      },
+      {
+       "seed": 5,
+       "fallback_N@10": 0.2164015556505212,
+       "biblioguard_N@10": 0.23467614334154818,
+       "gain_N@10": 0.018274587691026994,
+       "selection_rate": 0.517
+      },
+      {
+       "seed": 6,
+       "fallback_N@10": 0.2164015556505212,
+       "biblioguard_N@10": 0.23379764637680955,
+       "gain_N@10": 0.01739609072628837,
+       "selection_rate": 0.494
+      },
+      {
+       "seed": 7,
+       "fallback_N@10": 0.2164015556505212,
+       "biblioguard_N@10": 0.2345961557484032,
+       "gain_N@10": 0.018194600097881996,
+       "selection_rate": 0.511
+      },
+      {
+       "seed": 8,
+       "fallback_N@10": 0.2164015556505212,
+       "biblioguard_N@10": 0.23255384792476835,
+       "gain_N@10": 0.016152292274247144,
+       "selection_rate": 0.484
+      },
+      {
+       "seed": 9,
+       "fallback_N@10": 0.2164015556505212,
+       "biblioguard_N@10": 0.23592029319775798,
+       "gain_N@10": 0.019518737547236816,
+       "selection_rate": 0.51
+      }
+     ],
+     "gain_mean": 0.018033772570852525,
+     "gain_std": 0.0008814330229463635,
+     "score_mean": 0.23443532822137375,
+     "score_std": 0.0008814330229463543,
+     "selection_mean": 0.501,
+     "selection_std": 0.013157169570660378
+    },
+    "risk_coverage": [
+     {
+      "penalty_scale": 0.0,
+      "coverage": 1.0,
+      "gain_N@10": 0.044339375293697976,
+      "harmed_active": 138
+     },
+     {
+      "penalty_scale": 0.25,
+      "coverage": 0.992,
+      "gain_N@10": 0.043334260843463576,
+      "harmed_active": 133
+     },
+     {
+      "penalty_scale": 0.5,
+      "coverage": 0.944,
+      "gain_N@10": 0.04031371809441815,
+      "harmed_active": 129
+     },
+     {
+      "penalty_scale": 0.75,
+      "coverage": 0.803,
+      "gain_N@10": 0.032648582029002095,
+      "harmed_active": 109
+     },
+     {
+      "penalty_scale": 1.0,
+      "coverage": 0.493,
+      "gain_N@10": 0.0178852089370721,
+      "harmed_active": 62
+     },
+     {
+      "penalty_scale": 1.25,
+      "coverage": 0.183,
+      "gain_N@10": 0.005611623978552691,
+      "harmed_active": 28
+     },
+     {
+      "penalty_scale": 1.5,
+      "coverage": 0.052,
+      "gain_N@10": 0.0011290718830285708,
+      "harmed_active": 9
+     }
+    ],
+    "ablations": {
+     "word_only": {
+      "N@10": 0.23268994597138037,
+      "gain_N@10": 0.016288390320859183,
+      "selection_rate": 0.435,
+      "selected_counts": {
+       "SBERT-Dense::citation:0.30": 241,
+       "fallback": 565,
+       "SBERT-Dense::citation:0.20": 92,
+       "SBERT-Dense::citation:0.15": 74,
+       "SBERT-Dense::citation:0.10": 27,
+       "SBERT-Dense::citation:0.05": 1
+      },
+      "outcomes_all": {
+       "improved": 181,
+       "unchanged": 762,
+       "harmed": 57
+      },
+      "outcomes_active": {
+       "improved": 181,
+       "unchanged": 197,
+       "harmed": 57
+      },
+      "wilcoxon_p_two_sided": 5.213774440516073e-18
+     },
+     "char_only": {
+      "N@10": 0.23665366921588027,
+      "gain_N@10": 0.020252113565359043,
+      "selection_rate": 0.515,
+      "selected_counts": {
+       "SBERT-Dense::citation:0.20": 102,
+       "fallback": 485,
+       "SBERT-Dense::citation:0.30": 278,
+       "SBERT-Dense::citation:0.15": 103,
+       "SBERT-Dense::citation:0.10": 31,
+       "SBERT-Dense::citation:0.05": 1
+      },
+      "outcomes_all": {
+       "improved": 227,
+       "unchanged": 712,
+       "harmed": 61
+      },
+      "outcomes_active": {
+       "improved": 227,
+       "unchanged": 227,
+       "harmed": 61
+      },
+      "wilcoxon_p_two_sided": 1.161895382423761e-23
+     },
+     "k_half": {
+      "N@10": 0.2217262579768075,
+      "gain_N@10": 0.005324702326286287,
+      "selection_rate": 0.145,
+      "selected_counts": {
+       "SBERT-Dense::citation:0.30": 83,
+       "fallback": 855,
+       "SBERT-Dense::citation:0.10": 4,
+       "SBERT-Dense::citation:0.15": 22,
+       "SBERT-Dense::citation:0.20": 34,
+       "SBERT-Dense::citation:0.05": 2
+      },
+      "outcomes_all": {
+       "improved": 60,
+       "unchanged": 922,
+       "harmed": 18
+      },
+      "outcomes_active": {
+       "improved": 60,
+       "unchanged": 67,
+       "harmed": 18
+      },
+      "wilcoxon_p_two_sided": 1.3542523052567893e-06
+     },
+     "k_double": {
+      "N@10": 0.251833995968097,
+      "gain_N@10": 0.03543244031757581,
+      "selection_rate": 0.854,
+      "selected_counts": {
+       "SBERT-Dense::citation:0.30": 556,
+       "fallback": 146,
+       "SBERT-Dense::citation:0.20": 152,
+       "SBERT-Dense::citation:0.15": 118,
+       "SBERT-Dense::citation:0.05": 6,
+       "SBERT-Dense::citation:0.10": 22
+      },
+      "outcomes_all": {
+       "improved": 386,
+       "unchanged": 502,
+       "harmed": 112
+      },
+      "outcomes_active": {
+       "improved": 386,
+       "unchanged": 356,
+       "harmed": 112
+      },
+      "wilcoxon_p_two_sided": 1.0478107020653782e-36
+     }
+    },
+    "wilcoxon_p_holm_two_sided": 2.7486167581744026e-19
+   },
+   "scifact": {
+    "dataset": "scifact",
+    "n_queries": 300,
+    "n_splits": 5,
+    "family_alpha": 0.05,
+    "n_actions": 9,
+    "actions": [
+     "citation:0.05",
+     "citation:0.10",
+     "citation:0.15",
+     "citation:0.20",
+     "citation:0.30",
+     "recency:0.05",
+     "recency:0.10",
+     "recency:0.15",
+     "recency:0.20"
+    ],
+    "available_content_bases": [
+     "BGE-Dense",
+     "BGE-Hybrid",
+     "Neural-Hybrid",
+     "SBERT-Dense"
+    ],
+    "fallback_selection": "training-fold best content-only retriever",
+    "fallback_counts": {
+     "BGE-Dense": 240,
+     "Neural-Hybrid": 60
+    },
+    "feature_mode": "word+char",
+    "neighbour_rule": "ceil(sqrt(n_training_queries))",
+    "decision_rule": "mean effect minus Bonferroni t penalty; activate iff positive",
+    "decision_score_caveat": "operational pessimistic score, not a formal confidence bound",
+    "fallback_N@10": 0.6997821575711919,
+    "biblioguard_N@10": 0.6997821575711919,
+    "gain_N@10": 0.0,
+    "selection_rate": 0.0,
+    "wilcoxon_p_two_sided": 1.0,
+    "paired_bootstrap_95ci": [
+     0.0,
+     0.0
+    ],
+    "comparisons": {
+     "global_best": {
+      "N@10": 0.7029978531349557,
+      "gain_N@10": 0.003215695563763865,
+      "selection_rate": 0.4,
+      "selected_counts": {
+       "fallback": 180,
+       "Neural-Hybrid::citation:0.10": 60,
+       "BGE-Dense::recency:0.05": 60
+      },
+      "outcomes_all": {
+       "improved": 5,
+       "unchanged": 293,
+       "harmed": 2
+      },
+      "outcomes_active": {
+       "improved": 5,
+       "unchanged": 113,
+       "harmed": 2
+      },
+      "wilcoxon_p_two_sided": 0.26758390747028626
+     },
+     "local_mean": {
+      "N@10": 0.6953557562690633,
+      "gain_N@10": -0.004426401302128481,
+      "selection_rate": 0.76,
+      "selected_counts": {
+       "BGE-Dense::citation:0.15": 10,
+       "fallback": 72,
+       "BGE-Dense::citation:0.10": 25,
+       "Neural-Hybrid::citation:0.30": 8,
+       "BGE-Dense::citation:0.30": 33,
+       "BGE-Dense::citation:0.20": 19,
+       "BGE-Dense::recency:0.10": 31,
+       "Neural-Hybrid::recency:0.10": 2,
+       "BGE-Dense::citation:0.05": 21,
+       "BGE-Dense::recency:0.05": 26,
+       "BGE-Dense::recency:0.20": 9,
+       "BGE-Dense::recency:0.15": 8,
+       "Neural-Hybrid::citation:0.05": 5,
+       "Neural-Hybrid::citation:0.20": 2,
+       "Neural-Hybrid::recency:0.05": 5,
+       "Neural-Hybrid::citation:0.15": 5,
+       "Neural-Hybrid::citation:0.10": 6,
+       "Neural-Hybrid::recency:0.15": 6,
+       "Neural-Hybrid::recency:0.20": 7
+      },
+      "outcomes_all": {
+       "improved": 18,
+       "unchanged": 261,
+       "harmed": 21
+      },
+      "outcomes_active": {
+       "improved": 18,
+       "unchanged": 189,
+       "harmed": 21
+      },
+      "wilcoxon_p_two_sided": 0.6398909214380899
+     },
+     "uncorrected": {
+      "N@10": 0.6997821575711919,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0033333333333333335,
+      "selected_counts": {
+       "fallback": 299,
+       "BGE-Dense::citation:0.20": 1
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 300,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 1,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0
+     },
+     "empirical_bernstein": {
+      "N@10": 0.6997821575711919,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+       "fallback": 300
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 300,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0
+     },
+     "biblioguard": {
+      "N@10": 0.6997821575711919,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+       "fallback": 300
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 300,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0,
+      "paired_bootstrap_95ci": [
+       0.0,
+       0.0
+      ]
+     }
+    },
+    "repeated_seeds": {
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+     ],
+     "runs": [
+      {
+       "seed": 0,
+       "fallback_N@10": 0.6980435726474754,
+       "biblioguard_N@10": 0.6980435726474754,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 1,
+       "fallback_N@10": 0.6970638360441677,
+       "biblioguard_N@10": 0.6970638360441677,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 2,
+       "fallback_N@10": 0.7023237251844173,
+       "biblioguard_N@10": 0.7023237251844173,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 3,
+       "fallback_N@10": 0.7053464661151878,
+       "biblioguard_N@10": 0.7053464661151878,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 4,
+       "fallback_N@10": 0.7000439037413372,
+       "biblioguard_N@10": 0.7000439037413372,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 5,
+       "fallback_N@10": 0.6937736782739182,
+       "biblioguard_N@10": 0.6937736782739182,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 6,
+       "fallback_N@10": 0.6950373784206236,
+       "biblioguard_N@10": 0.6950373784206236,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 7,
+       "fallback_N@10": 0.6904119707544087,
+       "biblioguard_N@10": 0.6904119707544087,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 8,
+       "fallback_N@10": 0.689153977961099,
+       "biblioguard_N@10": 0.689153977961099,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 9,
+       "fallback_N@10": 0.693349049769005,
+       "biblioguard_N@10": 0.693349049769005,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      }
+     ],
+     "gain_mean": 0.0,
+     "gain_std": 0.0,
+     "score_mean": 0.696454755891164,
+     "score_std": 0.005141808675245872,
+     "selection_mean": 0.0,
+     "selection_std": 0.0
+    },
+    "risk_coverage": [
+     {
+      "penalty_scale": 0.0,
+      "coverage": 0.76,
+      "gain_N@10": -0.004426401302128481,
+      "harmed_active": 21
+     },
+     {
+      "penalty_scale": 0.25,
+      "coverage": 0.49,
+      "gain_N@10": -0.003047544503339553,
+      "harmed_active": 14
+     },
+     {
+      "penalty_scale": 0.5,
+      "coverage": 0.05,
+      "gain_N@10": -0.002642680859735158,
+      "harmed_active": 4
+     },
+     {
+      "penalty_scale": 0.75,
+      "coverage": 0.0,
+      "gain_N@10": 0.0,
+      "harmed_active": 0
+     },
+     {
+      "penalty_scale": 1.0,
+      "coverage": 0.0,
+      "gain_N@10": 0.0,
+      "harmed_active": 0
+     },
+     {
+      "penalty_scale": 1.25,
+      "coverage": 0.0,
+      "gain_N@10": 0.0,
+      "harmed_active": 0
+     },
+     {
+      "penalty_scale": 1.5,
+      "coverage": 0.0,
+      "gain_N@10": 0.0,
+      "harmed_active": 0
+     }
+    ],
+    "ablations": {
+     "word_only": {
+      "N@10": 0.6997821575711919,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+       "fallback": 300
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 300,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0
+     },
+     "char_only": {
+      "N@10": 0.6997821575711919,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+       "fallback": 300
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 300,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0
+     },
+     "k_half": {
+      "N@10": 0.6997821575711919,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+       "fallback": 300
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 300,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0
+     },
+     "k_double": {
+      "N@10": 0.6997821575711919,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+       "fallback": 300
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 300,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0
+     }
+    },
+    "wilcoxon_p_holm_two_sided": 1.0
+   },
+   "nfcorpus": {
+    "dataset": "nfcorpus",
+    "n_queries": 323,
+    "n_splits": 5,
+    "family_alpha": 0.05,
+    "n_actions": 9,
+    "actions": [
+     "citation:0.05",
+     "citation:0.10",
+     "citation:0.15",
+     "citation:0.20",
+     "citation:0.30",
+     "recency:0.05",
+     "recency:0.10",
+     "recency:0.15",
+     "recency:0.20"
+    ],
+    "available_content_bases": [
+     "BGE-Dense",
+     "BGE-Hybrid"
+    ],
+    "fallback_selection": "training-fold best content-only retriever",
+    "fallback_counts": {
+     "BGE-Hybrid": 323
+    },
+    "feature_mode": "word+char",
+    "neighbour_rule": "ceil(sqrt(n_training_queries))",
+    "decision_rule": "mean effect minus Bonferroni t penalty; activate iff positive",
+    "decision_score_caveat": "operational pessimistic score, not a formal confidence bound",
+    "fallback_N@10": 0.34874124949613544,
+    "biblioguard_N@10": 0.34874124949613544,
+    "gain_N@10": 0.0,
+    "selection_rate": 0.0,
+    "wilcoxon_p_two_sided": 1.0,
+    "paired_bootstrap_95ci": [
+     0.0,
+     0.0
+    ],
+    "comparisons": {
+     "global_best": {
+      "N@10": 0.3487482443362248,
+      "gain_N@10": 6.994840089403376e-06,
+      "selection_rate": 1.0,
+      "selected_counts": {
+       "BGE-Hybrid::recency:0.10": 193,
+       "BGE-Hybrid::recency:0.05": 65,
+       "BGE-Hybrid::recency:0.15": 65
+      },
+      "outcomes_all": {
+       "improved": 4,
+       "unchanged": 316,
+       "harmed": 3
+      },
+      "outcomes_active": {
+       "improved": 4,
+       "unchanged": 316,
+       "harmed": 3
+      },
+      "wilcoxon_p_two_sided": 1.0
+     },
+     "local_mean": {
+      "N@10": 0.34831992484138913,
+      "gain_N@10": -0.000421324654746345,
+      "selection_rate": 0.718266253869969,
+      "selected_counts": {
+       "fallback": 91,
+       "BGE-Hybrid::citation:0.15": 24,
+       "BGE-Hybrid::citation:0.10": 75,
+       "BGE-Hybrid::recency:0.10": 29,
+       "BGE-Hybrid::citation:0.05": 40,
+       "BGE-Hybrid::citation:0.30": 9,
+       "BGE-Hybrid::recency:0.05": 10,
+       "BGE-Hybrid::citation:0.20": 29,
+       "BGE-Hybrid::recency:0.20": 10,
+       "BGE-Hybrid::recency:0.15": 6
+      },
+      "outcomes_all": {
+       "improved": 41,
+       "unchanged": 248,
+       "harmed": 34
+      },
+      "outcomes_active": {
+       "improved": 41,
+       "unchanged": 157,
+       "harmed": 34
+      },
+      "wilcoxon_p_two_sided": 0.5901428745167671
+     },
+     "uncorrected": {
+      "N@10": 0.34927369954162635,
+      "gain_N@10": 0.0005324500454909168,
+      "selection_rate": 0.021671826625386997,
+      "selected_counts": {
+       "fallback": 316,
+       "BGE-Hybrid::citation:0.10": 2,
+       "BGE-Hybrid::citation:0.05": 3,
+       "BGE-Hybrid::citation:0.15": 2
+      },
+      "outcomes_all": {
+       "improved": 3,
+       "unchanged": 319,
+       "harmed": 1
+      },
+      "outcomes_active": {
+       "improved": 3,
+       "unchanged": 3,
+       "harmed": 1
+      },
+      "wilcoxon_p_two_sided": 0.14412703481601533
+     },
+     "empirical_bernstein": {
+      "N@10": 0.34874124949613544,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+       "fallback": 323
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 323,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0
+     },
+     "biblioguard": {
+      "N@10": 0.34874124949613544,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+       "fallback": 323
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 323,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0,
+      "paired_bootstrap_95ci": [
+       0.0,
+       0.0
+      ]
+     }
+    },
+    "repeated_seeds": {
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+     ],
+     "runs": [
+      {
+       "seed": 0,
+       "fallback_N@10": 0.3431572734573192,
+       "biblioguard_N@10": 0.3431572734573192,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 1,
+       "fallback_N@10": 0.3433308110633305,
+       "biblioguard_N@10": 0.3433308110633305,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 2,
+       "fallback_N@10": 0.34236998213849845,
+       "biblioguard_N@10": 0.34236998213849845,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 3,
+       "fallback_N@10": 0.3407649376061766,
+       "biblioguard_N@10": 0.3407649376061766,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 4,
+       "fallback_N@10": 0.34874124949613544,
+       "biblioguard_N@10": 0.34874124949613544,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 5,
+       "fallback_N@10": 0.33341027223930986,
+       "biblioguard_N@10": 0.33341027223930986,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 6,
+       "fallback_N@10": 0.3432666354263746,
+       "biblioguard_N@10": 0.3432666354263746,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 7,
+       "fallback_N@10": 0.34874124949613544,
+       "biblioguard_N@10": 0.34874124949613544,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 8,
+       "fallback_N@10": 0.34874124949613544,
+       "biblioguard_N@10": 0.34874124949613544,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 9,
+       "fallback_N@10": 0.34350516953217497,
+       "biblioguard_N@10": 0.34350516953217497,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      }
+     ],
+     "gain_mean": 0.0,
+     "gain_std": 0.0,
+     "score_mean": 0.343602882995159,
+     "score_std": 0.00463161748580327,
+     "selection_mean": 0.0,
+     "selection_std": 0.0
+    },
+    "risk_coverage": [
+     {
+      "penalty_scale": 0.0,
+      "coverage": 0.718266253869969,
+      "gain_N@10": -0.000421324654746345,
+      "harmed_active": 34
+     },
+     {
+      "penalty_scale": 0.25,
+      "coverage": 0.38080495356037153,
+      "gain_N@10": 0.0008300277359898236,
+      "harmed_active": 12
+     },
+     {
+      "penalty_scale": 0.5,
+      "coverage": 0.04643962848297214,
+      "gain_N@10": 0.0009009699368552033,
+      "harmed_active": 2
+     },
+     {
+      "penalty_scale": 0.75,
+      "coverage": 0.009287925696594427,
+      "gain_N@10": 0.0,
+      "harmed_active": 0
+     },
+     {
+      "penalty_scale": 1.0,
+      "coverage": 0.0,
+      "gain_N@10": 0.0,
+      "harmed_active": 0
+     },
+     {
+      "penalty_scale": 1.25,
+      "coverage": 0.0,
+      "gain_N@10": 0.0,
+      "harmed_active": 0
+     },
+     {
+      "penalty_scale": 1.5,
+      "coverage": 0.0,
+      "gain_N@10": 0.0,
+      "harmed_active": 0
+     }
+    ],
+    "ablations": {
+     "word_only": {
+      "N@10": 0.34874124949613544,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+       "fallback": 323
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 323,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0
+     },
+     "char_only": {
+      "N@10": 0.34874124949613544,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+       "fallback": 323
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 323,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0
+     },
+     "k_half": {
+      "N@10": 0.34874124949613544,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+       "fallback": 323
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 323,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0
+     },
+     "k_double": {
+      "N@10": 0.34874124949613544,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+       "fallback": 323
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 323,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0
+     }
+    },
+    "wilcoxon_p_holm_two_sided": 1.0
+   },
+   "trec-covid": {
+    "dataset": "trec-covid",
+    "n_queries": 50,
+    "n_splits": 5,
+    "family_alpha": 0.05,
+    "n_actions": 9,
+    "actions": [
+     "citation:0.05",
+     "citation:0.10",
+     "citation:0.15",
+     "citation:0.20",
+     "citation:0.30",
+     "recency:0.05",
+     "recency:0.10",
+     "recency:0.15",
+     "recency:0.20"
+    ],
+    "available_content_bases": [
+     "BGE-Dense"
+    ],
+    "fallback_selection": "training-fold best content-only retriever",
+    "fallback_counts": {
+     "BGE-Dense": 50
+    },
+    "feature_mode": "word+char",
+    "neighbour_rule": "ceil(sqrt(n_training_queries))",
+    "decision_rule": "mean effect minus Bonferroni t penalty; activate iff positive",
+    "decision_score_caveat": "operational pessimistic score, not a formal confidence bound",
+    "fallback_N@10": 0.7578350423643588,
+    "biblioguard_N@10": 0.7578350423643588,
+    "gain_N@10": 0.0,
+    "selection_rate": 0.0,
+    "wilcoxon_p_two_sided": 1.0,
+    "paired_bootstrap_95ci": [
+     0.0,
+     0.0
+    ],
+    "comparisons": {
+     "global_best": {
+      "N@10": 0.7577208588010044,
+      "gain_N@10": -0.00011418356335428648,
+      "selection_rate": 1.0,
+      "selected_counts": {
+       "BGE-Dense::recency:0.20": 30,
+       "BGE-Dense::recency:0.15": 10,
+       "BGE-Dense::citation:0.10": 10
+      },
+      "outcomes_all": {
+       "improved": 13,
+       "unchanged": 25,
+       "harmed": 12
+      },
+      "outcomes_active": {
+       "improved": 13,
+       "unchanged": 25,
+       "harmed": 12
+      },
+      "wilcoxon_p_two_sided": 0.8611621969468249
+     },
+     "local_mean": {
+      "N@10": 0.76077719084754,
+      "gain_N@10": 0.002942148483181517,
+      "selection_rate": 1.0,
+      "selected_counts": {
+       "BGE-Dense::citation:0.05": 13,
+       "BGE-Dense::recency:0.10": 6,
+       "BGE-Dense::recency:0.20": 5,
+       "BGE-Dense::recency:0.15": 16,
+       "BGE-Dense::citation:0.15": 2,
+       "BGE-Dense::recency:0.05": 2,
+       "BGE-Dense::citation:0.10": 6
+      },
+      "outcomes_all": {
+       "improved": 16,
+       "unchanged": 19,
+       "harmed": 15
+      },
+      "outcomes_active": {
+       "improved": 16,
+       "unchanged": 19,
+       "harmed": 15
+      },
+      "wilcoxon_p_two_sided": 0.7687867213524004
+     },
+     "uncorrected": {
+      "N@10": 0.7583138016823079,
+      "gain_N@10": 0.00047875931794919333,
+      "selection_rate": 0.12,
+      "selected_counts": {
+       "fallback": 44,
+       "BGE-Dense::recency:0.20": 2,
+       "BGE-Dense::citation:0.05": 2,
+       "BGE-Dense::citation:0.10": 1,
+       "BGE-Dense::recency:0.10": 1
+      },
+      "outcomes_all": {
+       "improved": 3,
+       "unchanged": 46,
+       "harmed": 1
+      },
+      "outcomes_active": {
+       "improved": 3,
+       "unchanged": 2,
+       "harmed": 1
+      },
+      "wilcoxon_p_two_sided": 0.4652088184521418
+     },
+     "empirical_bernstein": {
+      "N@10": 0.7578350423643588,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+       "fallback": 50
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 50,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0
+     },
+     "biblioguard": {
+      "N@10": 0.7578350423643588,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+       "fallback": 50
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 50,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0,
+      "paired_bootstrap_95ci": [
+       0.0,
+       0.0
+      ]
+     }
+    },
+    "repeated_seeds": {
+     "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+     ],
+     "runs": [
+      {
+       "seed": 0,
+       "fallback_N@10": 0.7578350423643588,
+       "biblioguard_N@10": 0.7578350423643588,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 1,
+       "fallback_N@10": 0.7578350423643588,
+       "biblioguard_N@10": 0.7578350423643588,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.02
+      },
+      {
+       "seed": 2,
+       "fallback_N@10": 0.7578350423643588,
+       "biblioguard_N@10": 0.7578350423643588,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 3,
+       "fallback_N@10": 0.7578350423643588,
+       "biblioguard_N@10": 0.7578350423643588,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 4,
+       "fallback_N@10": 0.7578350423643588,
+       "biblioguard_N@10": 0.7578350423643588,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 5,
+       "fallback_N@10": 0.7578350423643588,
+       "biblioguard_N@10": 0.7578350423643588,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 6,
+       "fallback_N@10": 0.7578350423643588,
+       "biblioguard_N@10": 0.7578350423643588,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 7,
+       "fallback_N@10": 0.7578350423643588,
+       "biblioguard_N@10": 0.7578350423643588,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 8,
+       "fallback_N@10": 0.7578350423643588,
+       "biblioguard_N@10": 0.7578350423643588,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      },
+      {
+       "seed": 9,
+       "fallback_N@10": 0.7578350423643588,
+       "biblioguard_N@10": 0.7578350423643588,
+       "gain_N@10": 0.0,
+       "selection_rate": 0.0
+      }
+     ],
+     "gain_mean": 0.0,
+     "gain_std": 0.0,
+     "score_mean": 0.757835042364359,
+     "score_std": 1.1702778228589004e-16,
+     "selection_mean": 0.002,
+     "selection_std": 0.006324555320336759
+    },
+    "risk_coverage": [
+     {
+      "penalty_scale": 0.0,
+      "coverage": 1.0,
+      "gain_N@10": 0.002942148483181517,
+      "harmed_active": 15
+     },
+     {
+      "penalty_scale": 0.25,
+      "coverage": 0.84,
+      "gain_N@10": 0.006140585100297799,
+      "harmed_active": 7
+     },
+     {
+      "penalty_scale": 0.5,
+      "coverage": 0.14,
+      "gain_N@10": 0.00047875931794919333,
+      "harmed_active": 1
+     },
+     {
+      "penalty_scale": 0.75,
+      "coverage": 0.02,
+      "gain_N@10": 0.0,
+      "harmed_active": 0
+     },
+     {
+      "penalty_scale": 1.0,
+      "coverage": 0.0,
+      "gain_N@10": 0.0,
+      "harmed_active": 0
+     },
+     {
+      "penalty_scale": 1.25,
+      "coverage": 0.0,
+      "gain_N@10": 0.0,
+      "harmed_active": 0
+     },
+     {
+      "penalty_scale": 1.5,
+      "coverage": 0.0,
+      "gain_N@10": 0.0,
+      "harmed_active": 0
+     }
+    ],
+    "ablations": {
+     "word_only": {
+      "N@10": 0.7578350423643588,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+       "fallback": 50
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 50,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0
+     },
+     "char_only": {
+      "N@10": 0.7545172391788227,
+      "gain_N@10": -0.0033178031855360325,
+      "selection_rate": 0.04,
+      "selected_counts": {
+       "fallback": 48,
+       "BGE-Dense::citation:0.10": 2
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 48,
+       "harmed": 2
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 2
+      },
+      "wilcoxon_p_two_sided": 0.17971249487899976
+     },
+     "k_half": {
+      "N@10": 0.7578350423643588,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+       "fallback": 50
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 50,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0
+     },
+     "k_double": {
+      "N@10": 0.7578350423643588,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+       "fallback": 50
+      },
+      "outcomes_all": {
+       "improved": 0,
+       "unchanged": 50,
+       "harmed": 0
+      },
+      "outcomes_active": {
+       "improved": 0,
+       "unchanged": 0,
+       "harmed": 0
+      },
+      "wilcoxon_p_two_sided": 1.0
+     }
+    },
+    "wilcoxon_p_holm_two_sided": 1.0
+   }
+  },
+  "macro": {
+   "fallback_N@10": 0.5056900012705519,
+   "biblioguard_N@10": 0.5101613035048199,
+   "gain_N@10": 0.004471302234268025
+  }
+ },
  "primary_tests": [
   {
    "dataset": "scidocs",
-   "test": "CA-HR vs BM25 | N@10",
-   "p_raw": 6.690501972335169e-48,
-   "d": 0.4752999979127741,
-   "p_holm": 1.070480315573627e-46
-  },
-  {
-   "dataset": "scidocs",
-   "test": "CA-HR vs SBERT-Dense | N@10",
-   "p_raw": 0.9999999941306923,
-   "d": -0.1868183014016634,
-   "p_holm": 1.0
-  },
-  {
-   "dataset": "scidocs",
-   "test": "CA-HR vs Neural-Hybrid | N@10",
-   "p_raw": 0.9977908088828512,
-   "d": -0.09788378350956063,
-   "p_holm": 1.0
-  },
-  {
-   "dataset": "scidocs",
-   "test": "BGE-CA-HR vs BGE-Hybrid | N@10",
-   "p_raw": 0.9240994963660204,
-   "d": -0.05873021535883005,
-   "p_holm": 1.0
+   "test": "BiblioGuard vs strong fallback | N@10",
+   "p_raw": 6.871541895436006e-20,
+   "d": 0.28325647884835087,
+   "biblioguard": 0.2342867645875933,
+   "base": 0.2164015556505212,
+   "selection_rate": 0.493,
+   "p_holm": 2.7486167581744026e-19
   },
   {
    "dataset": "scifact",
-   "test": "CA-HR vs BM25 | N@10",
-   "p_raw": 1.282765896415287e-09,
-   "d": 0.345458487093915,
-   "p_holm": 1.9241488446229305e-08
-  },
-  {
-   "dataset": "scifact",
-   "test": "CA-HR vs SBERT-Dense | N@10",
-   "p_raw": 0.0001309700431852326,
-   "d": 0.20134839818388534,
-   "p_holm": 0.0014406704750375586
-  },
-  {
-   "dataset": "scifact",
-   "test": "CA-HR vs Neural-Hybrid | N@10",
-   "p_raw": 0.84614899883436,
-   "d": -0.04828107699808995,
-   "p_holm": 1.0
-  },
-  {
-   "dataset": "scifact",
-   "test": "BGE-CA-HR vs BGE-Hybrid | N@10",
-   "p_raw": 0.563000137611143,
-   "d": -0.0069985637497967075,
+   "test": "BiblioGuard vs strong fallback | N@10",
+   "p_raw": 1.0,
+   "d": 0.0,
+   "biblioguard": 0.6997821575711919,
+   "base": 0.6997821575711919,
+   "selection_rate": 0.0,
    "p_holm": 1.0
   },
   {
    "dataset": "nfcorpus",
-   "test": "CA-HR vs BM25 | N@10",
-   "p_raw": 3.179075880526528e-09,
-   "d": 0.31797976730795957,
-   "p_holm": 4.4507062327371394e-08
-  },
-  {
-   "dataset": "nfcorpus",
-   "test": "CA-HR vs SBERT-Dense | N@10",
-   "p_raw": 0.13582351623570077,
-   "d": 0.09299354458482653,
-   "p_holm": 1.0
-  },
-  {
-   "dataset": "nfcorpus",
-   "test": "CA-HR vs Neural-Hybrid | N@10",
-   "p_raw": 0.9997777153396615,
-   "d": -0.17676184224798053,
-   "p_holm": 1.0
-  },
-  {
-   "dataset": "nfcorpus",
-   "test": "BGE-CA-HR vs BGE-Hybrid | N@10",
-   "p_raw": 0.9999774406379054,
-   "d": -0.21342819571474356,
+   "test": "BiblioGuard vs strong fallback | N@10",
+   "p_raw": 1.0,
+   "d": 0.0,
+   "biblioguard": 0.34874124949613544,
+   "base": 0.34874124949613544,
+   "selection_rate": 0.0,
    "p_holm": 1.0
   },
   {
    "dataset": "trec-covid",
-   "test": "CA-HR vs BM25 | N@10",
-   "p_raw": 1.3670815556920957e-05,
-   "d": 0.6653288968450869,
-   "p_holm": 0.00017772060223997244
-  },
-  {
-   "dataset": "trec-covid",
-   "test": "CA-HR vs SBERT-Dense | N@10",
-   "p_raw": 2.6189793389587792e-05,
-   "d": 0.6961756258880134,
-   "p_holm": 0.0003142775206750535
-  },
-  {
-   "dataset": "trec-covid",
-   "test": "CA-HR vs Neural-Hybrid | N@10",
-   "p_raw": 0.8472005294725982,
-   "d": -0.19534574132337224,
-   "p_holm": 1.0
-  },
-  {
-   "dataset": "trec-covid",
-   "test": "BGE-CA-HR vs BGE-Hybrid | N@10",
-   "p_raw": 0.9598330895547084,
-   "d": -0.2890024779697928,
+   "test": "BiblioGuard vs strong fallback | N@10",
+   "p_raw": 1.0,
+   "d": 0.0,
+   "biblioguard": 0.7578350423643588,
+   "base": 0.7578350423643588,
+   "selection_rate": 0.0,
    "p_holm": 1.0
   }
  ]

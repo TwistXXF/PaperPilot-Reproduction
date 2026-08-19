@@ -4,8 +4,8 @@
 PaperPilot reproduction pipeline
 ================================
 Reproduces every number, table, and figure in:
-  "Adaptive Retrieval-Augmented Generation for Scientific Literature Analysis:
-   A Cross-Domain Evaluation with Real Citation Metadata"
+  "BiblioGuard: Selective bibliographic metadata intervention for
+   multi-domain scientific retrieval-augmented generation"
 
 Usage:
     python reproduce.py <stage> [dataset]
@@ -25,6 +25,9 @@ Stages (in pipeline order):
     robust      Query word-drop noise robustness (10-40%)
     router      PAV-Agent 5-fold CV routing analysis
     sensitivity BGE-CA-HR beta x gamma grid + RRF baselines
+    biblioguard_actions Confound-free same-content metadata action archives
+    biblioguard Pessimistic cross-fitted metadata intervention policy
+    biblioguard_transfer Official train-to-test transfer on SciFact/NFCorpus
     diagnostics Bibliographic metadata diagnostics (citation-relevance AUC)
     eswa_tables Consolidate everything into results/eswa_tables.json
     eswa_figs   Regenerate the manuscript figures (Fig. 2-5)
@@ -777,6 +780,34 @@ def stage_sensitivity(datasets=ALL_DS):
 
 
 # =====================================================================
+# Stage: confound-free BiblioGuard action outcomes
+# =====================================================================
+def stage_biblioguard_actions(datasets=ALL_DS):
+    import biblioguard_actions
+    for dataset in datasets:
+        biblioguard_actions.generate(dataset)
+    for dataset in datasets:
+        if dataset in ('scifact', 'nfcorpus'):
+            biblioguard_actions.generate(dataset, split='train')
+
+
+# =====================================================================
+# Stage: BiblioGuard pessimistic metadata intervention
+# =====================================================================
+def stage_biblioguard():
+    import biblioguard
+    biblioguard.main()
+
+
+# =====================================================================
+# Stage: official train-to-test BiblioGuard transfer
+# =====================================================================
+def stage_biblioguard_transfer():
+    import biblioguard_transfer
+    biblioguard_transfer.main()
+
+
+# =====================================================================
 # Stage: metadata diagnostics
 # =====================================================================
 def stage_diagnostics():
@@ -796,7 +827,8 @@ def stage_eswa_tables():
 # Stage: manuscript figures (Fig. 2-5)
 # =====================================================================
 def stage_eswa_figs():
-    import make_eswa_figs  # noqa: F401  (module-level code draws the figures)
+    import make_biblioguard_figs
+    make_biblioguard_figs.main()
 
 
 # =====================================================================
@@ -905,6 +937,9 @@ STAGES = {
     'robust': stage_robust,
     'router': stage_router,
     'sensitivity': stage_sensitivity,
+    'biblioguard_actions': stage_biblioguard_actions,
+    'biblioguard': stage_biblioguard,
+    'biblioguard_transfer': stage_biblioguard_transfer,
     'diagnostics': stage_diagnostics,
     'eswa_tables': stage_eswa_tables,
     'eswa_figs': stage_eswa_figs,
@@ -912,7 +947,8 @@ STAGES = {
     'figures': stage_figures,
 }
 ORDER = ['download', 'metadata', 'encode', 'retrieval', 'bge', 'tables',
-         'ablation', 'robust', 'router', 'sensitivity', 'diagnostics',
+         'ablation', 'robust', 'router', 'sensitivity', 'biblioguard_actions',
+         'biblioguard', 'biblioguard_transfer', 'diagnostics',
          'eswa_tables', 'eswa_figs']
 
 if __name__ == '__main__':
@@ -930,7 +966,8 @@ if __name__ == '__main__':
         #   python reproduce.py robust scidocs
         if len(sys.argv) > 2 and stage in ('encode', 'retrieval', 'bge',
                                            'tables', 'ablation', 'robust',
-                                           'router', 'sensitivity'):
+                                           'router', 'sensitivity',
+                                           'biblioguard_actions'):
             STAGES[stage](datasets=(sys.argv[2],))
         else:
             STAGES[stage]()
