@@ -154,23 +154,28 @@ def main():
             combo.pop('_pq', None)
     out['sensitivity'] = sens
 
-    # Confidence-gated, five-fold cross-fitted metadata intervention results.
+    # Pessimistic, five-fold cross-fitted metadata intervention results.
     bg = json.load(open(os.path.join(R3, 'biblioguard_results.json')))
     out['biblioguard'] = bg
 
     # ---- primary comparison family with Holm-Bonferroni correction --------
-    # Pre-specified revised-paper family: BiblioGuard vs. its metadata-free
-    # BGE-Hybrid fallback on NDCG@10, once per dataset (four tests).
+    # Pre-specified revised-paper family: BiblioGuard vs. the training-fold
+    # selected strong content fallback on NDCG@10, once per dataset.
     primary = []
     for ds in DS_META:
         row = bg['results'][ds]
+        archive = np.load(os.path.join(R3, f'{ds}_biblioguard_perquery.npz'),
+                          allow_pickle=True)
+        difference = (archive['BiblioGuard||N@10'].astype(float)
+                      - archive['Fallback||N@10'].astype(float))
+        sd = float(difference.std(ddof=1))
         primary.append({
             'dataset': ds,
-            'test': 'BiblioGuard vs BGE-Hybrid | N@10',
-            'p_raw': row['wilcoxon_p_greater'],
-            'd': row['paired_cohen_d'],
+            'test': 'BiblioGuard vs strong fallback | N@10',
+            'p_raw': row['wilcoxon_p_two_sided'],
+            'd': float(difference.mean() / sd) if sd > 1e-12 else 0.0,
             'biblioguard': row['biblioguard_N@10'],
-            'base': row['baseline_N@10'],
+            'base': row['fallback_N@10'],
             'selection_rate': row['selection_rate'],
         })
     m = len(primary)
