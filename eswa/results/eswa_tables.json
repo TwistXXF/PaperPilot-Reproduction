@@ -1724,142 +1724,46 @@
  "robust": {
   "scidocs": {
    "0.1": {
-    "BM25": {
-     "R@10": 0.1365,
-     "N@10": 0.13696413123803156,
-     "MRR": 0.26188657463572246
-    },
-    "Neural-Hybrid": {
-     "R@10": 0.123,
-     "N@10": 0.11612801600906371,
-     "MRR": 0.21375107562395027
-    },
-    "CA-HR": {
-     "R@10": 0.14166666666666664,
-     "N@10": 0.1368568011097233,
-     "MRR": 0.2537588821884836
-    }
+    "BM25": 0.1365,
+    "Neural-Hybrid": 0.19133333333333333,
+    "CA-HR": 0.186
    },
    "0.2": {
-    "BM25": {
-     "R@10": 0.13349999999999998,
-     "N@10": 0.13005955382138681,
-     "MRR": 0.24492180318018672
-    },
-    "Neural-Hybrid": {
-     "R@10": 0.10866666666666668,
-     "N@10": 0.10496027561033307,
-     "MRR": 0.1943603657944289
-    },
-    "CA-HR": {
-     "R@10": 0.12983333333333336,
-     "N@10": 0.1256826661560943,
-     "MRR": 0.2351171438094217
-    }
+    "BM25": 0.13349999999999998,
+    "Neural-Hybrid": 0.18016666666666667,
+    "CA-HR": 0.177
    },
    "0.3": {
-    "BM25": {
-     "R@10": 0.12083333333333333,
-     "N@10": 0.11787142564278855,
-     "MRR": 0.22395502491070288
-    },
-    "Neural-Hybrid": {
-     "R@10": 0.1165,
-     "N@10": 0.1064738431154719,
-     "MRR": 0.19047814480651817
-    },
-    "CA-HR": {
-     "R@10": 0.13516666666666666,
-     "N@10": 0.12385998958169182,
-     "MRR": 0.21864317620123255
-    }
+    "BM25": 0.12083333333333333,
+    "Neural-Hybrid": 0.15877777777777777,
+    "CA-HR": 0.15783333333333333
    },
    "0.4": {
-    "BM25": {
-     "R@10": 0.1185,
-     "N@10": 0.11145588252530957,
-     "MRR": 0.20506154683333475
-    },
-    "Neural-Hybrid": {
-     "R@10": 0.09899999999999999,
-     "N@10": 0.08873470971943934,
-     "MRR": 0.16673230445336354
-    },
-    "CA-HR": {
-     "R@10": 0.11816666666666666,
-     "N@10": 0.10792893081842668,
-     "MRR": 0.20266925816125655
-    }
+    "BM25": 0.1185,
+    "Neural-Hybrid": 0.15449999999999997,
+    "CA-HR": 0.15216666666666667
    }
   },
   "scifact": {
    "0.1": {
-    "BM25": {
-     "R@10": 0.7547222222222222,
-     "N@10": 0.6159572612814718,
-     "MRR": 0.5829609219916853
-    },
-    "Neural-Hybrid": {
-     "R@10": 0.8081666666666666,
-     "N@10": 0.680526106888215,
-     "MRR": 0.6510453280973753
-    },
-    "CA-HR": {
-     "R@10": 0.8053888888888889,
-     "N@10": 0.6705252271806579,
-     "MRR": 0.639782258696758
-    }
+    "BM25": 0.7547222222222222,
+    "Neural-Hybrid": 0.8081666666666666,
+    "CA-HR": 0.8053888888888889
    },
    "0.2": {
-    "BM25": {
-     "R@10": 0.7241666666666666,
-     "N@10": 0.5898503779136686,
-     "MRR": 0.5564749707308656
-    },
-    "Neural-Hybrid": {
-     "R@10": 0.7742777777777778,
-     "N@10": 0.641851672840083,
-     "MRR": 0.6107187299582726
-    },
-    "CA-HR": {
-     "R@10": 0.7652777777777778,
-     "N@10": 0.6336031739113354,
-     "MRR": 0.6023893481222755
-    }
+    "BM25": 0.7241666666666666,
+    "Neural-Hybrid": 0.7742777777777778,
+    "CA-HR": 0.7652777777777778
    },
    "0.3": {
-    "BM25": {
-     "R@10": 0.7017777777777777,
-     "N@10": 0.5697005260658775,
-     "MRR": 0.541030459287199
-    },
-    "Neural-Hybrid": {
-     "R@10": 0.7557777777777779,
-     "N@10": 0.6207510713992764,
-     "MRR": 0.5898709117676414
-    },
-    "CA-HR": {
-     "R@10": 0.7509444444444444,
-     "N@10": 0.6212253741425148,
-     "MRR": 0.592993398972385
-    }
+    "BM25": 0.7017777777777777,
+    "Neural-Hybrid": 0.7557777777777779,
+    "CA-HR": 0.7509444444444444
    },
    "0.4": {
-    "BM25": {
-     "R@10": 0.6696666666666666,
-     "N@10": 0.5305286219551832,
-     "MRR": 0.4955656363288896
-    },
-    "Neural-Hybrid": {
-     "R@10": 0.7072777777777778,
-     "N@10": 0.5690782569830105,
-     "MRR": 0.5347702162767909
-    },
-    "CA-HR": {
-     "R@10": 0.6922777777777778,
-     "N@10": 0.5639554462707986,
-     "MRR": 0.5325617032896471
-    }
+    "BM25": 0.6696666666666666,
+    "Neural-Hybrid": 0.7072777777777778,
+    "CA-HR": 0.6922777777777778
    }
   },
   "nfcorpus": {
@@ -3316,117 +3220,243 @@
    }
   }
  },
+ "biblioguard": {
+  "method": "BiblioGuard",
+  "protocol": "five-fold cross-fitted paired treatment-effect routing",
+  "results": {
+   "scidocs": {
+    "dataset": "scidocs",
+    "n_queries": 1000,
+    "n_splits": 5,
+    "family_alpha": 0.05,
+    "n_actions": 9,
+    "actions": [
+     "beta=0.0|gamma=0.05",
+     "beta=0.0|gamma=0.1",
+     "beta=0.0|gamma=0.15",
+     "beta=0.0|gamma=0.2",
+     "beta=0.05|gamma=0.0",
+     "beta=0.1|gamma=0.0",
+     "beta=0.15|gamma=0.0",
+     "beta=0.2|gamma=0.0",
+     "beta=0.3|gamma=0.0"
+    ],
+    "neighbour_rule": "ceil(sqrt(n_training_queries))",
+    "baseline_N@10": 0.18321345952632037,
+    "biblioguard_N@10": 0.1881333805716126,
+    "gain_N@10": 0.004919921045292215,
+    "selection_rate": 0.187,
+    "selected_counts": {
+     "baseline": 813,
+     "beta=0.3|gamma=0.0": 141,
+     "beta=0.2|gamma=0.0": 39,
+     "beta=0.15|gamma=0.0": 7
+    },
+    "wilcoxon_p_greater": 3.221218409192316e-07,
+    "wilcoxon_p_two_sided": 6.442436818384632e-07,
+    "paired_cohen_d": 0.1393932891403354,
+    "ablation_unconstrained": {
+     "N@10": 0.20681236295109745,
+     "gain_N@10": 0.02359890342477708,
+     "selection_rate": 0.968,
+     "selected_counts": {
+      "beta=0.3|gamma=0.0": 853,
+      "beta=0.2|gamma=0.0": 84,
+      "baseline": 32,
+      "beta=0.1|gamma=0.0": 4,
+      "beta=0.15|gamma=0.0": 24,
+      "beta=0.0|gamma=0.05": 1,
+      "beta=0.05|gamma=0.0": 2
+     }
+    },
+    "wilcoxon_p_holm": 1.2884873636769263e-06
+   },
+   "scifact": {
+    "dataset": "scifact",
+    "n_queries": 300,
+    "n_splits": 5,
+    "family_alpha": 0.05,
+    "n_actions": 9,
+    "actions": [
+     "beta=0.0|gamma=0.05",
+     "beta=0.0|gamma=0.1",
+     "beta=0.0|gamma=0.15",
+     "beta=0.0|gamma=0.2",
+     "beta=0.05|gamma=0.0",
+     "beta=0.1|gamma=0.0",
+     "beta=0.15|gamma=0.0",
+     "beta=0.2|gamma=0.0",
+     "beta=0.3|gamma=0.0"
+    ],
+    "neighbour_rule": "ceil(sqrt(n_training_queries))",
+    "baseline_N@10": 0.7101019570935004,
+    "biblioguard_N@10": 0.7101019570935004,
+    "gain_N@10": 0.0,
+    "selection_rate": 0.0,
+    "selected_counts": {
+     "baseline": 300
+    },
+    "wilcoxon_p_greater": 1.0,
+    "wilcoxon_p_two_sided": 1.0,
+    "paired_cohen_d": 0.0,
+    "ablation_unconstrained": {
+     "N@10": 0.7100706115811966,
+     "gain_N@10": -3.134551230387454e-05,
+     "selection_rate": 0.6733333333333333,
+     "selected_counts": {
+      "baseline": 98,
+      "beta=0.0|gamma=0.2": 46,
+      "beta=0.15|gamma=0.0": 7,
+      "beta=0.3|gamma=0.0": 37,
+      "beta=0.2|gamma=0.0": 15,
+      "beta=0.1|gamma=0.0": 17,
+      "beta=0.0|gamma=0.15": 20,
+      "beta=0.0|gamma=0.05": 15,
+      "beta=0.05|gamma=0.0": 19,
+      "beta=0.0|gamma=0.1": 26
+     }
+    },
+    "wilcoxon_p_holm": 1.0
+   },
+   "nfcorpus": {
+    "dataset": "nfcorpus",
+    "n_queries": 323,
+    "n_splits": 5,
+    "family_alpha": 0.05,
+    "n_actions": 9,
+    "actions": [
+     "beta=0.0|gamma=0.05",
+     "beta=0.0|gamma=0.1",
+     "beta=0.0|gamma=0.15",
+     "beta=0.0|gamma=0.2",
+     "beta=0.05|gamma=0.0",
+     "beta=0.1|gamma=0.0",
+     "beta=0.15|gamma=0.0",
+     "beta=0.2|gamma=0.0",
+     "beta=0.3|gamma=0.0"
+    ],
+    "neighbour_rule": "ceil(sqrt(n_training_queries))",
+    "baseline_N@10": 0.34874124949613544,
+    "biblioguard_N@10": 0.34874124949613544,
+    "gain_N@10": 0.0,
+    "selection_rate": 0.0,
+    "selected_counts": {
+     "baseline": 323
+    },
+    "wilcoxon_p_greater": 1.0,
+    "wilcoxon_p_two_sided": 1.0,
+    "paired_cohen_d": 0.0,
+    "ablation_unconstrained": {
+     "N@10": 0.34535287612914484,
+     "gain_N@10": -0.0033883733669906185,
+     "selection_rate": 0.4582043343653251,
+     "selected_counts": {
+      "baseline": 175,
+      "beta=0.1|gamma=0.0": 41,
+      "beta=0.05|gamma=0.0": 12,
+      "beta=0.0|gamma=0.05": 29,
+      "beta=0.15|gamma=0.0": 29,
+      "beta=0.3|gamma=0.0": 13,
+      "beta=0.0|gamma=0.15": 3,
+      "beta=0.2|gamma=0.0": 8,
+      "beta=0.0|gamma=0.1": 4,
+      "beta=0.0|gamma=0.2": 9
+     }
+    },
+    "wilcoxon_p_holm": 1.0
+   },
+   "trec-covid": {
+    "dataset": "trec-covid",
+    "n_queries": 50,
+    "n_splits": 5,
+    "family_alpha": 0.05,
+    "n_actions": 9,
+    "actions": [
+     "beta=0.0|gamma=0.05",
+     "beta=0.0|gamma=0.1",
+     "beta=0.0|gamma=0.15",
+     "beta=0.0|gamma=0.2",
+     "beta=0.05|gamma=0.0",
+     "beta=0.1|gamma=0.0",
+     "beta=0.15|gamma=0.0",
+     "beta=0.2|gamma=0.0",
+     "beta=0.3|gamma=0.0"
+    ],
+    "neighbour_rule": "ceil(sqrt(n_training_queries))",
+    "baseline_N@10": 0.7115096634595705,
+    "biblioguard_N@10": 0.7115096634595705,
+    "gain_N@10": 0.0,
+    "selection_rate": 0.0,
+    "selected_counts": {
+     "baseline": 50
+    },
+    "wilcoxon_p_greater": 1.0,
+    "wilcoxon_p_two_sided": 1.0,
+    "paired_cohen_d": 0.0,
+    "ablation_unconstrained": {
+     "N@10": 0.700026435076381,
+     "gain_N@10": -0.011483228383189461,
+     "selection_rate": 0.54,
+     "selected_counts": {
+      "baseline": 23,
+      "beta=0.1|gamma=0.0": 6,
+      "beta=0.0|gamma=0.2": 10,
+      "beta=0.2|gamma=0.0": 1,
+      "beta=0.0|gamma=0.15": 3,
+      "beta=0.3|gamma=0.0": 3,
+      "beta=0.0|gamma=0.05": 1,
+      "beta=0.0|gamma=0.1": 2,
+      "beta=0.15|gamma=0.0": 1
+     }
+    },
+    "wilcoxon_p_holm": 1.0
+   }
+  },
+  "macro": {
+   "baseline_N@10": 0.4883915823938817,
+   "biblioguard_N@10": 0.48962156265520473,
+   "gain_N@10": 0.0012299802613230538
+  }
+ },
  "primary_tests": [
   {
    "dataset": "scidocs",
-   "test": "CA-HR vs BM25 | N@10",
-   "p_raw": 6.690501972335169e-48,
-   "d": 0.4752999979127741,
-   "p_holm": 1.070480315573627e-46
-  },
-  {
-   "dataset": "scidocs",
-   "test": "CA-HR vs SBERT-Dense | N@10",
-   "p_raw": 0.9999999941306923,
-   "d": -0.1868183014016634,
-   "p_holm": 1.0
-  },
-  {
-   "dataset": "scidocs",
-   "test": "CA-HR vs Neural-Hybrid | N@10",
-   "p_raw": 0.9977908088828512,
-   "d": -0.09788378350956063,
-   "p_holm": 1.0
-  },
-  {
-   "dataset": "scidocs",
-   "test": "BGE-CA-HR vs BGE-Hybrid | N@10",
-   "p_raw": 0.9240994963660204,
-   "d": -0.05873021535883005,
-   "p_holm": 1.0
+   "test": "BiblioGuard vs BGE-Hybrid | N@10",
+   "p_raw": 3.221218409192316e-07,
+   "d": 0.1393932891403354,
+   "biblioguard": 0.1881333805716126,
+   "base": 0.18321345952632037,
+   "selection_rate": 0.187,
+   "p_holm": 1.2884873636769263e-06
   },
   {
    "dataset": "scifact",
-   "test": "CA-HR vs BM25 | N@10",
-   "p_raw": 1.282765896415287e-09,
-   "d": 0.345458487093915,
-   "p_holm": 1.9241488446229305e-08
-  },
-  {
-   "dataset": "scifact",
-   "test": "CA-HR vs SBERT-Dense | N@10",
-   "p_raw": 0.0001309700431852326,
-   "d": 0.20134839818388534,
-   "p_holm": 0.0014406704750375586
-  },
-  {
-   "dataset": "scifact",
-   "test": "CA-HR vs Neural-Hybrid | N@10",
-   "p_raw": 0.84614899883436,
-   "d": -0.04828107699808995,
-   "p_holm": 1.0
-  },
-  {
-   "dataset": "scifact",
-   "test": "BGE-CA-HR vs BGE-Hybrid | N@10",
-   "p_raw": 0.563000137611143,
-   "d": -0.0069985637497967075,
+   "test": "BiblioGuard vs BGE-Hybrid | N@10",
+   "p_raw": 1.0,
+   "d": 0.0,
+   "biblioguard": 0.7101019570935004,
+   "base": 0.7101019570935004,
+   "selection_rate": 0.0,
    "p_holm": 1.0
   },
   {
    "dataset": "nfcorpus",
-   "test": "CA-HR vs BM25 | N@10",
-   "p_raw": 3.179075880526528e-09,
-   "d": 0.31797976730795957,
-   "p_holm": 4.4507062327371394e-08
-  },
-  {
-   "dataset": "nfcorpus",
-   "test": "CA-HR vs SBERT-Dense | N@10",
-   "p_raw": 0.13582351623570077,
-   "d": 0.09299354458482653,
-   "p_holm": 1.0
-  },
-  {
-   "dataset": "nfcorpus",
-   "test": "CA-HR vs Neural-Hybrid | N@10",
-   "p_raw": 0.9997777153396615,
-   "d": -0.17676184224798053,
-   "p_holm": 1.0
-  },
-  {
-   "dataset": "nfcorpus",
-   "test": "BGE-CA-HR vs BGE-Hybrid | N@10",
-   "p_raw": 0.9999774406379054,
-   "d": -0.21342819571474356,
+   "test": "BiblioGuard vs BGE-Hybrid | N@10",
+   "p_raw": 1.0,
+   "d": 0.0,
+   "biblioguard": 0.34874124949613544,
+   "base": 0.34874124949613544,
+   "selection_rate": 0.0,
    "p_holm": 1.0
   },
   {
    "dataset": "trec-covid",
-   "test": "CA-HR vs BM25 | N@10",
-   "p_raw": 1.3670815556920957e-05,
-   "d": 0.6653288968450869,
-   "p_holm": 0.00017772060223997244
-  },
-  {
-   "dataset": "trec-covid",
-   "test": "CA-HR vs SBERT-Dense | N@10",
-   "p_raw": 2.6189793389587792e-05,
-   "d": 0.6961756258880134,
-   "p_holm": 0.0003142775206750535
-  },
-  {
-   "dataset": "trec-covid",
-   "test": "CA-HR vs Neural-Hybrid | N@10",
-   "p_raw": 0.8472005294725982,
-   "d": -0.19534574132337224,
-   "p_holm": 1.0
-  },
-  {
-   "dataset": "trec-covid",
-   "test": "BGE-CA-HR vs BGE-Hybrid | N@10",
-   "p_raw": 0.9598330895547084,
-   "d": -0.2890024779697928,
+   "test": "BiblioGuard vs BGE-Hybrid | N@10",
+   "p_raw": 1.0,
+   "d": 0.0,
+   "biblioguard": 0.7115096634595705,
+   "base": 0.7115096634595705,
+   "selection_rate": 0.0,
    "p_holm": 1.0
   }
  ]

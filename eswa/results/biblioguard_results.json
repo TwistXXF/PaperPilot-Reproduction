@@ -1,0 +1,198 @@
+{
+  "method": "BiblioGuard",
+  "protocol": "five-fold cross-fitted paired treatment-effect routing",
+  "results": {
+    "scidocs": {
+      "dataset": "scidocs",
+      "n_queries": 1000,
+      "n_splits": 5,
+      "family_alpha": 0.05,
+      "n_actions": 9,
+      "actions": [
+        "beta=0.0|gamma=0.05",
+        "beta=0.0|gamma=0.1",
+        "beta=0.0|gamma=0.15",
+        "beta=0.0|gamma=0.2",
+        "beta=0.05|gamma=0.0",
+        "beta=0.1|gamma=0.0",
+        "beta=0.15|gamma=0.0",
+        "beta=0.2|gamma=0.0",
+        "beta=0.3|gamma=0.0"
+      ],
+      "neighbour_rule": "ceil(sqrt(n_training_queries))",
+      "baseline_N@10": 0.18321345952632037,
+      "biblioguard_N@10": 0.1881333805716126,
+      "gain_N@10": 0.004919921045292215,
+      "selection_rate": 0.187,
+      "selected_counts": {
+        "baseline": 813,
+        "beta=0.3|gamma=0.0": 141,
+        "beta=0.2|gamma=0.0": 39,
+        "beta=0.15|gamma=0.0": 7
+      },
+      "wilcoxon_p_greater": 3.221218409192316e-07,
+      "wilcoxon_p_two_sided": 6.442436818384632e-07,
+      "paired_cohen_d": 0.1393932891403354,
+      "ablation_unconstrained": {
+        "N@10": 0.20681236295109745,
+        "gain_N@10": 0.02359890342477708,
+        "selection_rate": 0.968,
+        "selected_counts": {
+          "beta=0.3|gamma=0.0": 853,
+          "beta=0.2|gamma=0.0": 84,
+          "baseline": 32,
+          "beta=0.1|gamma=0.0": 4,
+          "beta=0.15|gamma=0.0": 24,
+          "beta=0.0|gamma=0.05": 1,
+          "beta=0.05|gamma=0.0": 2
+        }
+      },
+      "wilcoxon_p_holm": 1.2884873636769263e-06
+    },
+    "scifact": {
+      "dataset": "scifact",
+      "n_queries": 300,
+      "n_splits": 5,
+      "family_alpha": 0.05,
+      "n_actions": 9,
+      "actions": [
+        "beta=0.0|gamma=0.05",
+        "beta=0.0|gamma=0.1",
+        "beta=0.0|gamma=0.15",
+        "beta=0.0|gamma=0.2",
+        "beta=0.05|gamma=0.0",
+        "beta=0.1|gamma=0.0",
+        "beta=0.15|gamma=0.0",
+        "beta=0.2|gamma=0.0",
+        "beta=0.3|gamma=0.0"
+      ],
+      "neighbour_rule": "ceil(sqrt(n_training_queries))",
+      "baseline_N@10": 0.7101019570935004,
+      "biblioguard_N@10": 0.7101019570935004,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+        "baseline": 300
+      },
+      "wilcoxon_p_greater": 1.0,
+      "wilcoxon_p_two_sided": 1.0,
+      "paired_cohen_d": 0.0,
+      "ablation_unconstrained": {
+        "N@10": 0.7100706115811966,
+        "gain_N@10": -3.134551230387454e-05,
+        "selection_rate": 0.6733333333333333,
+        "selected_counts": {
+          "baseline": 98,
+          "beta=0.0|gamma=0.2": 46,
+          "beta=0.15|gamma=0.0": 7,
+          "beta=0.3|gamma=0.0": 37,
+          "beta=0.2|gamma=0.0": 15,
+          "beta=0.1|gamma=0.0": 17,
+          "beta=0.0|gamma=0.15": 20,
+          "beta=0.0|gamma=0.05": 15,
+          "beta=0.05|gamma=0.0": 19,
+          "beta=0.0|gamma=0.1": 26
+        }
+      },
+      "wilcoxon_p_holm": 1.0
+    },
+    "nfcorpus": {
+      "dataset": "nfcorpus",
+      "n_queries": 323,
+      "n_splits": 5,
+      "family_alpha": 0.05,
+      "n_actions": 9,
+      "actions": [
+        "beta=0.0|gamma=0.05",
+        "beta=0.0|gamma=0.1",
+        "beta=0.0|gamma=0.15",
+        "beta=0.0|gamma=0.2",
+        "beta=0.05|gamma=0.0",
+        "beta=0.1|gamma=0.0",
+        "beta=0.15|gamma=0.0",
+        "beta=0.2|gamma=0.0",
+        "beta=0.3|gamma=0.0"
+      ],
+      "neighbour_rule": "ceil(sqrt(n_training_queries))",
+      "baseline_N@10": 0.34874124949613544,
+      "biblioguard_N@10": 0.34874124949613544,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+        "baseline": 323
+      },
+      "wilcoxon_p_greater": 1.0,
+      "wilcoxon_p_two_sided": 1.0,
+      "paired_cohen_d": 0.0,
+      "ablation_unconstrained": {
+        "N@10": 0.34535287612914484,
+        "gain_N@10": -0.0033883733669906185,
+        "selection_rate": 0.4582043343653251,
+        "selected_counts": {
+          "baseline": 175,
+          "beta=0.1|gamma=0.0": 41,
+          "beta=0.05|gamma=0.0": 12,
+          "beta=0.0|gamma=0.05": 29,
+          "beta=0.15|gamma=0.0": 29,
+          "beta=0.3|gamma=0.0": 13,
+          "beta=0.0|gamma=0.15": 3,
+          "beta=0.2|gamma=0.0": 8,
+          "beta=0.0|gamma=0.1": 4,
+          "beta=0.0|gamma=0.2": 9
+        }
+      },
+      "wilcoxon_p_holm": 1.0
+    },
+    "trec-covid": {
+      "dataset": "trec-covid",
+      "n_queries": 50,
+      "n_splits": 5,
+      "family_alpha": 0.05,
+      "n_actions": 9,
+      "actions": [
+        "beta=0.0|gamma=0.05",
+        "beta=0.0|gamma=0.1",
+        "beta=0.0|gamma=0.15",
+        "beta=0.0|gamma=0.2",
+        "beta=0.05|gamma=0.0",
+        "beta=0.1|gamma=0.0",
+        "beta=0.15|gamma=0.0",
+        "beta=0.2|gamma=0.0",
+        "beta=0.3|gamma=0.0"
+      ],
+      "neighbour_rule": "ceil(sqrt(n_training_queries))",
+      "baseline_N@10": 0.7115096634595705,
+      "biblioguard_N@10": 0.7115096634595705,
+      "gain_N@10": 0.0,
+      "selection_rate": 0.0,
+      "selected_counts": {
+        "baseline": 50
+      },
+      "wilcoxon_p_greater": 1.0,
+      "wilcoxon_p_two_sided": 1.0,
+      "paired_cohen_d": 0.0,
+      "ablation_unconstrained": {
+        "N@10": 0.700026435076381,
+        "gain_N@10": -0.011483228383189461,
+        "selection_rate": 0.54,
+        "selected_counts": {
+          "baseline": 23,
+          "beta=0.1|gamma=0.0": 6,
+          "beta=0.0|gamma=0.2": 10,
+          "beta=0.2|gamma=0.0": 1,
+          "beta=0.0|gamma=0.15": 3,
+          "beta=0.3|gamma=0.0": 3,
+          "beta=0.0|gamma=0.05": 1,
+          "beta=0.0|gamma=0.1": 2,
+          "beta=0.15|gamma=0.0": 1
+        }
+      },
+      "wilcoxon_p_holm": 1.0
+    }
+  },
+  "macro": {
+    "baseline_N@10": 0.4883915823938817,
+    "biblioguard_N@10": 0.48962156265520473,
+    "gain_N@10": 0.0012299802613230538
+  }
+}

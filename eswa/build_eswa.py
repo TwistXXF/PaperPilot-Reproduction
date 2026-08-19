@@ -20,6 +20,7 @@ import shutil
 from docx import Document
 from docx.shared import Pt, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml import OxmlElement
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.normpath(os.path.join(BASE, '..', 'ESWA_submission'))
@@ -42,9 +43,8 @@ REPO = 'https://github.com/TwistXXF/PaperPilot-Reproduction'
 DOI = '10.5281/zenodo.21930729'
 SITE = 'https://xxfpaperpilot.cn'
 
-TITLE = ('When does bibliographic metadata help scientific retrieval-augmented '
-         'generation? A four-domain evaluation of metadata-aware hybrid '
-         'retrieval with a deployed academic writing assistant')
+TITLE = ('BiblioGuard: Confidence-gated bibliographic metadata intervention '
+         'for cross-domain scientific retrieval-augmented generation')
 
 
 def f4(x):
@@ -88,7 +88,7 @@ def h2(doc, t):
     p(doc, t, bold=True, size=11)
 
 
-def add_table(doc, headers, rows):
+def add_table(doc, headers, rows, font_size=8):
     t = doc.add_table(rows=1 + len(rows), cols=len(headers))
     t.style = 'Table Grid'
     for j, htxt in enumerate(headers):
@@ -96,13 +96,19 @@ def add_table(doc, headers, rows):
         c.text = htxt
         for r in c.paragraphs[0].runs:
             r.bold = True
-            r.font.size = Pt(8)
+            r.font.size = Pt(font_size)
     for i, row in enumerate(rows):
         for j, v in enumerate(row):
             c = t.rows[i + 1].cells[j]
             c.text = str(v)
             for r in c.paragraphs[0].runs:
-                r.font.size = Pt(8)
+                r.font.size = Pt(font_size)
+    for index, row in enumerate(t.rows):
+        row._tr.get_or_add_trPr().append(OxmlElement('w:cantSplit'))
+        if index == 0:
+            row._tr.get_or_add_trPr().append(OxmlElement('w:tblHeader'))
+    doc.add_paragraph()
+    return t
 
 
 # convenient accessors ------------------------------------------------------
@@ -114,12 +120,10 @@ def abl(ds, variant, k='N@10'):
     return T['ablation'][ds][variant][k]
 
 
-def holm(ds, test):
-    """Holm-Bonferroni-adjusted p of a pre-specified primary comparison."""
-    for t in T['primary_tests']:
-        if t['dataset'] == ds and t['test'] == test:
-            return t['p_holm']
-    raise KeyError(test)
+def robust_n10(ds, noise, method):
+    """Read both legacy scalar and metric-dictionary robustness formats."""
+    value = T['robust'][ds][noise][method]
+    return float(value['N@10'] if isinstance(value, dict) else value)
 
 
 # ===========================================================================
@@ -154,13 +158,11 @@ def build_highlights():
     d = new_doc()
     p(d, 'Highlights', bold=True, size=13)
     hl = [
-        'Ten retrieval configurations are evaluated across four scientific '
-        'domains.',
-        'BGE-based retrieval leads on three domains, but no method wins '
-        'everywhere.',
-        'Citation priors help only when citation counts predict relevance.',
-        'A surface-feature router fails to recover per-query oracle gains.',
-        'Answer quality is stable across backends on 200 paired queries.',
+        'BiblioGuard learns paired query-level gains for nine metadata actions.',
+        'Simultaneous lower bounds gate interventions and otherwise abstain.',
+        'Five-fold cross-fitting separates every decision from held-out qrels.',
+        'SCIDOCS NDCG@10 rises by 0.0049; BiblioGuard abstains elsewhere.',
+        'Removing confidence gating causes negative transfer in three domains.',
     ]
     for x in hl:
         par = d.add_paragraph(style='List Bullet')
@@ -178,134 +180,106 @@ def build_manuscript():
 
     # ---- Abstract ---------------------------------------------------------
     g = T['generation']
+    BG = T['biblioguard']['results']
     h1(d, 'Abstract')
     p(d,
-      'Retrieval-augmented generation (RAG) systems for scientific '
-      'literature often ship one static retrieval configuration, yet '
-      'whether one is optimal across research domains—and '
-      'whether bibliographic metadata should influence ranking—remains '
-      'insufficiently quantified. We evaluate ten retrieval '
-      'configurations—BM25, latent semantic analysis, two pretrained dense '
-      'encoders, equal-weight hybrid fusion, and metadata-aware variants '
-      '(UMA-RAG, LP-RAG, and a citation- and recency-aware re-ranker, '
-      'CA-HR)—on SCIDOCS, SciFact, NFCorpus, and '
-      'TREC-COVID (3,633 to 171,332 documents; 1,673 queries), using real '
-      'citation counts, years, and venues from Semantic '
-      'Scholar and OpenAlex (coverage 69.8%-99.7%). Three findings '
-      'emerge. First, the optimal strategy is domain-dependent: '
-      'no configuration wins everywhere. Second, citation-aware signals '
-      'help only where citation authority predicts relevance (on SCIDOCS, '
-      'relevant documents carry a median of 566 citations versus 71 for '
-      'non-relevant ones; AUC 0.798), are neutral where the association is '
-      'weak, mildly harmful where citations are uninformative or '
-      'inversely associated with relevance (AUC 0.498 and 0.461); the gain '
-      'on the weaker MiniLM backbone does not transfer to the stronger BGE '
-      'backbone under fixed hyperparameters, and a 30-combination weight '
-      'sweep recovers it only on the citation-informative corpus. Third, '
-      'per-query strategy selection offers little recoverable headroom: a '
-      '12-feature logistic router does not exceed majority-class behaviour '
-      'on any dataset (kappa near 0). On 200 paired '
-      'queries, answer relevance and faithfulness are statistically '
-      'indistinguishable between the hybrid and metadata-aware backends. '
-      'The pipeline is deployed in a live academic writing assistant '
-      '(anonymized for review); we report a one-month pilot '
-      'deployment. Data, code, and per-query results are released '
-      'through an anonymized repository.')
+      'Bibliographic metadata is a tempting ranking prior for scientific '
+      'retrieval-augmented generation (RAG), but a static citation or recency '
+      'boost can improve one domain and harm another. We introduce '
+      'BiblioGuard, a confidence-gated intervention policy that decides, for '
+      'each query, whether a strong metadata-free hybrid should be modified. '
+      'Nine single-signal citation or recency actions are evaluated from '
+      'historical queries. For a held-out query, word- and character-level '
+      'TF-IDF retrieve similar training queries; similarity-weighted paired '
+      'NDCG@10 effects are converted into simultaneous one-sided Student-t '
+      'lower confidence bounds. BiblioGuard selects the action with the '
+      'largest positive lower bound and otherwise abstains to BGE-Hybrid. '
+      'Five-fold cross-fitting ensures that a query\'s relevance judgments '
+      'never enter its representation, neighbours, effect estimate, or '
+      'decision. Across SCIDOCS, SciFact, NFCorpus, and TREC-COVID (1,673 '
+      'queries), BiblioGuard raises SCIDOCS NDCG@10 from 0.1832 to 0.1881 '
+      '(+0.0049; 18.7% intervention rate; Holm-adjusted p < 0.001) and '
+      'abstains on the other three domains, producing no observed negative '
+      'mean transfer. Removing the simultaneous lower-bound gate activates '
+      '45.8%-67.3% of queries in those domains and reduces NDCG@10 by '
+      '0.00003, 0.00339, and 0.01148, respectively. Corpus diagnostics explain '
+      'the pattern: citation actions are supported only where citation count '
+      'predicts relevance. A secondary 200-query generation study and a '
+      'pilot deployment establish end-to-end feasibility. Code, cross-fitted '
+      'decisions, and per-query scores are released for exact reproduction.')
     p(d, 'Keywords: retrieval-augmented generation; scientific information '
-         'retrieval; hybrid retrieval; bibliographic metadata; citation-aware '
-         'ranking; query routing; expert systems',
+         'retrieval; bibliographic metadata; selective prediction; '
+         'treatment-effect routing; abstention; expert systems',
       italic=True, size=10)
     d.add_page_break()
 
     # ---- 1. Introduction ---------------------------------------------------
     h1(d, '1. Introduction')
     p(d,
-      'Academic writing and literature review increasingly rely on '
-      'retrieval-augmented generation (RAG): a user question is first '
-      'grounded in passages retrieved from a scholarly corpus, and a large '
-      'language model then composes an answer conditioned on those passages '
-      '(Lewis et al., 2020). The retrieval stage is the dominant determinant of end-to-end '
-      'quality, because passages that are never retrieved cannot be cited. '
-      'Yet most deployed scientific RAG systems adopt one fixed retrieval '
-      'configuration—typically BM25 or a pretrained dense encoder—chosen '
-      'once, on one benchmark, and generalised to every domain the system '
-      'serves.')
+      'Scientific retrieval-augmented generation (RAG) grounds a generated '
+      'answer in papers returned by an information-retrieval system (Lewis et '
+      'al., 2020). Bibliographic fields offer evidence unavailable to content '
+      'encoders: citation count approximates accumulated authority and '
+      'publication year captures timeliness. Their use is nevertheless an '
+      'intervention, not a free feature. A fixed citation boost can favour '
+      'canonical work in computer science while suppressing recent evidence '
+      'in pandemic medicine. The same action can therefore be beneficial, '
+      'irrelevant, or harmful across queries and domains.')
     p(d,
-      'This practice rests on an untested assumption: that the optimal '
-      'retrieval configuration is stable across research domains. Scientific '
-      'corpora differ systematically in document length, vocabulary '
-      'specificity, claim style, and—critically for metadata-aware '
-      'methods—in the density and coverage of bibliographic signals such as '
-      'citation counts, publication years, and venue prestige. A citation '
-      'boost that helps on a mature computer-science corpus may be useless on '
-      'an emergency pandemic corpus where a third of the documents are fresh '
-      'preprints with zero citations.')
+      'Existing adaptive RAG routers largely predict which retriever will '
+      'perform best. That objective is insufficient when metadata is '
+      'optional and the deployment already has a strong content-based '
+      'fallback: the operational question is whether the incremental effect '
+      'of a metadata action is positive with enough evidence to justify '
+      'departing from the fallback. Absolute performance prediction also '
+      'ignores the paired structure of alternative rankings for the same '
+      'query and can over-intervene after choosing among many noisy actions.')
     p(d,
-      'This paper quantifies that question directly. We evaluate ten '
-      'retrieval configurations on four public scientific benchmarks spanning '
-      'computer science, biomedicine, nutrition, and pandemic medicine, using '
-      'real—never synthetic—bibliographic metadata acquired from the Semantic '
-      'Scholar and OpenAlex APIs. Unlike prior comparisons that rely on '
-      'simulated metadata or single benchmarks, our study couples (i) a '
-      'cross-domain retrieval evaluation with significance testing, (ii) '
-      'ablation and query-corruption robustness analyses of the metadata '
-      'terms, (iii) an oracle-and-router analysis that measures how much '
-      'per-query adaptivity could ever buy, (iv) a generation-side study that '
-      'asks whether backend differences survive into the final answer, and '
-      '(v) a deployment case study in a live academic writing assistant '
-      'used by real users (system anonymized for review).')
-    p(d,
-      'Rather than proposing yet another retrieval algorithm, we frame the '
-      'study around three research questions:')
+      'We address this gap with BiblioGuard, a cross-fitted, confidence-gated '
+      'meta-policy for bibliographic intervention. It estimates local paired '
+      'uplift for nine single-signal citation or recency actions from similar '
+      'historical queries, corrects the one-sided decision threshold across '
+      'the action family, and abstains to BGE-Hybrid unless the best action '
+      'has a positive lower confidence bound. The policy is lightweight, '
+      'encoder-agnostic, and auditable: each decision is accompanied by its '
+      'estimated effect, lower bound, neighbour count, and selected action.')
+    p(d, 'We study three research questions:')
     for c in [
-        'RQ1. Does bibliographic metadata improve scientific retrieval '
-        'consistently across domains, or are its benefits conditional on '
-        'corpus properties?',
-        'RQ2. Which metadata signals help, under what corpus conditions do '
-        'they fail, and should retrieval strategy adaptation happen per '
-        'query or per domain?',
-        'RQ3. Do retrieval-level differences actually propagate to the '
-        'generated answers and to deployment decisions in a running system?',
+        'RQ1. Can paired-effect confidence gating exploit useful metadata '
+        'without the cross-domain negative transfer of unconstrained routing?',
+        'RQ2. Which parts of BiblioGuard—local effect estimation, simultaneous '
+        'confidence correction, and abstention—account for its behaviour?',
+        'RQ3. Which corpus signals explain activation, and is the resulting '
+        'decision layer feasible in an end-to-end scientific RAG system?',
     ]:
         par = d.add_paragraph(style='List Bullet')
         par.add_run(c)
     p(d,
       'Answering these questions yields the following contributions:')
     for c in [
-        'A four-domain, ten-configuration evaluation of scientific RAG '
-        'retrieval with real bibliographic metadata, showing that the best '
-        'configuration is domain-dependent and that BGE-based retrieval '
-        'leads on three of four domains (RQ1);',
-        'Evidence that citation- and recency-aware re-ranking (CA-HR) is '
-        'conditional on bibliographic informativeness, not coverage—'
-        'significantly helpful where citations strongly predict relevance '
-        '(computer science), neutral where the association is weak '
-        '(biomedical claims), mildly harmful where it is absent or inverted '
-        '(nutrition, pandemic medicine)—and backbone-conditional: '
-        'the citation gain observed on the weaker MiniLM backbone does not '
-        'transfer to the stronger BGE backbone under fixed a-priori '
-        'weights; a weight sweep recovers it only on the '
-        'citation-informative corpus (RQ1, RQ2);',
-        'A replicated negative result on per-query routing: oracle headroom '
-        'is small and a lightweight feature-based router (PAV Router) '
-        'collapses to majority-class behaviour on all four datasets, '
-        'implying adaptivity should be allocated at the domain level (RQ2);',
-        'A four-domain generation-side evaluation (200 paired queries) '
-        'showing answer relevance and faithfulness are statistically '
-        'indistinguishable across the two leading retrieval backends, '
-        'together with a citation-precision analysis of LLM answers (RQ3);',
-        'A deployment feasibility case study of the full pipeline in the '
-        'live system, with architecture, cost, and one month of '
-        'real usage statistics (RQ3). All code, data, and per-query results '
-        'are released through an anonymized public repository (link '
-        'withheld for anonymous review).',
+        'BiblioGuard, a new selective metadata-intervention algorithm that '
+        'combines local paired treatment effects, simultaneous one-sided '
+        'confidence bounds, and an explicit metadata-free fallback (RQ1);',
+        'A leakage-resistant five-fold evaluation protocol in which vectoriser '
+        'fitting, neighbour selection, effect estimation, and action choice '
+        'exclude each held-out query and its relevance judgments (RQ1, RQ2);',
+        'A mechanism ablation showing that removing the confidence gate gains '
+        'more on SCIDOCS but causes negative transfer on SciFact, NFCorpus, '
+        'and TREC-COVID, whereas the complete policy abstains there (RQ2);',
+        'A four-domain diagnostic account linking action utility to '
+        'citation-relevance association rather than metadata coverage, plus '
+        'comparisons with ten retrieval configurations and two rank-fusion '
+        'baselines (RQ3);',
+        'An exact reproduction package containing code, nine-action outcomes, '
+        'cross-fitted decisions, 135 algorithm-integrity checks, and a '
+        'secondary generation/deployment feasibility study (RQ3).',
     ]:
         par = d.add_paragraph(style='List Bullet')
         par.add_run(c)
     p(d,
       'The remainder of the paper is organised as follows. Section 2 reviews '
       'related work. Section 3 describes the deployed system. Section 4 '
-      'formalises the ten retrieval configurations and the router. Section 5 '
+      'formalises the retrieval actions and BiblioGuard. Section 5 '
       'details datasets, metadata acquisition, and evaluation protocol. '
       'Section 6 reports results. Section 7 presents the deployment case '
       'study. Section 8 discusses implications and limitations, and Section 9 '
@@ -354,20 +328,25 @@ def build_manuscript():
     h2(d, '2.3. Adaptive and agentic RAG')
     p(d,
       'Recent systems make retrieval adaptive: Self-RAG (Asai et al., '
-      '2024b) learns when to '
+      '2024) learns when to '
       'retrieve, ITER-RETGEN (Shao et al., 2023) interleaves retrieval and '
       'generation, and '
       'agent-based assistants (Wang et al., 2024) plan multi-step '
       'retrieval. OpenScholar '
-      '(Asai et al., 2024a) synthesises scientific literature with '
+      '(Asai et al., 2026) synthesises scientific literature with '
       'retrieval-augmented '
-      'models. These approaches adapt retrieval decisions per query or per '
-      'generation step; our router analysis asks a sharper question—given a '
-      'portfolio of cheap retrieval strategies, how much could perfect '
-      'per-query selection possibly gain, and can surface query features '
-      'recover it? On four datasets the answer for the tested surface-feature '
-      'router is consistently negative, which constrains where this '
-      'lightweight form of adaptivity is worth its cost.')
+      'models. Query-wise Dual-perspective Adaptive Retrieval (QuDAR) selects '
+      'sparse, dense, or expanded-query retrieval from score-margin '
+      'confidence and an LLM perspective (Kim et al., 2026). R3AG learns '
+      'retriever capabilities and routes using both retrieval-quality and '
+      'generation-utility labels (Zhao et al., 2026), while ContextualRouter '
+      'uses past query performance for non-parametric LLM/retriever routing '
+      '(Varangot-Reille et al., 2026). These systems predict absolute '
+      'candidate utility. BiblioGuard instead estimates the paired incremental '
+      'effect of an optional metadata action relative to a fixed strong '
+      'fallback, applies a simultaneous lower-bound test over all actions, '
+      'and can choose no intervention. The target, correction, and abstention '
+      'rule are therefore distinct from best-retriever classification.')
     h2(d, '2.4. Evaluating the generation side')
     p(d,
       'Retrieval metrics do not directly measure what users read. We '
@@ -379,7 +358,7 @@ def build_manuscript():
       'citation precision '
       'against the gold relevance judgments. This closes the loop between '
       'retrieval evaluation and deployed answer quality.')
-    h2(d, '2.5. Recent metadata-aware scientific RAG and positioning')
+    h2(d, '2.5. Metadata-aware scientific RAG and positioning')
     p(d,
       'The RAG literature has moved quickly, and several 2025-2026 studies '
       'are closest to our problem. SurveyGen (Bao et al., 2025) builds a '
@@ -407,27 +386,30 @@ def build_manuscript():
       'across four scientific domains, when citation- and recency-aware '
       'ranking priors help, are neutral, or harm—linking the outcome to a '
       'measurable corpus property (citation-relevance AUC) rather than to '
-      'metadata coverage—and (ii) show, via a weight-sensitivity sweep on a '
-      'stronger encoder, that the gain is backbone-dependent and re-emerges '
-      'only where citations are informative, and that it does not propagate '
-      'to generation quality or to a deployed system.')
+      'metadata coverage—and (ii) turn that diagnostic finding into a '
+      'query-level intervention algorithm with paired-effect estimation, '
+      'multiplicity-aware confidence gating, and abstention. This is not a '
+      'claim of a distribution-free safety guarantee: the confidence bound '
+      'is a local, similarity-weighted decision statistic whose empirical '
+      'behaviour is evaluated by cross-fitting.')
+    d.add_page_break()
+    p(d, 'Table 1. Algorithmic positioning against recent adaptive-retrieval '
+         'routers. Metadata-aware systems are reviewed in the text.',
+      italic=True, size=9)
     add_table(d,
-      ['Study', 'Venue', 'Metadata signal', 'Role of metadata',
-       'Cross-domain analysis', 'Deployment'],
+      ['Study', 'Decision target', 'Supervision', 'Family-wise gate',
+       'Explicit abstention'],
       [
-        ['Bao et al. (2025)', 'EMNLP 2025', 'Citations, author, venue',
-         'Quality filter for survey generation', 'No', 'No'],
-        ['Yousuf et al. (2026)', 'ECIR 2026', 'Structural fields (SEC)',
-         'Embedding/fusion strategies', 'Single corpus', 'No'],
-        ['Ding et al. (2026)', 'EACL 2026', 'Citation graph',
-         'Evidence organisation & attribution', 'No', 'No'],
-        ['Hwang et al. (2025)', 'EMNLP 2025', 'Source reliability',
-         'Source selection & voting', 'No', 'No'],
-        ['This paper', '—', 'Citations, recency, venue (real APIs)',
-         'Ranking prior; informativeness-gated', 'Four domains', 'Live system'],
-      ])
-    p(d, 'Table 1. Positioning against recent (2025-2026) metadata-aware and '
-         'citation-aware RAG studies.', italic=True, size=9)
+        ['QuDAR (Kim et al., 2026)', 'Best retriever/query form',
+         'Margins and LLM decision', 'No', 'No'],
+        ['R3AG (Zhao et al., 2026)', 'Best retriever',
+         'Retrieval + generation labels', 'No', 'No'],
+        ['ContextualRouter (Varangot-Reille et al., 2026)',
+         'Best model/retriever', 'Past absolute performance', 'No', 'No'],
+        ['BiblioGuard (this paper)', 'Incremental metadata effect',
+         'Past paired query effects', 'Yes, over nine actions',
+         'Yes, to BGE-Hybrid'],
+      ], font_size=7)
 
     # ---- 3. Deployed system ------------------------------------------------
     h1(d, '3. The deployed academic writing assistant')
@@ -466,7 +448,7 @@ def build_manuscript():
       italic=True, size=9)
 
     # ---- 4. Methods ---------------------------------------------------------
-    h1(d, '4. Retrieval configurations and routing')
+    h1(d, '4. Retrieval actions and BiblioGuard')
     h2(d, '4.1. Content-based retrieval')
     p(d,
       'BM25 (Robertson & Zaragoza, 2009) scores documents with k1 = 1.5, '
@@ -493,30 +475,70 @@ def build_manuscript():
       'C(d). LP-RAG multiplies the hybrid score by a length prior '
       '1 + eta * exp(-len(d)/mu), which smoothly down-weights longer '
       'documents: shorter documents receive up to a 1 + eta boost that '
-      'decays exponentially with document length. CA-HR forms the hybrid base score S_hybrid(q, d) = alpha * '
-      'S_sparse + (1 - alpha) * S_dense with alpha = 0.6, takes the top-100 '
-      'candidates, and re-ranks by S_CA-HR(q, d) = S_hybrid(q, d) + beta * '
-      'C(d) + gamma * R(d), where C(d) = log(1 + c_d) / max_j log(1 + c_j) '
-      'is corpus-normalised citation authority and R(d) = exp(-lambda * '
-      '(t_ref - t_d)) is an exponential recency term (lambda = 0.1 per year, '
-      't_ref = 2024), with beta = 0.15 and gamma = 0.10. Citation counts, '
+      'decays exponentially with document length. CA-HR forms the hybrid '
+      'base score Sₕ(q,d) = α Ssparse(q,d) + (1−α) Sdense(q,d), with α = 0.6, '
+      'takes the top-100 candidates, and re-ranks by SCA(q,d) = Sₕ(q,d) + '
+      'β C(d) + γ R(d), where C(d) = log[1+c(d)] / maxⱼ log[1+c(j)] '
+      'is corpus-normalised citation authority and R(d) = exp[-λ(tref−t(d))] '
+      'is an exponential recency term (λ = 0.1 per year, '
+      'tref = 2024), with β = 0.15 and γ = 0.10. Citation counts, '
       'years, and venues are real API values; documents without a matched '
-      'record receive c_d = 0 and the corpus median year, mirroring how a '
+      'record receive c(d) = 0 and the corpus median year, mirroring how a '
       'deployed system must handle missing metadata.')
-    h2(d, '4.3. Query-level routing (PAV Router)')
+    h2(d, '4.3. BiblioGuard: confidence-gated paired-effect routing')
     p(d,
-      'PAV Router is a multinomial logistic-regression classifier over 12 '
-      'hand-crafted query features (length, lexical diversity, acronym and '
-      'digit counts, survey/intent keywords, year mentions, stop-word ratio, '
-      'capitalisation, hyphenation). Training labels are derived post hoc: '
-      'for each query, the label is the strategy among {UMA-RAG, LP-RAG, '
-      'CA-HR} attaining the highest per-query NDCG@10 (ties favour CA-HR). '
-      'We evaluate with stratified 5-fold cross-validation and report '
-      'out-of-fold accuracy, macro-F1, and Cohen\'s kappa, together with the '
-      'end-to-end effectiveness of the routed system versus the per-query '
-      'oracle and the best single strategy. This design measures how much of '
-      'the oracle routing gain is recoverable from surface query features '
-      'alone.')
+      'Decision problem. Let a₀ denote the metadata-free BGE-Hybrid fallback '
+      '(0.5 BM25 + 0.5 BGE after per-query min-max normalisation). The action '
+      'family A contains nine single-signal CA-HR configurations: five '
+      'citation actions beta in {0.05, 0.10, 0.15, 0.20, 0.30} with gamma = 0 '
+      'and four recency actions gamma in {0.05, 0.10, 0.15, 0.20} with beta = '
+      '0. Each intervention uses CA-HR\'s 0.6 BM25 + 0.4 BGE candidate score '
+      'and re-ranks its top 100. Thus the estimand is the total effect of '
+      'switching from the deployed fallback to a single-metadata '
+      'configuration; it does not attribute the full contrast to metadata '
+      'alone. The beta = gamma = 0 configuration is retained as a '
+      'fusion-weight control in Section 6.5 but is not an intervention.')
+    p(d,
+      'Local paired effects. For every labelled historical query qᵢ and '
+      'action a, define Δᵢ(a) = NDCGᵢ@10(a) − NDCGᵢ@10(a₀). Query text '
+      'is represented by the concatenation of word TF-IDF uni-/bi-grams and '
+      'character-boundary TF-IDF 3-5-grams. Both vectorisers are fitted only '
+      'on the training part of a fold. For a held-out query q, BiblioGuard '
+      'retrieves k = ⌈√ntrain⌉ cosine-nearest training queries. '
+      'Non-negative similarities receive a 0.001 stabiliser and are '
+      'normalised to weights wᵢ. The local paired-effect estimator is '
+      'Δ̂q(a) = Σᵢ wᵢΔᵢ(a), with effective sample size neff = 1/Σᵢwᵢ². Its '
+      'weighted variance is v̂q(a) = Σᵢwᵢ[Δᵢ(a)−Δ̂q(a)]² and standard error '
+      'seq(a) = √[v̂q(a)/neff].')
+    p(d,
+      'Simultaneous confidence gate. With family alpha = 0.05 and |A| = 9, '
+      'the one-sided lower bound is Lq(a) = Δ̂q(a) − '
+      't(1−α/|A|, ⌊neff⌋−1) seq(a). The policy chooses the action '
+      'with the largest lower bound only if maxₐ Lq(a) > 0; otherwise it '
+      'returns a₀. Bonferroni correction makes the gate deliberately '
+      'conservative across the nine actions. Because neighbours are selected '
+      'by similarity rather than sampled i.i.d., L is an operational '
+      'uncertainty score, not a distribution-free coverage guarantee.')
+    p(d, 'Algorithm 1. Cross-fitted BiblioGuard decision for held-out query q.',
+      italic=True, size=9)
+    add_table(d, ['Step', 'Operation'], [
+      ['1', 'Fit word/character TF-IDF on training-query text only.'],
+      ['2', 'Retrieve k cosine-nearest training queries for q.'],
+      ['3', 'Estimate nine similarity-weighted paired NDCG@10 effects.'],
+      ['4', 'Compute Bonferroni-adjusted one-sided lower bounds.'],
+      ['5', 'Select argmax L if max L > 0; otherwise return BGE-Hybrid.'],
+      ['6', 'Log action, effect estimate, lower bound, k, and critical value.'],
+    ])
+    p(d,
+      'Evaluation and complexity. We use shuffled five-fold cross-fitting '
+      '(seed 42); a held-out query\'s relevance judgments are never used in '
+      'its vectorisation, neighbour set, effect estimate, or decision. The '
+      'unconstrained ablation keeps the same neighbours and paired estimator '
+      'but selects the largest positive mean effect without a lower-bound '
+      'test. Given cached action outcomes, inference costs one sparse cosine '
+      'search and O(k|A|) effect aggregation. A new domain with no labelled '
+      'history takes the explicit cold-start path a₀ rather than extrapolating '
+      'a metadata policy.')
 
     # ---- 5. Experimental setup ----------------------------------------------
     h1(d, '5. Experimental setup')
@@ -611,15 +633,15 @@ def build_manuscript():
       'signed-rank test over per-query scores with Cohen\'s d computed from '
       'the same per-query differences, so reported p-values and effect sizes '
       'are consistent by construction. To control the family-wise error '
-      'rate, significance claims in the text are restricted to a '
-      'pre-specified primary family of 16 comparisons (per dataset: CA-HR '
-      'vs. BM25, SBERT-Dense, and Neural-Hybrid, and BGE-CA-HR vs. '
-      'BGE-Hybrid, all on NDCG@10); quoted primary p-values are '
-      'Holm-Bonferroni-adjusted within this family. Ablation, robustness, '
-      'routing, and generation-side comparisons are exploratory analyses '
-      'with unadjusted two-sided p-values; metadata-weight sensitivity '
-      'uses one-sided Wilcoxon tests with Holm correction within each '
-      'dataset. All retrieval runs use '
+      'rate, the revised paper pre-specifies one primary comparison per '
+      'dataset: cross-fitted BiblioGuard versus its BGE-Hybrid fallback on '
+      'NDCG@10 (four one-sided Wilcoxon tests, Holm-Bonferroni-corrected '
+      'across domains). The confidence gate\'s internal Bonferroni correction '
+      'over nine actions is separate from this evaluation-level correction. '
+      'Retrieval-landscape, component ablation, robustness, sensitivity, '
+      'unconstrained-routing, and generation comparisons are mechanism or '
+      'exploratory analyses. The 30-combination metadata-weight grid was '
+      'computed on the same judgments and is not confirmatory. All retrieval runs use '
       'a single '
       'CPU-only workstation. Measured per-query cost on the largest corpus '
       '(TREC-COVID, 171k documents): BM25 scoring averages 1,002 ms; dense '
@@ -630,8 +652,55 @@ def build_manuscript():
 
     # ---- 6. Results ---------------------------------------------------------
     h1(d, '6. Results')
-    h2(d, '6.1. Main retrieval results')
-    p(d, 'Table 4. Retrieval effectiveness: NDCG@10 / Recall@10 on the four '
+    h2(d, '6.1. Primary BiblioGuard evaluation')
+    p(d, 'Table 4. Cross-fitted BiblioGuard evaluation. Active rates are '
+         'unconstrained / confidence-gated; p-values compare BiblioGuard with '
+         'BGE-Hybrid and are Holm-adjusted across four domains.',
+      italic=True, size=9)
+    rows = []
+    for ds in DS:
+        bg = BG[ds]
+        raw = bg['ablation_unconstrained']
+        rows.append([
+            DS_NAME[ds], f4(bg['baseline_N@10']), f4(raw['N@10']),
+            f4(bg['biblioguard_N@10']),
+            f"{100*raw['selection_rate']:.1f}% / {100*bg['selection_rate']:.1f}%",
+            f"{bg['gain_N@10']:+.4f}", pval(bg['wilcoxon_p_holm'])])
+    add_table(d, ['Dataset', 'Fallback', 'Without LCB', 'BiblioGuard',
+                  'Active rate', 'Guarded gain', 'Holm p'], rows)
+    p(d,
+      'BiblioGuard improves SCIDOCS from '
+      f'{f4(BG["scidocs"]["baseline_N@10"])} to '
+      f'{f4(BG["scidocs"]["biblioguard_N@10"])} NDCG@10 '
+      f'({BG["scidocs"]["gain_N@10"]:+.4f}; '
+      f'{100*BG["scidocs"]["selection_rate"]:.1f}% of queries activated; '
+      f'Holm-adjusted p = {BG["scidocs"]["wilcoxon_p_holm"]:.2g}; '
+      f'paired d = {BG["scidocs"]["paired_cohen_d"]:.3f}). The selected '
+      'SCIDOCS actions are citation-only: beta = 0.30 on 141 queries, beta = '
+      '0.20 on 39, and beta = 0.15 on 7; 813 queries return the fallback. On '
+      'SciFact, NFCorpus, and TREC-COVID no action clears the simultaneous '
+      'lower bound, so the policy exactly reproduces BGE-Hybrid. Across the '
+      'released four-domain evaluation this yields no negative mean transfer '
+      'and a macro-average gain of '
+      f'{T["biblioguard"]["macro"]["gain_N@10"]:+.4f}. This is an empirical '
+      'result under the cross-fitted protocol, not a universal safety claim.')
+    p(d,
+      'The confidence gate is consequential rather than cosmetic. Removing '
+      'it activates 96.8% of SCIDOCS queries and reaches 0.2068 NDCG@10, but '
+      'it also activates 67.3%, 45.8%, and 54.0% of queries on SciFact, '
+      'NFCorpus, and TREC-COVID and changes NDCG@10 by -0.00003, -0.00339, '
+      'and -0.01148. The guarded policy therefore trades some attainable '
+      'SCIDOCS gain for abstention where local mean estimates are not strong '
+      'enough after simultaneous uncertainty correction. Fig. 5 visualises '
+      'this selectivity/performance trade-off.')
+    d.add_picture(os.path.join(BASE, 'figures', 'Fig5_biblioguard.png'),
+                  width=Inches(5.0))
+    p(d, 'Fig. 5. BGE-Hybrid, unconstrained paired-effect routing, and '
+         'confidence-gated BiblioGuard. Labels show the guarded action rate.',
+      italic=True, size=9)
+
+    h2(d, '6.2. Retrieval landscape and failure motivation')
+    p(d, 'Table 5. Retrieval effectiveness: NDCG@10 / Recall@10 on the four '
          'test sets (best single method per dataset in bold in Fig. 2).',
       italic=True, size=9)
     rows = []
@@ -647,7 +716,7 @@ def build_manuscript():
         f"({avg(ds, T['main'][ds]['best_single_N@10'], 'N@10'):.4f})"
         for ds in DS)
     p(d,
-      f'Fig. 2 and Table 4 show the central pattern: no configuration wins '
+      f'Fig. 2 and Table 5 show the central pattern: no configuration wins '
       f'everywhere. The best single method per dataset is {best_str}. '
       f'Pretrained dense retrieval dominates on SCIDOCS, where '
       f'SBERT-Dense reaches {f4(avg("scidocs", "SBERT-Dense", "N@10"))} '
@@ -670,23 +739,16 @@ def build_manuscript():
       f'encoder choice is domain-dependent.')
     p(d,
       'CA-HR, the citation- and recency-aware configuration, sits in the '
-      'middle of the hybrid family overall: it significantly outperforms '
-      'BM25 on all four datasets '
-      f'(Holm-adjusted within the primary family; e.g., SCIDOCS '
-      f'{pval(holm("scidocs", "CA-HR vs BM25 | N@10"))}, '
-      f'TREC-COVID {pval(holm("trec-covid", "CA-HR vs BM25 | N@10"))}), '
-      'and it also exceeds LSA-Dense on all four datasets, an exploratory '
-      'comparison outside the primary family (unadjusted one-sided '
-      'Wilcoxon p < 0.001 on every dataset), '
-      'but it does not beat the plain dense or plain hybrid baselines except '
-      'on SciFact, where it significantly exceeds SBERT-Dense '
-      f'({pval(holm("scifact", "CA-HR vs SBERT-Dense | N@10"))}, '
-      f'd = {f3(T["main"]["scifact"]["tests_vs_cahr"]["CA-HR vs SBERT-Dense | N@10"]["d"])}). '
-      'In other words, metadata-aware re-ranking reliably beats purely '
-      'lexical and non-pretrained retrieval, but whether it beats plain '
-      'dense retrieval depends on the domain.')
+      'middle of the hybrid family overall. It exceeds BM25 and LSA-Dense '
+      'on all four datasets, but it does not beat the strongest plain dense '
+      'or hybrid baseline except against SBERT-Dense on SciFact. These '
+      'landscape contrasts are descriptive/exploratory in the revised '
+      'analysis; the confirmatory family is restricted to BiblioGuard versus '
+      'its fallback (Section 6.1). The important motivation is that always-on '
+      'metadata is competitive yet unstable, which creates a role for a '
+      'selective intervention policy rather than another fixed re-ranker.')
     p(d,
-      'Table 4 also isolates the role of the dense backbone. Equal-weight '
+      'Table 5 also isolates the role of the dense backbone. Equal-weight '
       'hybrid fusion on BGE-small (BGE-Hybrid) does not reproduce the hybrid '
       'advantage seen with MiniLM: it trails BGE-Dense on SCIDOCS '
       f'({f4(avg("scidocs", "BGE-Hybrid", "N@10"))} vs. '
@@ -716,14 +778,15 @@ def build_manuscript():
       'hyperparameters, the citation gain obtained on the weaker MiniLM '
       'backbone on SCIDOCS does not transfer to a stronger encoder: the '
       'observed metadata benefit is backbone-dependent rather than '
-      'additive (Section 6.4 tests whether any metadata weight rescues it).')
+      'additive (Section 6.5 tests whether any metadata weight rescues it).')
     d.add_picture(os.path.join(BASE, 'figures', 'Fig2_main_results.png'),
                   width=Inches(6.0))
     p(d, 'Fig. 2. Retrieval effectiveness (NDCG@10) across four domains.',
       italic=True, size=9)
 
-    h2(d, '6.2. Ablation of CA-HR components')
-    p(d, 'Table 5. CA-HR ablation (NDCG@10; bold marks cases where removing '
+    d.add_page_break()
+    h2(d, '6.3. Ablation of CA-HR components')
+    p(d, 'Table 6. CA-HR ablation (NDCG@10; bold marks cases where removing '
          'a component improves performance).', italic=True, size=9)
     ABL = ['full', '-citation', '-recency', '-dense (alpha=1)',
            '-sparse (alpha=0)', '-rerank (plain hybrid)']
@@ -742,7 +805,7 @@ def build_manuscript():
     add_table(d, ['Variant', 'SCIDOCS', 'SciFact', 'NFCorpus', 'TREC-COVID'],
               rows)
     p(d,
-      f'The ablation (Table 5, Fig. 3; * = removal improves on the full '
+      f'The ablation (Table 6, Fig. 3; * = removal improves on the full '
       f'model) localises exactly where metadata helps and where it hurts. '
       f'On SCIDOCS—the corpus where citations are most informative about '
       f'relevance (AUC = {T["diagnostics"]["scidocs"]["cit_rel_auc"]:.3f})—removing the '
@@ -772,31 +835,31 @@ def build_manuscript():
     p(d, 'Fig. 3. CA-HR ablation (NDCG@10; dashed line = full model).',
       italic=True, size=9)
 
-    h2(d, '6.3. Robustness to query corruption')
+    h2(d, '6.4. Robustness to query corruption')
     p(d,
       'Under simulated word-drop noise (10%-40%), all hybrid methods degrade '
       'gracefully, but robustness rankings are domain-dependent and do not '
       'simply follow clean-query rankings (Fig. 4). On TREC-COVID, CA-HR is '
       'the most noise-resistant configuration: at 40% corruption it retains '
-      f'{f4(T["robust"]["trec-covid"]["0.4"]["CA-HR"]["N@10"])} NDCG@10 '
-      f'versus {f4(T["robust"]["trec-covid"]["0.4"]["Neural-Hybrid"]["N@10"])} '
+      f'{f4(robust_n10("trec-covid", "0.4", "CA-HR"))} NDCG@10 '
+      f'versus {f4(robust_n10("trec-covid", "0.4", "Neural-Hybrid"))} '
       'for Neural-Hybrid and '
-      f'{f4(T["robust"]["trec-covid"]["0.4"]["BM25"]["N@10"])} for BM25: the '
+      f'{f4(robust_n10("trec-covid", "0.4", "BM25"))} for BM25: the '
       'citation authority term, being independent of the corrupted query '
       'text, acts as a stabiliser even where it does not raise clean-query '
       'effectiveness. On SciFact, CA-HR '
-      f'({f4(T["robust"]["scifact"]["0.4"]["CA-HR"]["N@10"])}) and '
+      f'({f4(robust_n10("scifact", "0.4", "CA-HR"))}) and '
       'Neural-Hybrid '
-      f'({f4(T["robust"]["scifact"]["0.4"]["Neural-Hybrid"]["N@10"])}) are '
+      f'({f4(robust_n10("scifact", "0.4", "Neural-Hybrid"))}) are '
       'nearly tied at 40% noise, both well above BM25 '
-      f'({f4(T["robust"]["scifact"]["0.4"]["BM25"]["N@10"])}), and on '
+      f'({f4(robust_n10("scifact", "0.4", "BM25"))}), and on '
       'NFCorpus the two hybrids again track each other closely '
-      f'({f4(T["robust"]["nfcorpus"]["0.4"]["CA-HR"]["N@10"])} vs. '
-      f'{f4(T["robust"]["nfcorpus"]["0.4"]["Neural-Hybrid"]["N@10"])}). '
+      f'({f4(robust_n10("nfcorpus", "0.4", "CA-HR"))} vs. '
+      f'{f4(robust_n10("nfcorpus", "0.4", "Neural-Hybrid"))}). '
       'SCIDOCS is the exception: there BM25 is the most robust method at 40% '
-      f'corruption ({f4(T["robust"]["scidocs"]["0.4"]["BM25"]["N@10"])} '
-      f'versus {f4(T["robust"]["scidocs"]["0.4"]["CA-HR"]["N@10"])} for CA-HR '
-      f'and {f4(T["robust"]["scidocs"]["0.4"]["Neural-Hybrid"]["N@10"])} for '
+      f'corruption ({f4(robust_n10("scidocs", "0.4", "BM25"))} '
+      f'versus {f4(robust_n10("scidocs", "0.4", "CA-HR"))} for CA-HR '
+      f'and {f4(robust_n10("scidocs", "0.4", "Neural-Hybrid"))} for '
       'Neural-Hybrid), indicating that where dense representations dominate '
       'on clean queries they are also the most fragile to lexical '
       'corruption.')
@@ -805,13 +868,13 @@ def build_manuscript():
     p(d, 'Fig. 4. Robustness to query corruption (NDCG@10 vs. word-drop '
          'noise).', italic=True, size=9)
 
-    h2(d, '6.4. Metadata-weight sensitivity and rank-fusion baselines')
+    h2(d, '6.5. Metadata-weight sensitivity and rank-fusion baselines')
     p(d,
-      'Two objections remain after Section 6.1. First, CA-HR\'s weights were '
+      'Two objections remain after Section 6.2. First, CA-HR\'s weights were '
       'fixed a priori, so the absence of a metadata gain on the stronger BGE '
       'backbone could be an artefact of under-weighting the metadata terms. '
       'Second, our hybrids interpolate min-max-normalised scores, so a '
-      'standard rank-fusion reference is missing. Table 6 addresses both. '
+      'standard rank-fusion reference is missing. Table 7 addresses both. '
       'We sweep the citation and recency weights of BGE-CA-HR over a '
       '30-combination grid (beta in {0, 0.05, 0.10, 0.15, 0.20, 0.30}, '
       'gamma in {0, 0.05, 0.10, 0.15, 0.20}) and test each combination '
@@ -853,7 +916,7 @@ def build_manuscript():
       f'{f4(T["sensitivity"]["trec-covid"]["rrf"]["RRF-MiniLM"]["N@10"])} / '
       f'{f4(T["sensitivity"]["trec-covid"]["rrf"]["RRF-BGE"]["N@10"])} on '
       'TREC-COVID: no RRF variant is the best configuration on any dataset, '
-      'so the qualitative conclusions of Table 4 do not depend on the '
+      'so the qualitative conclusions of Table 5 do not depend on the '
       'min-max interpolation rule.')
     rows = []
     for ds in DS:
@@ -867,53 +930,14 @@ def build_manuscript():
                      'yes' if s['any_significant_gain_after_holm'] else 'no',
                      f4(s['rrf']['RRF-MiniLM']['N@10']),
                      f4(s['rrf']['RRF-BGE']['N@10'])])
+    p(d, 'Table 7. BGE-backbone metadata-weight sensitivity (30-combination '
+         'grid per dataset; significance vs. BGE-Hybrid, one-sided Wilcoxon '
+         'with Holm correction) and RRF (k = 60) rank-fusion baselines; '
+         'NDCG@10.', italic=True, size=9)
     add_table(d,
       ['Dataset', 'BGE-Hybrid', 'BGE-Dense', 'BGE-CA-HR (fixed)',
        'Best grid beta/gamma', 'Best grid N@10', 'Sig. after Holm',
        'RRF-MiniLM', 'RRF-BGE'], rows)
-    p(d, 'Table 6. BGE-backbone metadata-weight sensitivity (30-combination '
-         'grid per dataset; significance vs. BGE-Hybrid, one-sided Wilcoxon '
-         'with Holm correction) and RRF (k = 60) rank-fusion baselines; '
-         'NDCG@10.', italic=True, size=9)
-
-    h2(d, '6.5. Oracle headroom and learned routing')
-    p(d, 'Table 7. Per-query oracle, best single metadata-aware strategy, '
-         'PAV Router-routed system, and router agreement.', italic=True,
-      size=9)
-    rows = []
-    for ds in DS:
-        o = T['oracle'][ds]['routed_oracle']['N@10']
-        routed = ['UMA-RAG', 'LP-RAG', 'CA-HR']
-        best = max(routed, key=lambda m: avg(ds, m, 'N@10'))
-        rt = T['router'][ds]
-        rows.append([DS_NAME[ds], f'{avg(ds, best, "N@10"):.4f} ({best})',
-                     f4(avg(ds, 'CA-HR', 'N@10')),
-                     f4(rt['routed_system']['N@10']), f4(o),
-                     f"{rt['cv_accuracy']:.3f}", f"{rt['kappa']:.3f}"])
-    add_table(d, ['Dataset', 'Best single', 'CA-HR', 'PAV Router',
-                  'Oracle', 'Router acc.', "Cohen's κ"], rows)
-    p(d,
-      'Table 7 and Fig. 5 quantify how much per-query adaptivity could ever '
-      'buy. The oracle that picks the per-query best among the three '
-      'metadata-aware strategies exceeds the best single strategy by only '
-      f'+0.006 (SCIDOCS) and +0.008 (SciFact) NDCG@10; the headroom is '
-      f'larger on NFCorpus (+0.010) and TREC-COVID (+0.036), where the '
-      f'metadata signals interact with sparse coverage. The learned router '
-      f'does not recover this headroom on any dataset: out-of-fold label '
-      f'accuracy reaches '
-      f'{T["router"]["scifact"]["cv_accuracy"]*100:.1f}% on SciFact but '
-      f'collapses to majority-class prediction (Cohen\'s κ between '
-      f'{min(T["router"][d]["kappa"] for d in DS):.3f} and '
-      f'{max(T["router"][d]["kappa"] for d in DS):.3f} across the four '
-      f'datasets), and the routed system never exceeds simply always '
-      f'choosing CA-HR. Across the four datasets, the tested surface-feature '
-      f'router fails to recover the available per-query oracle headroom, '
-      f'suggesting that domain-level configuration is a stronger default '
-      f'than this lightweight form of query-level adaptation.')
-    d.add_picture(os.path.join(BASE, 'figures', 'Fig5_routing.png'),
-                  width=Inches(6.0))
-    p(d, 'Fig. 5. Oracle headroom vs. learned routing (NDCG@10).',
-      italic=True, size=9)
 
     h2(d, '6.6. Generation-side evaluation')
     p(d, 'Table 8. End-to-end answer quality with DeepSeek generation on 200 '
@@ -940,8 +964,10 @@ def build_manuscript():
     add_table(d, ['Measure', 'CA-HR backend', 'Neural-Hybrid backend',
                   'Wilcoxon (two-sided)'], rows)
     p(d,
-      'Do the retrieval-level differences survive into the answers users '
-      'actually read? We sampled 200 test queries (50 per dataset, fixed '
+      'This secondary experiment predates BiblioGuard and compares two fixed '
+      'MiniLM-family backends; it tests whether retrieval changes of the '
+      'observed magnitude survive generation, not whether BiblioGuard itself '
+      'improves generated answers. We sampled 200 test queries (50 per dataset, fixed '
       'seed), generated cited answers with DeepSeek (deepseek-chat, '
       'temperature 0.2, top-5 passages as context), and scored each answer '
       'for relevance and faithfulness with an LLM judge and for citation '
@@ -961,7 +987,7 @@ def build_manuscript():
       f'{ca["relevance"]["mean"]:.2f}-{nh["relevance"]["mean"]:.2f}, '
       f'faithfulness '
       f'{ca["faithfulness"]["mean"]:.2f}-{nh["faithfulness"]["mean"]:.2f} '
-      f'of 5), so the pipeline is usable in production. Second, citation '
+      f'of 5), supporting technical feasibility under this automated judge. Second, citation '
       f'precision against the strict gold judgments averages about '
       f'{g["paired_citation_precision"]["mean_CA-HR"]:.2f} but varies '
       f'sharply with gold-judgment density: 0.87 on TREC-COVID, whose '
@@ -1000,8 +1026,11 @@ def build_manuscript():
       'process restarted twice in six days (both manual deploys) and the '
       'edge responds in about 74 ms. This is a pilot-scale deployment, and '
       'we report it as such: its purpose is to demonstrate that the '
-      'evaluated pipeline runs unchanged on commodity hardware in '
-      'production, not to claim large-scale adoption.')
+      'retrieval/generation pipeline runs on commodity hardware, not to claim '
+      'large-scale adoption or an online evaluation of BiblioGuard. The pilot '
+      'used fixed hybrid/CA-HR backends and predates the new decision policy; '
+      'BiblioGuard has been integrated into the offline reproduction code but '
+      'has not yet been subjected to a live A/B test.')
     p(d,
       'Two operational observations connect the deployment to the '
       'experimental findings. First, retrieval never appeared in the latency '
@@ -1011,100 +1040,76 @@ def build_manuscript():
       'user-uploaded papers are often fresh preprints with no citation '
       'record—the production analogue of TREC-COVID\'s inverted '
       'citation-relevance association—so '
-      'the system defaults to the plain hybrid backend for user libraries '
-      'and reserves citation-aware re-ranking for corpora where citations '
-      'demonstrably correlate with relevance, which is exactly the '
-      'informativeness-conditional configuration policy our experiments '
-      'support.')
+      'the system defaults to the plain hybrid backend for user libraries. '
+      'BiblioGuard formalises a future evidence-gated path away from that '
+      'fallback; the current deployment evidence establishes only that its '
+      'underlying retrieval actions satisfy the hardware budget.')
 
     # ---- 8. Discussion ------------------------------------------------------
     h1(d, '8. Discussion')
-    h2(d, '8.1. A configuration policy for scientific RAG')
+    h2(d, '8.1. Why confidence-gated intervention changes the result')
     p(d,
-      'Taken together, the four-domain results support a simple '
-      'domain-conditional policy grounded in bibliographic informativeness '
-      '(Table 3): (i) where citation authority strongly separates relevant '
-      'from non-relevant documents (computer science; citation-relevance '
-      'AUC = 0.798), citation-aware signals contribute positively—uniform '
-      'metadata augmentation (UMA-RAG) is the strongest metadata-aware '
-      'variant on SCIDOCS, and within CA-HR the citation term is the single '
-      'most valuable component—though a strong pretrained dense encoder '
-      'alone is hard to beat; (ii) for claim-style biomedical retrieval, '
-      'where the citation-relevance association is weak (AUC = 0.582), '
-      'hybrid fusion is best-in-family and metadata terms are neutral; '
-      '(iii) where citations are uninformative or inversely associated with '
-      'relevance (nutrition, AUC = 0.498; pandemic medicine, AUC = 0.461—'
-      'and, analogously, fresh user uploads with no citation record), '
-      'metadata boosts are neutral-to-harmful regardless of coverage, and a '
-      'stronger dense encoder such as BGE-small is the best single '
-      'investment; and (iv) the tested surface-feature router does not '
-      'recover the available oracle headroom anywhere we tested—'
-      'configuration effort should be spent at domain level. Two '
-      'qualifiers sharpen the policy. First, the metadata effects are '
-      'backbone- and weight-conditional: at CA-HR\'s fixed weights every '
-      'metadata gain measured on the MiniLM backbone disappeared or '
-      'inverted on the stronger BGE-small backbone (Section 6.1), and a '
-      '30-combination weight sweep shows the gain re-emerges only on the '
-      'citation-informative corpus (SCIDOCS) and only after raising the '
-      'citation weight (Section 6.4)—metadata re-ranking must therefore be '
-      're-validated and re-calibrated whenever the underlying encoder is '
-      'upgraded. Second, robustness under query '
-      'corruption does not follow clean-query rankings—BM25 is the most '
-      'noise-robust method on SCIDOCS while CA-HR is the most robust on '
-      'TREC-COVID (Section 6.3)—so noise expectations should also enter the '
-      'per-domain choice.')
+      'BiblioGuard changes the learning target from absolute winner '
+      'prediction to paired incremental utility. This matters because all '
+      'candidate outcomes share the same query and much of the same ranking; '
+      'subtracting the fallback removes query difficulty and asks only '
+      'whether intervention is justified. The explicit no-action outcome '
+      'also changes the error asymmetry: a false positive can damage a strong '
+      'baseline, whereas a false negative merely forgoes a possible gain. '
+      'The lower-bound gate implements this conservative preference.')
+    p(d,
+      'The cross-domain activation pattern is consistent with the independent '
+      'bibliographic diagnostics. SCIDOCS has a strong citation-relevance '
+      'association (AUC = 0.798), and every guarded activation is a '
+      'citation-only action. SciFact is weaker (AUC = 0.582), NFCorpus is '
+      'uninformative (0.498), and TREC-COVID is inverted (0.461); in these '
+      'domains the unconstrained estimator often predicts a positive local '
+      'mean but the simultaneous lower bound rejects it. This difference '
+      'between mean routing and evidence-gated routing is the central '
+      'mechanism result, not a claim that bibliographic metadata is generally '
+      'beneficial. Backbone and query noise remain relevant: the fixed '
+      'MiniLM metadata gain does not transfer directly to BGE (Section 6.2), '
+      'and robustness rankings change under word drop (Section 6.4).')
     h2(d, '8.2. Limitations')
     p(d,
-      'Six limitations qualify our claims. (1) TREC-COVID has only 50 test '
-      'queries, so per-dataset rankings there carry wider confidence '
-      'intervals; the cross-domain pattern, however, is consistent across '
-      '1,673 queries in total. (2) Metadata coverage is below 100% by '
-      'construction on TREC-COVID (69.8% citations); we mitigated with '
-      'neutral defaults and disclosed coverage per field, but matched and '
-      'unmatched documents may differ systematically. (3) The generation '
-      'judge shares the generator\'s model family; the paired design '
-      'controls relative bias, absolute judge scores may be inflated, and '
-      'no human verification subsample was performed. (4) '
-      'CA-HR\'s hyperparameters (alpha, beta, gamma, lambda, top-100 depth) '
-      'were fixed a priori and not tuned per dataset, which is conservative '
-      'but may understate the method where metadata is rich; the Section 6.4 '
-      'weight sweep bounds this effect directly, showing a reachable gain '
-      'only on SCIDOCS. (5) The '
-      'deployment study is pilot-scale (6 users, one month); it '
-      'demonstrates operability, not adoption. (6) The benchmark experiments '
-      'operate on document-level representations (title and abstract), '
-      'whereas the deployed pipeline retrieves passage-level '
-      'chunks of uploaded papers; the deployment demonstrates engineering '
-      'transferability but does not establish that all document-level '
-      'ranking effects reproduce identically at passage level.')
+      'Eight limitations delimit the contribution. (1) BiblioGuard requires '
+      'historical queries with judgments; an unseen domain follows the '
+      'metadata-free cold-start path and receives no learned benefit. (2) The '
+      'similarity-weighted Student-t lower bound is an operational confidence '
+      'gate, not a finite-sample or distribution-free safety certificate. '
+      '(3) Evaluation is within-domain cross-fitting, not temporal or '
+      'cross-domain external validation; only SCIDOCS activates, and its '
+      '+0.0049 absolute gain and d = 0.139 are modest. (4) Interventions use '
+      'CA-HR\'s 0.6/0.4 content fusion whereas the fallback uses 0.5/0.5, so '
+      'the paired effect measures the complete configuration switch rather '
+      'than a metadata-only causal effect. (5) The action family, confidence '
+      'level, one BGE encoder, four benchmarks, and NDCG@10 utility should be '
+      'locked prospectively and tested on more domains, encoders, and time '
+      'slices. (6) TREC-COVID has only 50 queries and 69.8% citation coverage; '
+      'neutral defaults cannot remove systematic missingness. (7) The '
+      'generation experiment compares fixed MiniLM backends, uses the same '
+      'model family for generation and judging, has no human verification, '
+      'and therefore does not establish a BiblioGuard generation gain. (8) '
+      'The six-user, one-month deployment predates BiblioGuard and shows '
+      'hardware feasibility only; an online A/B evaluation and passage-level '
+      'validation remain future work.')
 
     # ---- 9. Conclusion ------------------------------------------------------
     h1(d, '9. Conclusion')
     p(d,
-      'We evaluated ten retrieval configurations for scientific RAG on '
-      'four benchmarks with real bibliographic metadata, and deployed the '
-      'stack in a live academic writing assistant. The answer to the title '
-      'question is conditional on two dimensions rather than one: '
-      'bibliographic metadata helps scientific RAG when the bibliographic '
-      'signal is genuinely informative about relevance—citation authority '
-      'separates relevant from non-relevant documents on SCIDOCS '
-      '(AUC = 0.798) but not on NFCorpus (AUC = 0.498) or TREC-COVID '
-      '(AUC = 0.461)—and requires re-calibration when the underlying content '
-      'retriever changes: under fixed hyperparameters the citation gain '
-      'observed with MiniLM vanishes on the stronger BGE-small backbone, and '
-      'a 30-combination weight sweep recovers it only on the '
-      'citation-informative corpus (SCIDOCS). A lightweight surface-feature '
-      'router does not '
-      'recover even the modest oracle headroom, '
-      'generation-side quality is insensitive to the backend at top-5, and '
-      'the whole pipeline runs on commodity CPU hardware in production. '
-      'For practitioners, the actionable guidance is to '
-      'configure retrieval per domain and to audit the citation-relevance '
-      'association of a corpus before '
-      'relying on metadata-aware ranking. Future work includes citation '
-      'verification for generated answers, richer routing features '
-      '(embedding-space and corpus-statistic signals), and scaling the '
-      'deployment study to a larger user base.')
+      'We introduced BiblioGuard, a cross-fitted decision layer for selective '
+      'bibliographic intervention in scientific RAG. Rather than predicting '
+      'the best retriever, it estimates paired local uplift relative to a '
+      'strong fallback, corrects its one-sided gate over nine actions, and '
+      'abstains when the evidence is insufficient. On four domains it '
+      'improves SCIDOCS by 0.0049 NDCG@10 and reproduces the fallback exactly '
+      'elsewhere; removing the lower-confidence gate causes negative transfer '
+      'in the other three domains. The result supports a narrow conclusion: '
+      'selective metadata use can be safer empirically than always-on or '
+      'mean-only routing when paired historical evidence is available. It '
+      'does not establish a universal guarantee. Prospective multi-encoder '
+      'and temporal evaluation, calibrated or conformal risk control, and a '
+      'live BiblioGuard A/B test are the next steps.')
 
     # ---- Declaration of generative AI (required before references) --------
     h1(d, 'Declaration of generative AI and AI-assisted technologies in '
@@ -1119,8 +1124,8 @@ def build_manuscript():
     # ---- References (APA, author-year, alphabetical) -----------------------
     h1(d, 'References')
     refs = [
-        'Asai, A., He, J., Shao, R., Shi, W., Singh, A., Chang, J. C., Lo, K., Soldaini, L., Feldman, S., D\'Arcy, M., Wadden, D., Latzke, M., Tian, M., Ji, P., Liu, S., Tong, H., Wu, B., Xiong, Y., Zettlemoyer, L., ... Hajishirzi, H. (2024a). OpenScholar: Synthesizing scientific literature with retrieval-augmented language models. arXiv:2411.14199. https://doi.org/10.48550/arXiv.2411.14199',
-        'Asai, A., Wu, Z., Wang, Y., Sil, A., & Hajishirzi, H. (2024b). Self-RAG: Learning to retrieve, generate, and critique through self-reflection. In Proceedings of ICLR.',
+        'Asai, A., He, J., Shao, R., Shi, W., Singh, A., Chang, J. C., Lo, K., Soldaini, L., Feldman, S., D\'Arcy, M., Wadden, D., Latzke, M., Sparks, J., Hwang, J. D., Kishore, V., Tian, M., Ji, P., Liu, S., Tong, H., Wu, B., ... Hajishirzi, H. (2026). Synthesizing scientific literature with retrieval-augmented language models. Nature, 650, 857–863. https://doi.org/10.1038/s41586-025-10072-4',
+        'Asai, A., Wu, Z., Wang, Y., Sil, A., & Hajishirzi, H. (2024). Self-RAG: Learning to retrieve, generate, and critique through self-reflection. In Proceedings of ICLR.',
         'Bao, T., Nayeem, M. T., Rafiei, D., & Zhang, C. (2025). SurveyGen: Quality-aware scientific survey generation with large language models. In Proceedings of EMNLP (pp. 2712–2736). https://doi.org/10.18653/v1/2025.emnlp-main.136',
         'Boteva, V., Gholipour, D., Sokolov, A., & Riezler, S. (2016). A full-text learning to rank dataset for medical information retrieval. In Proceedings of ECIR (pp. 716–722).',
         'Chen, J., Xiao, S., Zhang, P., Luo, K., Lian, D., & Liu, Z. (2024). BGE M3-Embedding: Multi-lingual, multi-functionality, multi-granularity text embeddings through self-knowledge distillation. arXiv:2402.03216. https://doi.org/10.48550/arXiv.2402.03216',
@@ -1130,6 +1135,7 @@ def build_manuscript():
         'Ding, H., Zhao, Y., Hu, T., Wang, Z., Patwardhan, M., & Cohan, A. (2026). SciRAG: Adaptive, citation-aware, and outline-guided retrieval and synthesis for scientific literature. In Proceedings of EACL (Volume 1: Long Papers) (pp. 6440–6460).',
         'Hwang, J., Park, J., Park, H., Kim, D., Park, S., & Ok, J. (2025). Retrieval-augmented generation with estimation of source reliability. In Proceedings of EMNLP (pp. 34279–34303). https://doi.org/10.18653/v1/2025.emnlp-main.1738',
         'Karpukhin, V., Oğuz, B., Min, S., Lewis, P., Wu, L., Edunov, S., Chen, D., & Yih, W.-t. (2020). Dense passage retrieval for open-domain question answering. In Proceedings of EMNLP (pp. 6769–6781). https://doi.org/10.18653/v1/2020.emnlp-main.550',
+        'Kim, J., Yoon, S., Le, X.-B., Nam, Y., Kim, D., Song, H., & Lee, J.-G. (2026). QuDAR: Query-wise dual-perspective adaptive retrieval. In Proceedings of ACL (pp. 38662–38679). https://doi.org/10.18653/v1/2026.acl-long.1791',
         'Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V., Goyal, N., Küttler, H., Lewis, M., Yih, W.-t., Rocktäschel, T., Riedel, S., & Kiela, D. (2020). Retrieval-augmented generation for knowledge-intensive NLP tasks. In Proceedings of NeurIPS (pp. 9459–9474).',
         'Lin, J. (2021). A proposed conceptual framework for a representational approach to information retrieval. ACM SIGIR Forum, 55(2).',
         'Nogueira, R., Jiang, Z., Pradeep, R., & Lin, J. (2020). Document ranking with a pretrained sequence-to-sequence model. In Findings of EMNLP (pp. 708–718). https://doi.org/10.18653/v1/2020.findings-emnlp.63',
@@ -1141,6 +1147,7 @@ def build_manuscript():
         'Shao, Z., Gong, Y., Shen, Y., Huang, M., Duan, N., & Chen, W. (2023). Enhancing retrieval-augmented large language models with iterative retrieval-generation synergy. In Findings of EMNLP (pp. 9248–9274).',
         'Singh, A., D\'Arcy, M., Cohan, A., Downey, D., & Feldman, S. (2023). SciRepEval: A multi-format benchmark for scientific document representations. In Proceedings of EMNLP (pp. 5548–5566).',
         'Thakur, N., Reimers, N., Rücklé, A., Srivastava, A., & Gurevych, I. (2021). BEIR: A heterogeneous benchmark for zero-shot evaluation of information retrieval models. In Proceedings of NeurIPS Datasets and Benchmarks.',
+        'Varangot-Reille, C., Bouvard, C., & Gourru, A. (2026). Generalising LLM routing using past performance retrieval: A few-shot router is sufficient. In Proceedings of EACL Student Research Workshop (pp. 304–319). https://doi.org/10.18653/v1/2026.eacl-srw.22',
         'Voorhees, E., Alam, T., Bedrick, S., Demner-Fushman, D., Hersh, W. R., Lo, K., Roberts, K., Soboroff, I., & Wang, L. L. (2021). TREC-COVID: Constructing a pandemic information retrieval test collection. ACM SIGIR Forum, 54(1), 1–12.',
         'Wadden, D., Lin, S., Lo, K., Wang, L. L., van Zuylen, M., Cohan, A., & Hajishirzi, H. (2020). Fact or fiction: Verifying scientific claims. In Proceedings of EMNLP (pp. 7534–7550). https://doi.org/10.18653/v1/2020.emnlp-main.609',
         'Wang, L., Yang, N., Huang, X., Jiao, B., Yang, L., Jiang, D., Majumder, R., & Wei, F. (2022). Text embeddings by weakly-supervised contrastive pre-training. arXiv:2212.03533. https://doi.org/10.48550/arXiv.2212.03533',
@@ -1148,6 +1155,7 @@ def build_manuscript():
         'Wang, W., Wei, F., Dong, L., Bao, H., Yang, N., & Zhou, M. (2020). MiniLM: Deep self-attention distillation for task-agnostic compression of pre-trained transformers. In Proceedings of NeurIPS.',
         'Xiao, S., Liu, Z., Zhang, P., & Muennighoff, N. (2023). C-Pack: Packaged resources to advance general Chinese embedding. arXiv:2309.07597. https://doi.org/10.48550/arXiv.2309.07597',
         'Yousuf, R. B., Xu, S., Sharma, M., Neeser, A., Latimer, C., & Ramakrishnan, N. (2026). Utilizing metadata for better retrieval-augmented generation. In Proceedings of ECIR (pp. 305–319). https://doi.org/10.1007/978-3-032-21289-4_20',
+        'Zhao, T., Zhu, Y., Tian, Y., & Dou, Z. (2026). R^3AG: Retriever routing for retrieval-augmented generation. In Proceedings of ACL (pp. 20506–20522). https://doi.org/10.18653/v1/2026.acl-long.939',
         'Zheng, L., Chiang, W.-L., Sheng, Y., Zhuang, S., Wu, Z., Zhuang, Y., Lin, Z., Li, Z., Li, D., Xing, E. P., Zhang, H., Gonzalez, J. E., & Stoica, I. (2023). Judging LLM-as-a-judge with MT-Bench and Chatbot Arena. In Proceedings of NeurIPS Datasets and Benchmarks.',
         'Zhuang, S., Zhuang, H., Koopman, B., & Zuccon, G. (2024). A setwise approach for effective and highly efficient zero-shot ranking with large language models. In Proceedings of SIGIR (pp. 38–47).',
     ]
@@ -1173,15 +1181,17 @@ def build_cover_letter():
       f'Systems with Applications.')
     p(d,
       'The manuscript fits the journal\'s focus on applied intelligent '
-      'systems: it couples (i) a four-domain, ten-configuration evaluation '
-      'of retrieval for scientific question answering with real '
-      'bibliographic metadata, (ii) a replicated negative result on '
-      'query-level routing that carries practical design guidance, (iii) a '
-      'generation-side evaluation of answer quality, and (iv) a deployment '
-      'case study of the full pipeline in PaperPilot, a live academic '
-      'writing assistant running on commodity hardware. The study yields an '
-      'actionable, domain-conditional configuration policy for scientific '
-      'RAG systems, and all data, code, and per-query results are publicly '
+      'systems through a new decision algorithm, BiblioGuard. Given a strong '
+      'metadata-free fallback and nine citation/recency actions, BiblioGuard '
+      'retrieves similar historical queries, estimates paired query-level '
+      'NDCG uplift, applies simultaneous one-sided confidence bounds, and '
+      'abstains unless an intervention has positive lower-bound evidence. A '
+      'five-fold cross-fitted evaluation across four scientific domains '
+      'shows a significant SCIDOCS gain and exact fallback behaviour on the '
+      'other three; removing the confidence gate causes negative transfer in '
+      'all three. The paper further provides mechanism diagnostics, an '
+      'end-to-end feasibility analysis, and a pilot academic-writing '
+      'assistant deployment. All data, code, cross-fitted decisions, and per-query results are publicly '
       f'available at {REPO} (archived at https://doi.org/{DOI}) '
       'for full reproducibility.')
     p(d,
@@ -1262,7 +1272,7 @@ def copy_figures():
         'Fig2_main_results.png': 'Fig2_main_results.png',
         'Fig3_ablation.png': 'Fig3_ablation.png',
         'Fig4_robustness.png': 'Fig4_robustness.png',
-        'Fig5_routing.png': 'Fig5_routing.png',
+        'Fig5_biblioguard.png': 'Fig5_biblioguard.png',
     }
     src = os.path.join(BASE, 'figures')
     for dst, s in mapping.items():

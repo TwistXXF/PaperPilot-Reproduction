@@ -7,6 +7,9 @@ import sys
 from pathlib import Path
 
 import numpy as np  # noqa: E402
+_mpl_cache = Path(__file__).resolve().parent / 'artifacts' / 'matplotlib'
+_mpl_cache.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault('MPLCONFIGDIR', str(_mpl_cache))
 import matplotlib  # noqa: E402
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt  # noqa: E402
@@ -34,6 +37,12 @@ COLORS = {'BM25': '#94a3b8', 'LSA-Dense': '#cbd5e1', 'SBERT-Dense': '#60a5fa',
           'BGE-Hybrid': '#7c3aed', 'BGE-CA-HR': '#f43f5e'}
 XLB = ['BM25', 'LSA', 'MiniLM', 'BGE', 'NH', 'UMA', 'LP', 'CA-HR',
        'BGE-H', 'BGE-CA']
+
+
+def robust_n10(record, method):
+    """Read both legacy scalar and metric-dictionary robustness files."""
+    value = record[method]
+    return float(value['N@10'] if isinstance(value, dict) else value)
 
 
 def save(fig, name):
@@ -111,12 +120,14 @@ for ax, ds in zip(axes, DS):
         base = T['main'][ds]['avg']['BM25']['N@10']
         nh0 = T['main'][ds]['avg']['Neural-Hybrid']['N@10']
         ca0 = T['main'][ds]['avg']['CA-HR']['N@10']
-    ax.plot(xs, [base] + [rob[str(k)]['BM25']['N@10'] for k in (0.1, 0.2, 0.3, 0.4)],
+    ax.plot(xs, [base] + [robust_n10(rob[str(k)], 'BM25')
+                          for k in (0.1, 0.2, 0.3, 0.4)],
             'o-', color='#94a3b8', label='BM25')
-    ax.plot(xs, [nh0] + [rob[str(k)]['Neural-Hybrid']['N@10']
+    ax.plot(xs, [nh0] + [robust_n10(rob[str(k)], 'Neural-Hybrid')
                          for k in (0.1, 0.2, 0.3, 0.4)],
             's-', color='#f59e0b', label='Neural-Hybrid')
-    ax.plot(xs, [ca0] + [rob[str(k)]['CA-HR']['N@10'] for k in (0.1, 0.2, 0.3, 0.4)],
+    ax.plot(xs, [ca0] + [robust_n10(rob[str(k)], 'CA-HR')
+                         for k in (0.1, 0.2, 0.3, 0.4)],
             '^-', color='#dc2626', label='CA-HR')
     ax.set_title(DS_LABEL[ds], fontsize=11)
     ax.set_xlabel('word-drop ratio', fontsize=9)
@@ -129,31 +140,35 @@ fig.suptitle('Robustness to query corruption (NDCG@10 vs. word-drop noise)',
 fig.tight_layout()
 save(fig, 'Fig4_robustness')
 
-# ---- Fig 5: oracle headroom vs routed system ------------------------------
+# ---- Fig 5: confidence gating and negative-transfer control ---------------
 fig, ax = plt.subplots(figsize=(7.5, 3.6))
-labels, oracle_v, routed_v, best_v, cahr_v = [], [], [], [], []
+labels, baseline_v, unconstrained_v, guarded_v, selection_v = [], [], [], [], []
 for ds in DS:
     labels.append(DS_LABEL[ds])
-    oracle_v.append(T['oracle'][ds]['routed_oracle']['N@10'])
-    routed_v.append(T['router'][ds]['routed_system']['N@10'])
-    best = max(['UMA-RAG', 'LP-RAG', 'CA-HR'],
-               key=lambda m: T['main'][ds]['avg'][m]['N@10'])
-    best_v.append(T['main'][ds]['avg'][best]['N@10'])
-    cahr_v.append(T['main'][ds]['avg']['CA-HR']['N@10'])
+    row = T['biblioguard']['results'][ds]
+    baseline_v.append(row['baseline_N@10'])
+    unconstrained_v.append(row['ablation_unconstrained']['N@10'])
+    guarded_v.append(row['biblioguard_N@10'])
+    selection_v.append(row['selection_rate'])
 x = np.arange(len(DS))
-w = 0.2
-ax.bar(x - 1.5 * w, best_v, w, label='best single metadata-aware',
-       color='#a78bfa')
-ax.bar(x - 0.5 * w, cahr_v, w, label='CA-HR (always)', color='#dc2626')
-ax.bar(x + 0.5 * w, routed_v, w, label='PAV-Agent routed', color='#60a5fa')
-ax.bar(x + 1.5 * w, oracle_v, w, label='per-query oracle', color='#1e293b')
+w = 0.24
+ax.bar(x - w, baseline_v, w, label='BGE-Hybrid fallback', color='#94a3b8')
+ax.bar(x, unconstrained_v, w, label='BiblioGuard without LCB', color='#f59e0b')
+guarded_bars = ax.bar(x + w, guarded_v, w, label='BiblioGuard', color='#2563eb')
+ax.set_ylim(0, max(baseline_v + unconstrained_v + guarded_v) * 1.10)
+for bar, rate in zip(guarded_bars, selection_v):
+    ax.annotate(f'{100 * rate:.1f}% active',
+                xy=(bar.get_x() + bar.get_width() / 2, bar.get_height()),
+                xytext=(0, 4), textcoords='offset points', ha='center',
+                va='bottom', fontsize=7)
 ax.set_xticks(x)
 ax.set_xticklabels(labels)
 ax.set_ylabel('NDCG@10')
 ax.legend(fontsize=8, ncol=1, loc='upper left')
 ax.grid(axis='y', alpha=0.3)
-ax.set_title('Oracle headroom vs. learned routing (NDCG@10)', fontsize=11)
+ax.set_title('Confidence gating avoids observed cross-domain negative transfer',
+             fontsize=11)
 fig.tight_layout()
-save(fig, 'Fig5_routing')
+save(fig, 'Fig5_biblioguard')
 
 print('figures:', sorted(os.listdir(OUT)))

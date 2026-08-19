@@ -50,7 +50,8 @@ for ds in DS:
     for v in ABL:
         expect(f'ablation {ds} {v}', f"{T['ablation'][ds][v]['N@10']:.4f}")
 
-# 3. robustness quoted values (nested metric dicts; manuscript quotes N@10)
+# 3. robustness quoted values (legacy files contain scalars; newer files
+# contain nested metric dictionaries)
 for ds, m in [('scifact', 'CA-HR'), ('scifact', 'BM25'),
               ('scifact', 'Neural-Hybrid'),
               ('trec-covid', 'CA-HR'), ('trec-covid', 'BM25'),
@@ -58,22 +59,34 @@ for ds, m in [('scifact', 'CA-HR'), ('scifact', 'BM25'),
               ('nfcorpus', 'CA-HR'), ('nfcorpus', 'Neural-Hybrid'),
               ('scidocs', 'BM25'), ('scidocs', 'CA-HR'),
               ('scidocs', 'Neural-Hybrid')]:
-    expect(f'robust {ds} 0.4 {m}',
-           f"{T['robust'][ds]['0.4'][m]['N@10']:.4f}")
+    value = T['robust'][ds]['0.4'][m]
+    value = value['N@10'] if isinstance(value, dict) else value
+    expect(f'robust {ds} 0.4 {m}', f"{value:.4f}")
 
 # 3b. BGE backbone-transfer effect sizes quoted in Section 6.1
 for ds in DS:
     d_val = T['main'][ds]['bge_tests']['BGE-CA-HR vs BGE-Hybrid | N@10']['d']
     expect(f'bge transfer d {ds}', f'd = {d_val:.3f}')
 
-# 4. router / oracle
+# 4. BiblioGuard primary results and mechanism ablation
+BG = T['biblioguard']['results']
 for ds in DS:
-    rt = T['router'][ds]
-    expect(f'router acc {ds}', f"{rt['cv_accuracy']:.3f}")
-    expect(f'router kappa {ds}', f"{rt['kappa']:.3f}")
-    expect(f'routed N@10 {ds}', f"{rt['routed_system']['N@10']:.4f}")
-    expect(f'oracle N@10 {ds}',
-           f"{T['oracle'][ds]['routed_oracle']['N@10']:.4f}")
+    row = BG[ds]
+    expect(f'BiblioGuard fallback {ds}', f"{row['baseline_N@10']:.4f}")
+    expect(f'BiblioGuard no-LCB {ds}',
+           f"{row['ablation_unconstrained']['N@10']:.4f}")
+    expect(f'BiblioGuard guarded {ds}', f"{row['biblioguard_N@10']:.4f}")
+    expect(f'BiblioGuard gain {ds}', f"{row['gain_N@10']:+.4f}")
+    expect(f'BiblioGuard rates {ds}',
+           f"{100*row['ablation_unconstrained']['selection_rate']:.1f}% / "
+           f"{100*row['selection_rate']:.1f}%")
+expect('BiblioGuard macro gain',
+       f"{T['biblioguard']['macro']['gain_N@10']:+.4f}")
+for s in ['beta = 0.30 on 141 queries', 'beta = 0.20 on 39',
+          'beta = 0.15 on 7', '813 queries return the fallback',
+          '96.8%', '67.3%', '45.8%', '54.0%', '-0.00003', '-0.00339',
+          '-0.01148']:
+    expect(f'BiblioGuard detail {s}', s)
 
 # 5. generation summary (200 paired queries, four datasets)
 g = T['generation']
@@ -109,21 +122,18 @@ for s in ['10 July 2026', '2 vCPU', '1.6 GB', 'Node.js 20.20.2',
           '63 messages', '6 registered users']:
     expect(f'deployment {s}', s)
 
-# 8. p-value strings quoted in text (Holm-adjusted primary family)
-for ds, key in [('scidocs', 'CA-HR vs BM25 | N@10'),
-                ('trec-covid', 'CA-HR vs BM25 | N@10'),
-                ('scifact', 'CA-HR vs SBERT-Dense | N@10')]:
-    pv = [t['p_holm'] for t in T['primary_tests']
-          if t['dataset'] == ds and t['test'] == key][0]
-    expect(f'holm pval {ds} {key}',
-           'p < 0.001' if pv < 0.001 else 'p = %.3f' % pv)
+# 8. revised confirmatory family
+expect('BiblioGuard scidocs Holm p',
+       f"Holm-adjusted p = {BG['scidocs']['wilcoxon_p_holm']:.2g}")
+expect('BiblioGuard scidocs d',
+       f"paired d = {BG['scidocs']['paired_cohen_d']:.3f}")
 
 # 9. bibliographic diagnostics (Section 5.2, Table 3)
 for s in ['0.798', '0.582', '0.498', '0.461', '566', '254', '179',
           '27.4%', '34.7%', '6 vs. 16', 'Mann-Whitney p = 0.55']:
     expect(f'diagnostic {s}', s)
 
-# 10. BGE metadata-weight sensitivity + RRF baselines (Section 6.4, Table 6)
+# 10. BGE metadata-weight sensitivity + RRF baselines (Section 6.5, Table 7)
 S = T['sensitivity']
 for ds in DS:
     expect(f'sens {ds} hybrid', f"{S[ds]['bge_hybrid_N@10']:.4f}")
@@ -135,11 +145,13 @@ expect('sens scidocs significant', 'yes')
 for ds in ('scifact', 'nfcorpus', 'trec-covid'):
     assert not S[ds]['any_significant_gain_after_holm'], ds
 assert S['scidocs']['any_significant_gain_after_holm']
-# Table 6/7/8 captions and renumbered cross-references
-for s in ['Table 6. BGE-backbone metadata-weight sensitivity',
-          'Table 7. Per-query oracle',
+# Table 4-8 captions and renumbered cross-references
+for s in ['Table 4. Cross-fitted BiblioGuard evaluation',
+          'Table 5. Retrieval effectiveness',
+          'Table 6. CA-HR ablation',
+          'Table 7. BGE-backbone metadata-weight sensitivity',
           'Table 8. End-to-end answer quality',
-          'Table 7 and Fig. 5', 'Table 8 shows']:
+          'Fig. 5. BGE-Hybrid', 'Table 8 shows']:
     expect(f'caption {s}', s)
 
 fails = []
@@ -159,7 +171,10 @@ for bad in ['Information Processing', 'IP&M', 'two benchmarks',
             'best metadata-aware choice',
             'The stronger BGE-small encoder is the best single',
             'Table 6. Per-query oracle', 'Table 7. End-to-end',
-            'Section 6.6', 'Table 6 and Fig',
+            'Rather than proposing yet another retrieval algorithm',
+            'nine atomic citation or recency actions',
+            'provides a distribution-free safety guarantee',
+            'BiblioGuard has been deployed', 'Table 6 and Fig',
             'Findings of EMNLP, 2022', 'R. Ren, Y. Qu', '679-693',
             'SCIDOCS (computer science; 25,657 documents, '
             '1,000 queries) and SciFact (biomedical;']:

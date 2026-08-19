@@ -9,6 +9,9 @@ artifacts/*_method_ckpt/
 
 __pycache__/
 *.pyc
+.venv/
+ESWA_submission/
+eswa/artifacts/matplotlib/
 .DS_Store
 
 # never commit API keys

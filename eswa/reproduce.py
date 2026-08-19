@@ -25,6 +25,7 @@ Stages (in pipeline order):
     robust      Query word-drop noise robustness (10-40%)
     router      PAV-Agent 5-fold CV routing analysis
     sensitivity BGE-CA-HR beta x gamma grid + RRF baselines
+    biblioguard Confidence-gated cross-fitted metadata intervention policy
     diagnostics Bibliographic metadata diagnostics (citation-relevance AUC)
     eswa_tables Consolidate everything into results/eswa_tables.json
     eswa_figs   Regenerate the manuscript figures (Fig. 2-5)
@@ -777,6 +778,14 @@ def stage_sensitivity(datasets=ALL_DS):
 
 
 # =====================================================================
+# Stage: BiblioGuard confidence-gated metadata intervention
+# =====================================================================
+def stage_biblioguard():
+    import biblioguard
+    biblioguard.main()
+
+
+# =====================================================================
 # Stage: metadata diagnostics
 # =====================================================================
 def stage_diagnostics():
@@ -905,6 +914,7 @@ STAGES = {
     'robust': stage_robust,
     'router': stage_router,
     'sensitivity': stage_sensitivity,
+    'biblioguard': stage_biblioguard,
     'diagnostics': stage_diagnostics,
     'eswa_tables': stage_eswa_tables,
     'eswa_figs': stage_eswa_figs,
@@ -912,7 +922,7 @@ STAGES = {
     'figures': stage_figures,
 }
 ORDER = ['download', 'metadata', 'encode', 'retrieval', 'bge', 'tables',
-         'ablation', 'robust', 'router', 'sensitivity', 'diagnostics',
+         'ablation', 'robust', 'router', 'sensitivity', 'biblioguard', 'diagnostics',
          'eswa_tables', 'eswa_figs']
 
 if __name__ == '__main__':
