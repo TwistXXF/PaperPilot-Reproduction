@@ -10,6 +10,7 @@ artifacts/*_bge_emb/
 artifacts/*_bge_qemb.npy
 artifacts/*_bge_qids.json
 eswa/artifacts/
+revision/artifacts/
 
 # official BEIR archives and large raw corpora are fetched by `reproduce.py download`
 data/*.zip

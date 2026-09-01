@@ -1,0 +1,27 @@
+{
+  "relish_inputs": {
+    "repository": "allenai/scirepeval",
+    "revision": "ecedf66bedbc4f473f55d498b1ba9305c3ed8430",
+    "path": "relish/evaluation-00000-of-00001.parquet",
+    "url": "https://huggingface.co/datasets/allenai/scirepeval/resolve/ecedf66bedbc4f473f55d498b1ba9305c3ed8430/relish/evaluation-00000-of-00001.parquet?download=true"
+  },
+  "relish_labels": {
+    "repository": "allenai/scirepeval_test",
+    "revision": "e124ef0eb918a65f6c8ccd7af5554d802c2e2074",
+    "path": "relish/test-00000-of-00001.parquet",
+    "url": "https://huggingface.co/datasets/allenai/scirepeval_test/resolve/e124ef0eb918a65f6c8ccd7af5554d802c2e2074/relish/test-00000-of-00001.parquet?download=true"
+  },
+  "semantic_scholar": {
+    "endpoint": "https://api.semanticscholar.org/graph/v1/paper/batch",
+    "fields": [
+      "paperId",
+      "corpusId",
+      "title",
+      "year",
+      "citationCount",
+      "externalIds"
+    ],
+    "id_namespace": "CorpusId"
+  }
+}
+

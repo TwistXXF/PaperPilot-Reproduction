@@ -1,0 +1,22 @@
+{
+  "bge": {
+    "kind": "sentence_transformer",
+    "model_id": "BAAI/bge-small-en-v1.5",
+    "batch_size": 128,
+    "max_length": 512
+  },
+  "scincl": {
+    "kind": "sentence_transformer",
+    "model_id": "malteos/scincl",
+    "batch_size": 64,
+    "max_length": 512
+  },
+  "specter2": {
+    "kind": "adapter",
+    "base_model_id": "allenai/specter2_base",
+    "adapter_model_id": "allenai/specter2",
+    "batch_size": 16,
+    "max_length": 512
+  }
+}
+
