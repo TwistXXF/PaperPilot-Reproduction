@@ -1,0 +1,51 @@
+{
+  "protocol_version": "3.0.0",
+  "frozen_at_utc": "2026-09-01T01:55:10Z",
+  "seed": 20260901,
+  "dataset": {
+    "inputs_id": "allenai/scirepeval",
+    "labels_id": "allenai/scirepeval_test",
+    "config": "relish",
+    "split_salt": "relish-v1",
+    "train_buckets": [0, 1],
+    "calibration_buckets": [2],
+    "locked_test_buckets": [3, 4, 5, 6, 7, 8, 9]
+  },
+  "primary_backbone": "allenai/specter2_base+allenai/specter2",
+  "retrievers": {
+    "bm25": "rank_bm25==0.2.2",
+    "bge": "BAAI/bge-small-en-v1.5",
+    "scincl": "malteos/scincl",
+    "specter2_base": "allenai/specter2_base",
+    "specter2_adapter": "allenai/specter2"
+  },
+  "actions": [
+    {"name": "citation_015", "kind": "linear", "metadata": "citation", "weight": 0.15},
+    {"name": "citation_030", "kind": "linear", "metadata": "citation", "weight": 0.30},
+    {"name": "recency_015", "kind": "linear", "metadata": "recency", "weight": 0.15},
+    {"name": "recency_030", "kind": "linear", "metadata": "recency", "weight": 0.30},
+    {"name": "balanced_015", "kind": "linear", "metadata": "balanced", "weight": 0.15},
+    {"name": "balanced_030", "kind": "linear", "metadata": "balanced", "weight": 0.30},
+    {"name": "rrf_citation", "kind": "rrf", "metadata": "citation", "rrf_k": 60},
+    {"name": "rrf_recency", "kind": "rrf", "metadata": "recency", "rrf_k": 60}
+  ],
+  "policy": {
+    "word_ngram_range": [1, 2],
+    "char_ngram_range": [3, 5],
+    "neighbors": "floor(sqrt(n_train))",
+    "lcb_z": 1.645,
+    "calibration_harm_upper_bound": 0.20,
+    "calibration_confidence": 0.95,
+    "minimum_active_calibration_queries": 30
+  },
+  "evaluation": {
+    "primary_metric": "ndcg_at_10",
+    "secondary_metrics": ["ndcg_at_20", "map_at_10", "recall_at_50", "precision_at_10"],
+    "coverage_budgets": [0.10, 0.25, 0.50, 0.75, 1.00],
+    "severe_harm_delta": -0.05,
+    "bootstrap_replicates": 10000,
+    "randomisation_replicates": 100000,
+    "multiplicity": "holm"
+  }
+}
+
