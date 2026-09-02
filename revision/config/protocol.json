@@ -1,7 +1,8 @@
 {
-  "protocol_version": "3.1.0",
+  "protocol_version": "3.2.0",
   "frozen_at_utc": "2026-09-01T01:55:10Z",
   "amended_before_locked_test_at_utc": "2026-09-02T01:51:04Z",
+  "amended_before_locked_evaluation_at_utc": "2026-09-02T08:24:43Z",
   "seed": 20260901,
   "dataset": {
     "inputs_id": "allenai/scirepeval",

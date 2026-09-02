@@ -433,6 +433,13 @@ def freeze_decisions(
         raise ValueError("Calibration metrics file must contain calibration rows only")
     content_audit = read_json(content_audit_path)
     locked_similarity = content_audit["locked_max_similarity_to_development"]
+    prepare_manifest_path = prepared_directory / "prepare_manifest.json"
+    prepare_manifest = read_json(prepare_manifest_path)
+    split_counts = prepare_manifest["split_audit"]["split_counts"]
+    if int(split_counts["train"]) != len(train_rows):
+        raise ValueError("Prepared/train metric query counts differ")
+    if int(split_counts["calibration"]) != len(calibration_rows):
+        raise ValueError("Prepared/calibration metric query counts differ")
 
     def effect_matrix(rows: list[dict[str, Any]]) -> np.ndarray:
         return np.asarray(
@@ -571,13 +578,24 @@ def freeze_decisions(
         "citation_count.npy",
         "year.npy",
         "layout.manifest.json",
+        "bm25.manifest.json",
+        "bge.manifest.json",
+        "scincl.manifest.json",
+        "specter2.manifest.json",
         "actions.manifest.json",
         "lambdarank.manifest.json",
     ]
+    models_config_path = protocol_path.parent / "models.json"
+    requirements_lock_path = protocol_path.parent.parent / "requirements-lock.txt"
     manifest = {
         "phase": "freeze",
         "test_labels_consumed": False,
+        "test_labels_materialised_for_evaluation": False,
+        "raw_label_container_may_contain_all_splits": True,
         "protocol_sha256": sha256_file(protocol_path),
+        "models_config_sha256": sha256_file(models_config_path),
+        "requirements_lock_sha256": sha256_file(requirements_lock_path),
+        "prepare_manifest_sha256": sha256_file(prepare_manifest_path),
         "training_metrics_sha256": sha256_file(training_metrics_path),
         "calibration_metrics_sha256": sha256_file(calibration_metrics_path),
         "content_audit_sha256": sha256_file(content_audit_path),
@@ -593,6 +611,14 @@ def freeze_decisions(
         "calibration_file": calibration_path.name,
         "calibration_sha256": sha256_file(calibration_path),
         "locked_queries": len(decision_rows),
+        "dataset_summary": {
+            "queries": int(prepare_manifest["queries"]),
+            "train_queries": int(split_counts["train"]),
+            "calibration_queries": int(split_counts["calibration"]),
+            "locked_queries": int(split_counts["locked_test"]),
+            "candidate_pairs": int(prepare_manifest["candidate_instances"]),
+            "unique_documents": int(prepare_manifest["documents"]),
+        },
     }
     write_json(manifest_path, manifest)
     return manifest
@@ -736,6 +762,7 @@ def evaluate_frozen_decisions(
         "frozen_decisions_sha256": sha256_file(decisions_path),
         "locked_metrics_sha256": sha256_file(locked_metrics_path),
         "locked_queries": len(metric_rows),
+        "dataset_summary": manifest["dataset_summary"],
         "retrieval_metrics": {
             system: {metric: float(np.mean(values)) for metric, values in metrics.items()}
             for system, metrics in retrieval_metrics.items()

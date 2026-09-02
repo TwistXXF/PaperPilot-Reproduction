@@ -52,7 +52,7 @@ class ProtocolTests(unittest.TestCase):
     def test_protocol_is_complete_and_hashable(self) -> None:
         path = REVISION / "config" / "protocol.json"
         protocol = load_protocol(path)
-        self.assertEqual(protocol["protocol_version"], "3.1.0")
+        self.assertEqual(protocol["protocol_version"], "3.2.0")
         self.assertEqual(len(sha256_file(path)), 64)
 
     def test_json_write_is_stable_and_round_trips(self) -> None:
@@ -168,12 +168,19 @@ class PhaseIsolationTests(unittest.TestCase):
                 {"query_id": "q-test", "cand_id": "c", "score": 1},
                 {"query_id": "q-test", "cand_id": "d", "score": 0},
             ]
-            original = data_module._read_parquet_rows
-            data_module._read_parquet_rows = lambda _: rows
+            requested_ids: list[set[str]] = []
+            original = data_module._read_selected_label_rows
+
+            def selected_rows(_: Path, selected: set[str]) -> list[dict[str, object]]:
+                requested_ids.append(set(selected))
+                return [row for row in rows if row["query_id"] in selected]
+
+            data_module._read_selected_label_rows = selected_rows
             try:
                 development_path = root / "development.jsonl.gz"
                 extract_labels(fake_parquet, prepared, development_path, {"train"})
                 self.assertEqual([row["qid"] for row in read_jsonl_gz(development_path)], ["q-train"])
+                self.assertEqual(requested_ids[-1], {"q-train"})
                 with self.assertRaises(RuntimeError):
                     extract_labels(
                         fake_parquet,
@@ -191,6 +198,7 @@ class PhaseIsolationTests(unittest.TestCase):
                     {
                         "phase": "freeze",
                         "test_labels_consumed": False,
+                        "test_labels_materialised_for_evaluation": False,
                         "score_hashes": {"fixture": "0" * 64},
                         "decisions_file": decisions.name,
                         "decisions_sha256": sha256_file(decisions),
@@ -205,8 +213,9 @@ class PhaseIsolationTests(unittest.TestCase):
                     frozen_decisions_manifest=manifest,
                 )
                 self.assertEqual([row["qid"] for row in read_jsonl_gz(locked_path)], ["q-test"])
+                self.assertEqual(requested_ids[-1], {"q-test"})
             finally:
-                data_module._read_parquet_rows = original
+                data_module._read_selected_label_rows = original
 
     def test_freeze_is_invariant_to_unpassed_locked_labels(self) -> None:
         protocol_path = REVISION / "config" / "protocol.json"
@@ -254,10 +263,23 @@ class PhaseIsolationTests(unittest.TestCase):
                         }
                     metric_rows.append({"qid": qid, "split": split, "metrics": systems})
             write_jsonl_gz(prepared / "queries.jsonl.gz", queries)
+            write_json(
+                prepared / "prepare_manifest.json",
+                {
+                    "queries": 12,
+                    "documents": len(set(candidate_ids)),
+                    "candidate_instances": len(candidate_ids),
+                    "split_audit": {
+                        "split_counts": {"train": 4, "calibration": 4, "locked_test": 4}
+                    },
+                },
+            )
             write_json(scores / "qids.json", qids)
             write_json(scores / "candidate_doc_ids.json", candidate_ids)
             np.save(scores / "offsets.npy", np.asarray(offsets, dtype=np.int64), allow_pickle=False)
             write_json(scores / "layout.manifest.json", {"fixture": True})
+            for name in ["bm25", "bge", "scincl", "specter2"]:
+                write_json(scores / f"{name}.manifest.json", {"fixture": name})
             rng = np.random.default_rng(11)
             for name in ["bm25", "bge", "scincl", "specter2", "lambdarank"]:
                 np.save(scores / f"{name}.npy", rng.normal(size=len(candidate_ids)), allow_pickle=False)
@@ -310,6 +332,9 @@ class PhaseIsolationTests(unittest.TestCase):
             )
             self.assertFalse(first["test_labels_consumed"])
             self.assertFalse(second["test_labels_consumed"])
+            self.assertFalse(first["test_labels_materialised_for_evaluation"])
+            self.assertEqual(first["dataset_summary"]["locked_queries"], 4)
+            self.assertIn("bm25.manifest.json", first["feature_hashes"])
             self.assertEqual(first["decisions_sha256"], second["decisions_sha256"])
             _verify_frozen_scores(scores, action_names, first)
             np.save(scores / "specter2.npy", np.zeros(len(candidate_ids)), allow_pickle=False)

@@ -1,13 +1,14 @@
-# BiblioGuard v3.1: leakage-aware RELISH reproduction
+# BiblioGuard v3.2: leakage-aware RELISH reproduction
 
 This directory is the clean experiment and paper lineage.  The files at the
 repository root are retained only for forensic comparison with the rejected
 manuscript; they are not presented as new confirmatory evidence.
 
-The protocol was committed before the new RELISH evaluation.  Corrections found
-by an independent code audit, also made before locked-test access, are listed in
-`ERRATA.md`.  The pipeline physically separates training, calibration, frozen
-decisions, label unlocking, and one-shot evaluation.
+The core v3.0 protocol was committed before the new RELISH label container was
+downloaded.  Pre-evaluation corrections and the exact label-access chronology
+are listed in `ERRATA.md`.  The pipeline keeps training, calibration, frozen
+decisions, hash-gated label materialisation, and one-shot evaluation in separate
+outputs and command phases.  It is not presented as externally blinded.
 
 ## Environment
 
@@ -65,7 +66,11 @@ $MANIFEST = "revision\frozen\decision_manifest.json"
 
 Locked label, metric, and final result files refuse overwrite.  The metrics
 phase verifies every score-array hash against the public freeze; the evaluator
-then verifies the locked-metric manifest and decision hash.
+then verifies the locked-metric manifest and decision hash.  Publication also
+checks every copied score/provenance hash against the public freeze, and the
+final verifier independently recomputes retrieval means, policy outcomes,
+matched coverage, risk curves/AURC, intervals, randomisation tests, sensitivity
+analysis, multiplicity adjustment, and generated LaTeX numbers.
 
 ## Released artefacts
 

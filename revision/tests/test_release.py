@@ -31,6 +31,14 @@ class ReleaseRenderingTests(unittest.TestCase):
             }
             curves[name] = {"coverage": [0.5, 1.0], "risk": [0.0, 0.1], "aurc": 0.025}
         results = {
+            "dataset_summary": {
+                "queries": 12,
+                "train_queries": 4,
+                "calibration_queries": 4,
+                "locked_queries": 4,
+                "candidate_pairs": 24,
+                "unique_documents": 24,
+            },
             "primary": {
                 "mean_effect": 0.0,
                 "bootstrap_95_ci": [-0.01, 0.01],

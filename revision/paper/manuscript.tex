@@ -50,9 +50,10 @@ but their apparent value is easily overstated by target leakage, post-publicatio
 metadata, repeated use of test collections, and comparisons against weak content
 retrievers.  We re-evaluate bibliographic intervention as a selective decision: for
 each seed paper, either retain a fixed SPECTER2 ranking or choose one of eight
-pre-specified citation/recency rerankings.  Before materialising locked-test labels, we
-publicly froze the split, action family, metric definitions, calibration rule, and stopping
-criterion.  The confirmatory experiment uses \dataset, an expert-curated biomedical
+pre-specified citation/recency rerankings.  Before materialising a locked-test label file
+or computing locked metrics, we publicly froze the split, action family, metric
+definitions, calibration rule, and stopping criterion.  The pre-committed experiment
+uses \dataset, an expert-curated biomedical
 related-article benchmark with \CandidatePairs{} graded query--candidate judgements.
 The policy is trained on \TrainQueries{} seed papers, calibrated on \CalibrationQueries{},
 and evaluated once on \TestQueries{} locked seeds.  Comparators include BM25,
@@ -104,10 +105,11 @@ retrospective audit.
 The revised study makes four contributions:
 
 \begin{enumerate}
-  \item A publicly timestamped protocol and physically separated
-  \code{fit}, \code{calibrate}, \code{freeze}, and \code{evaluate} phases.  Frozen
-  decisions are hashed before locked labels can be materialised.
-  \item A new confirmatory evaluation on human graded relevance rather than a
+  \item A publicly timestamped protocol and phase-separated
+  \code{fit}, \code{calibrate}, \code{freeze}, and \code{evaluate} outputs.  Frozen
+  decisions and all score/provenance inputs are hashed before a locked-test label file
+  or locked metric can be created.
+  \item A new pre-committed evaluation on human graded relevance rather than a
   citation-prediction target, with exact-CorpusId metadata provenance and explicit
   missingness.
   \item Comparisons with recent scientific document representations and a supervised
@@ -409,11 +411,16 @@ decision hash, per-query locked outcomes, generated tables, and manuscript sourc
 Aligned candidate scores, citation/year vectors, and the compressed metadata snapshot
 are stored with the release; large public inputs and document embeddings are regenerated.
 A
-verification command checks every published number against the machine-readable
-result file.  A v3.1 erratum records metric, preprocessing, and integrity corrections
-found during code audit; it was committed before locked-test access.  The original
-protocol commit predates labelled RELISH evaluation, and the freeze
-manifest explicitly records \code{test\_labels\_consumed: false}.
+verification command independently recomputes every numeric section of the result file,
+checks all frozen score/provenance hashes, and regenerates the LaTeX tables.  A v3.2
+erratum records metric, preprocessing, label-container, and integrity corrections made
+before any locked metric was computed.  The core v3.0 protocol commit predates the
+label download; however, an early development extractor subsequently loaded the public
+all-split Parquet before filtering its output.  It wrote no locked-label file and no
+locked result was inspected, but this prevents a literal ``labels were never read'' or
+external-blinding claim.  Version 3.2 instead Arrow-filters split rows before Python
+materialisation, and the freeze manifest records specifically that locked labels and
+metrics were not supplied to decision fitting.
 
 \section{Conclusion}
 

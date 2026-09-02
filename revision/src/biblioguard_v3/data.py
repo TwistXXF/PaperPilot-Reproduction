@@ -63,6 +63,32 @@ def _read_parquet_rows(path: Path) -> list[dict[str, Any]]:
     return parquet.read_table(path).to_pylist()
 
 
+def _read_selected_label_rows(
+    path: Path, selected_query_ids: set[str]
+) -> list[dict[str, Any]]:
+    """Materialise only the requested label rows through an Arrow-level filter.
+
+    The pinned label Parquet is a public container that includes every split.  Keeping
+    the filter inside Arrow prevents non-selected label rows from being converted to
+    Python objects or passed to downstream fitting/evaluation code.  This is process
+    isolation, not a claim that the raw container lacks locked-test bytes.
+    """
+    try:
+        import pyarrow.dataset as dataset
+    except ImportError as error:
+        raise RuntimeError(
+            "Reading the pinned Parquet files requires pyarrow; install the locked dependency set."
+        ) from error
+    if not selected_query_ids:
+        return []
+    source = dataset.dataset(path, format="parquet")
+    table = source.to_table(
+        columns=["query_id", "cand_id", "score"],
+        filter=dataset.field("query_id").isin(sorted(selected_query_ids)),
+    )
+    return table.to_pylist()
+
+
 def _clean_document(value: dict[str, Any]) -> dict[str, Any]:
     corpus_id = value.get("corpus_id")
     corpus_id = None if corpus_id is None or int(corpus_id) < 0 else int(corpus_id)
@@ -279,6 +305,8 @@ def extract_labels(
             "test_labels_consumed"
         ) is not False:
             raise RuntimeError("Locked-test labels require a valid pre-test freeze manifest")
+        if decision_manifest.get("test_labels_materialised_for_evaluation") is not False:
+            raise RuntimeError("Locked-test labels require a manifest created before materialisation")
         if not decision_manifest.get("score_hashes"):
             raise RuntimeError("Frozen manifest does not lock the evaluated score family")
         decision_path = frozen_decisions_manifest.parent / decision_manifest["decisions_file"]
@@ -289,7 +317,7 @@ def extract_labels(
     selected_ids = {qid for qid, row in query_by_id.items() if row["split"] in phases}
     labels_by_query: dict[str, dict[str, int]] = {qid: {} for qid in selected_ids}
     duplicate_pairs = 0
-    for row in _read_parquet_rows(parquet_path):
+    for row in _read_selected_label_rows(parquet_path, selected_ids):
         qid = str(row["query_id"])
         if qid not in selected_ids:
             continue
@@ -328,6 +356,9 @@ def extract_labels(
         "missing_pairs": missing_pairs,
         "extra_pairs": extra_pairs,
         "source_sha256": sha256_file(parquet_path),
+        "raw_label_container_contains_all_splits": True,
+        "arrow_query_filter_applied": True,
+        "python_materialised_phases": sorted(phases),
         "output_sha256": sha256_file(output_path),
     }
     write_json(output_path.with_suffix(output_path.suffix + ".manifest.json"), report)

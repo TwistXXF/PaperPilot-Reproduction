@@ -1,24 +1,31 @@
 # Locked protocol for the BiblioGuard re-evaluation
 
-Protocol version: `3.1.0`
+Protocol version: `3.2.0`
 
 Frozen at: `2026-09-01T01:55:10Z`
 
-Amended before locked-test access at: `2026-09-02T01:51:04Z`
+v3.1 amended before locked-test metrics at: `2026-09-02T01:51:04Z`
 
-Version 3.1 records implementation corrections found during a read-only code
-audit.  They were made before locked RELISH labels were materialised and are
-listed in `ERRATA.md`.
+v3.2 amended before locked-test metrics at: `2026-09-02T08:24:43Z`
 
-This file was committed before downloading or evaluating the labelled
-`allenai/scirepeval_test` RELISH configuration.  The earlier BEIR results in
-this repository had already been inspected and tuned against.  They are
-therefore retrospective evidence only and cannot be used as a confirmatory
-test of the revised policy.
+The core v3.0 decisions were committed before the labelled
+`allenai/scirepeval_test` RELISH configuration was downloaded.  Versions 3.1
+and 3.2 record implementation and integrity corrections found before any
+locked-test metric was computed.  By then, the public raw label container had
+been downloaded and an initial development extractor had loaded the whole table
+before filtering its output.  It persisted only training/calibration rows, and
+no locked-label file or locked result was inspected, but this is not an
+externally blinded study and we do not claim that locked label bytes were never
+read.  The exact chronology and unchanged decision parameters are listed in
+`ERRATA.md`.
+
+The earlier BEIR results in this repository had already been inspected and tuned
+against.  They are therefore retrospective evidence only and cannot be used as
+a confirmatory test of the revised policy.
 
 ## Research question and stopping rule
 
-The confirmatory question is whether a policy fitted on development queries
+The pre-committed locked question is whether a policy fitted on development queries
 can use bibliographic metadata to improve SPECTER2 ranking on a locked RELISH
 holdout without hiding query-level harm behind an overall mean.
 
@@ -36,7 +43,7 @@ outcome and will not claim superior safety or effectiveness.
 - Labels: `allenai/scirepeval_test`, configuration `relish`.
 - RELISH is used because its relevance judgements are supplied by scientists;
   unlike SCIDOCS, the target is not a future citation edge.
-- Before labels are read, query titles are Unicode-NFKC normalised, lowercased,
+- Before label values are used for fitting or calibration, query titles are Unicode-NFKC normalised, lowercased,
   stripped of punctuation, and whitespace-collapsed.  Identical normalised
   titles form one group.  An empty title falls back to its Semantic Scholar
   CorpusId.
@@ -51,11 +58,14 @@ outcome and will not claim superior safety or effectiveness.
   sensitivity analysis excludes locked titles with similarity at least 0.80
   to a training or calibration title.
 
-The label-bearing test data may be downloaded by the evaluation environment,
-but the pipeline must keep the phases separate: `fit` may read only training
-labels; `calibrate` may read only calibration labels; `freeze` emits decisions
-and their SHA-256 without locked-test labels; only `evaluate` may join frozen
-decisions to locked-test labels.
+The raw public label Parquet contains all splits and may be present in the
+evaluation environment.  Version 3.2 applies an Arrow-level `query_id` filter
+before rows are converted to Python objects: `fit` materialises only training
+rows, `calibrate` only calibration rows, `freeze` receives neither locked rows
+nor locked metrics, and only the hash-gated evaluation phase materialises and
+joins locked rows to frozen decisions.  This process isolation does not undo the
+earlier whole-table read disclosed above and is not described as external
+blinding.
 
 ## Inputs and provenance
 

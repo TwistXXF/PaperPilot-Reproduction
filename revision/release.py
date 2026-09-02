@@ -67,6 +67,12 @@ def copy_verified(source: Path, destination: Path) -> dict[str, Any]:
     return {"path": destination.relative_to(REPOSITORY).as_posix(), "sha256": source_hash}
 
 
+def require_hash(path: Path, expected: str, label: str) -> None:
+    actual = sha256_file(path)
+    if actual != expected:
+        raise RuntimeError(f"{label} hash mismatch: {actual} != {expected}")
+
+
 def latex_number(value: float, digits: int = 4, signed: bool = False) -> str:
     prefix = "+" if signed and value > 0 else ""
     return f"{prefix}{value:.{digits}f}"
@@ -100,6 +106,8 @@ def freeze_release(artifacts: Path) -> dict[str, Any]:
     manifest = read_json(source / "decision_manifest.json")
     if manifest.get("test_labels_consumed") is not False:
         raise RuntimeError("Refusing to release decisions without test_labels_consumed=false")
+    if manifest.get("test_labels_materialised_for_evaluation") is not False:
+        raise RuntimeError("Refusing to release decisions after locked labels were materialised")
     copied = [
         copy_verified(source / "decision_manifest.json", destination / "decision_manifest.json"),
         copy_verified(source / manifest["decisions_file"], destination / manifest["decisions_file"]),
@@ -110,6 +118,7 @@ def freeze_release(artifacts: Path) -> dict[str, Any]:
         "source_commit": git_value("rev-parse", "HEAD"),
         "decision_manifest_sha256": sha256_file(destination / "decision_manifest.json"),
         "test_labels_consumed": False,
+        "test_labels_materialised_for_evaluation": False,
         "files": copied,
     }
     write_json(destination / "release.json", report)
@@ -119,14 +128,15 @@ def freeze_release(artifacts: Path) -> dict[str, Any]:
 def render_tables_and_figure(results: dict[str, Any], generated: Path) -> None:
     primary = results["primary"]
     biblioguard = results["operating_point"]["biblioguard"]
+    dataset = results["dataset_summary"]
     low, high = primary["bootstrap_95_ci"]
     macros = "\n".join(
         [
-            r"\newcommand{\TrainQueries}{611}",
-            r"\newcommand{\CalibrationQueries}{339}",
-            r"\newcommand{\TestQueries}{2240}",
-            r"\newcommand{\CandidatePairs}{191245}",
-            r"\newcommand{\UniqueDocuments}{162971}",
+            rf"\newcommand{{\TrainQueries}}{{{dataset['train_queries']}}}",
+            rf"\newcommand{{\CalibrationQueries}}{{{dataset['calibration_queries']}}}",
+            rf"\newcommand{{\TestQueries}}{{{dataset['locked_queries']}}}",
+            rf"\newcommand{{\CandidatePairs}}{{{dataset['candidate_pairs']}}}",
+            rf"\newcommand{{\UniqueDocuments}}{{{dataset['unique_documents']}}}",
             rf"\newcommand{{\PrimaryGain}}{{{latex_number(primary['mean_effect'], signed=True)}}}",
             rf"\newcommand{{\PrimaryCI}}{{[{latex_number(low, signed=True)}, {latex_number(high, signed=True)}]}}",
             rf"\newcommand{{\PrimaryPValue}}{{{latex_pvalue(primary['paired_randomisation_p'])}}}",
@@ -215,6 +225,7 @@ def render_tables_and_figure(results: dict[str, Any], generated: Path) -> None:
 def publish_release(artifacts: Path) -> dict[str, Any]:
     import torch
 
+    git_dirty_before_publish = bool(git_value("status", "--porcelain"))
     source_results = artifacts / "results"
     source_frozen = artifacts / "frozen"
     source_metrics = artifacts / "metrics"
@@ -224,6 +235,74 @@ def publish_release(artifacts: Path) -> dict[str, Any]:
     frozen_manifest = read_json(source_frozen / "decision_manifest.json")
     if results["frozen_decisions_sha256"] != frozen_manifest["decisions_sha256"]:
         raise RuntimeError("Results do not descend from the frozen decision file")
+    public_frozen_manifest_path = REVISION / "frozen" / "decision_manifest.json"
+    require_hash(
+        public_frozen_manifest_path,
+        sha256_file(source_frozen / "decision_manifest.json"),
+        "Public frozen decision manifest",
+    )
+    require_hash(
+        REVISION / "frozen" / frozen_manifest["decisions_file"],
+        frozen_manifest["decisions_sha256"],
+        "Public frozen decisions",
+    )
+    if results.get("dataset_summary") != frozen_manifest.get("dataset_summary"):
+        raise RuntimeError("Result dataset summary differs from the public freeze")
+
+    action_names = sorted(results["fixed_action_ndcg_at_10"])
+    expected_score_names = {
+        "bm25",
+        "bge",
+        "scincl",
+        "specter2",
+        "lambdarank",
+        *(f"action_{name}" for name in action_names),
+    }
+    frozen_score_hashes = frozen_manifest.get("score_hashes")
+    if not isinstance(frozen_score_hashes, dict) or set(frozen_score_hashes) != expected_score_names:
+        raise RuntimeError("Frozen score hash family is incomplete or unexpected")
+    for name, expected in frozen_score_hashes.items():
+        require_hash(artifacts / "scores" / f"{name}.npy", expected, f"Frozen score {name}")
+
+    frozen_feature_hashes = frozen_manifest.get("feature_hashes")
+    if not isinstance(frozen_feature_hashes, dict):
+        raise RuntimeError("Frozen feature/layout hashes are missing")
+    for name, expected in frozen_feature_hashes.items():
+        require_hash(artifacts / "scores" / name, expected, f"Frozen feature {name}")
+    require_hash(
+        REVISION / "config" / "models.json",
+        frozen_manifest["models_config_sha256"],
+        "Model configuration",
+    )
+    require_hash(
+        REVISION / "requirements-lock.txt",
+        frozen_manifest["requirements_lock_sha256"],
+        "Requirements lock",
+    )
+    for model in ("bge", "scincl", "specter2"):
+        score_manifest = read_json(artifacts / "scores" / f"{model}.manifest.json")
+        require_hash(
+            artifacts / "embeddings" / f"{model}.manifest.json",
+            score_manifest["model_manifest_sha256"],
+            f"Embedding manifest {model}",
+        )
+
+    locked_metrics_path = source_metrics / "locked_test.jsonl.gz"
+    locked_metrics_manifest = read_json(
+        locked_metrics_path.with_suffix(locked_metrics_path.suffix + ".manifest.json")
+    )
+    require_hash(locked_metrics_path, results["locked_metrics_sha256"], "Locked metrics")
+    if locked_metrics_manifest.get("score_hashes") != frozen_score_hashes:
+        raise RuntimeError("Locked metrics and frozen score hashes differ")
+    if locked_metrics_manifest.get("frozen_decision_manifest_sha256") != sha256_file(
+        public_frozen_manifest_path
+    ):
+        raise RuntimeError("Locked metrics do not descend from the public freeze")
+    require_hash(
+        source_results / "locked_per_query.jsonl.gz",
+        results["per_query_sha256"],
+        "Locked per-query outcomes",
+    )
 
     copied = [
         copy_verified(source_results / "results.json", published / "results.json"),
@@ -244,12 +323,7 @@ def publish_release(artifacts: Path) -> dict[str, Any]:
         "offsets.npy",
         "citation_count.npy",
         "year.npy",
-        "bm25.npy",
-        "bge.npy",
-        "scincl.npy",
-        "specter2.npy",
-        "lambdarank.npy",
-    ] + [f"action_{name}.npy" for name in results["fixed_action_ndcg_at_10"]]
+    ] + [f"{name}.npy" for name in sorted(frozen_score_hashes)]
     for name in score_files:
         copied.append(
             copy_verified(artifacts / "scores" / name, published / "scores" / name)
@@ -286,7 +360,7 @@ def publish_release(artifacts: Path) -> dict[str, Any]:
     report = {
         "phase": "publish",
         "source_commit": git_value("rev-parse", "HEAD"),
-        "git_dirty_before_publish": bool(git_value("status", "--porcelain")),
+        "git_dirty_before_publish": git_dirty_before_publish,
         "python": sys.version,
         "platform": platform.platform(),
         "torch": torch.__version__,

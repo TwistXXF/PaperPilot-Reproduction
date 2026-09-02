@@ -85,7 +85,7 @@ def main() -> None:
     subparsers.add_parser("download-labels", help="Download pinned RELISH labels")
     subparsers.add_parser(
         "extract-development-labels",
-        help="Materialise training and calibration labels, never locked-test labels",
+        help="Arrow-filter and materialise only training/calibration label rows",
     )
     locked = subparsers.add_parser(
         "extract-locked-labels",
