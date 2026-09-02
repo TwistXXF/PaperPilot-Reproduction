@@ -26,15 +26,6 @@ def document_text(document: dict[str, Any], separator: str = " ") -> str:
     return separator.join(value for value in (title, abstract) if value)
 
 
-def resolve_model_revision(model_id: str) -> str:
-    from huggingface_hub import HfApi
-
-    information = HfApi().model_info(model_id)
-    if not information.sha:
-        raise RuntimeError(f"Hugging Face did not return a revision for {model_id}")
-    return str(information.sha)
-
-
 def _normalise_rows(values: np.ndarray) -> np.ndarray:
     values = np.asarray(values, dtype=np.float32)
     norms = np.linalg.norm(values, axis=1, keepdims=True)
@@ -118,14 +109,25 @@ def encode_sentence_transformer(
     from sentence_transformers import SentenceTransformer
 
     model_id = str(config["model_id"])
-    revision = resolve_model_revision(model_id)
+    revision = str(config["revision"])
+    if not re.fullmatch(r"[0-9a-f]{40}", revision):
+        raise ValueError(f"Model revision must be an immutable 40-character commit: {revision}")
     selected_device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     model = SentenceTransformer(model_id, revision=revision, device=selected_device)
     model.max_seq_length = int(config["max_length"])
     dimension = int(model.get_sentence_embedding_dimension())
+    separator_mode = str(config.get("separator", "space"))
+    if separator_mode == "space":
+        separator = " "
+    elif separator_mode == "tokenizer_sep":
+        separator = str(model.tokenizer.sep_token or "")
+        if not separator:
+            raise ValueError(f"{model_id} does not expose a tokenizer separator token")
+    else:
+        raise ValueError(f"Unknown document separator mode: {separator_mode}")
 
     def encode(batch: list[dict[str, Any]]) -> np.ndarray:
-        texts = [document_text(document) for document in batch]
+        texts = [document_text(document, separator=separator) for document in batch]
         return np.asarray(
             model.encode(
                 texts,
@@ -148,6 +150,10 @@ def encode_sentence_transformer(
             "kind": "sentence_transformer",
             "model_id": model_id,
             "resolved_revision": revision,
+            "document_separator_mode": separator_mode,
+            "document_separator": separator,
+            "max_length": int(config["max_length"]),
+            "batch_size": int(config["batch_size"]),
             "device": selected_device,
             "torch_version": torch.__version__,
             "sentence_transformers_version": sentence_transformers.__version__,
@@ -171,8 +177,11 @@ def encode_specter2(
 
     base_id = str(config["base_model_id"])
     adapter_id = str(config["adapter_model_id"])
-    base_revision = resolve_model_revision(base_id)
-    adapter_revision = resolve_model_revision(adapter_id)
+    base_revision = str(config["base_revision"])
+    adapter_revision = str(config["adapter_revision"])
+    for revision in (base_revision, adapter_revision):
+        if not re.fullmatch(r"[0-9a-f]{40}", revision):
+            raise ValueError(f"Model revision must be an immutable 40-character commit: {revision}")
     selected_device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     tokenizer = AutoTokenizer.from_pretrained(base_id, revision=base_revision)
     model = AutoAdapterModel.from_pretrained(base_id, revision=base_revision)
@@ -209,6 +218,10 @@ def encode_specter2(
             "base_resolved_revision": base_revision,
             "adapter_model_id": adapter_id,
             "adapter_resolved_revision": adapter_revision,
+            "document_separator_mode": "tokenizer_sep",
+            "document_separator": tokenizer.sep_token,
+            "max_length": int(config["max_length"]),
+            "batch_size": int(config["batch_size"]),
             "device": selected_device,
             "torch_version": torch.__version__,
             "transformers_version": transformers.__version__,

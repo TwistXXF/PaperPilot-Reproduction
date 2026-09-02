@@ -11,6 +11,7 @@ REPOSITORY = REVISION.parent
 sys.path.insert(0, str(REVISION / "src"))
 
 from biblioguard_v3.data import (  # noqa: E402
+    audit_content_near_duplicates,
     download_file,
     extract_labels,
     fetch_semantic_scholar_metadata,
@@ -21,6 +22,7 @@ from biblioguard_v3.experiment import (  # noqa: E402
     build_metadata_actions,
     evaluate_frozen_decisions,
     evaluate_score_files,
+    fit_lambdarank,
     freeze_decisions,
 )
 from biblioguard_v3.protocol import load_protocol  # noqa: E402
@@ -79,6 +81,7 @@ def main() -> None:
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("download-inputs", help="Download pinned unlabelled RELISH inputs")
     subparsers.add_parser("prepare", help="Normalise unlabelled inputs and freeze the split")
+    subparsers.add_parser("audit-content", help="Audit exact and near-duplicate titles without labels")
     subparsers.add_parser("download-labels", help="Download pinned RELISH labels")
     subparsers.add_parser(
         "extract-development-labels",
@@ -98,10 +101,15 @@ def main() -> None:
     score = subparsers.add_parser("score", help="Generate candidate scores from embeddings")
     score.add_argument("--model", choices=["bge", "scincl", "specter2"], required=True)
     subparsers.add_parser("actions", help="Generate the frozen metadata action score family")
+    subparsers.add_parser("lambdarank", help="Fit the development-only LambdaRank baseline")
     subparsers.add_parser("development-metrics", help="Evaluate score files on development labels")
     subparsers.add_parser("freeze", help="Fit, calibrate, and freeze locked-test decisions")
-    subparsers.add_parser("locked-metrics", help="Evaluate all score files on unlocked test labels")
-    subparsers.add_parser("evaluate", help="Evaluate immutable frozen decisions")
+    locked_metrics = subparsers.add_parser(
+        "locked-metrics", help="Evaluate frozen score files on unlocked test labels once"
+    )
+    locked_metrics.add_argument("--decision-manifest", type=Path, required=True)
+    evaluate = subparsers.add_parser("evaluate", help="Evaluate immutable frozen decisions once")
+    evaluate.add_argument("--decision-manifest", type=Path, required=True)
     arguments = parser.parse_args()
 
     artefact_paths = paths(arguments.artifacts.resolve())
@@ -117,18 +125,34 @@ def main() -> None:
         if not input_parquet.exists():
             parser.error("Run download-inputs before prepare")
         emit(prepare_unlabelled(input_parquet, artefact_paths["prepared"], protocol["dataset"]))
+    elif arguments.command == "audit-content":
+        emit(
+            audit_content_near_duplicates(
+                artefact_paths["prepared"] / "queries.jsonl.gz",
+                artefact_paths["prepared"] / "content_audit.json",
+                float(protocol["evaluation"]["near_duplicate_sensitivity_threshold"]),
+            )
+        )
     elif arguments.command == "download-labels":
         emit(download_named_source("relish_labels", label_parquet))
     elif arguments.command == "extract-development-labels":
         if not label_parquet.exists():
             parser.error("Run download-labels before extracting development labels")
         emit(
-            extract_labels(
-                label_parquet,
-                artefact_paths["prepared"],
-                artefact_paths["labels"] / "development.jsonl.gz",
-                {"train", "calibration"},
-            )
+            {
+                "train": extract_labels(
+                    label_parquet,
+                    artefact_paths["prepared"],
+                    artefact_paths["labels"] / "train.jsonl.gz",
+                    {"train"},
+                ),
+                "calibration": extract_labels(
+                    label_parquet,
+                    artefact_paths["prepared"],
+                    artefact_paths["labels"] / "calibration.jsonl.gz",
+                    {"calibration"},
+                ),
+            }
         )
     elif arguments.command == "extract-locked-labels":
         if not label_parquet.exists():
@@ -194,24 +218,38 @@ def main() -> None:
                 artefact_paths["scores"],
                 artefact_paths["metadata"] / "semantic_scholar.jsonl.gz",
                 protocol,
+                REVISION / "config" / "protocol.json",
+            )
+        )
+    elif arguments.command == "lambdarank":
+        emit(
+            fit_lambdarank(
+                artefact_paths["labels"] / "train.jsonl.gz",
+                artefact_paths["scores"],
+                REVISION / "config" / "protocol.json",
             )
         )
     elif arguments.command == "development-metrics":
         artefact_paths["metrics"].mkdir(parents=True, exist_ok=True)
         emit(
-            evaluate_score_files(
-                artefact_paths["labels"] / "development.jsonl.gz",
-                artefact_paths["scores"],
-                artefact_paths["metrics"] / "development.jsonl.gz",
-                [action["name"] for action in protocol["actions"]],
-            )
+            {
+                split: evaluate_score_files(
+                    artefact_paths["labels"] / f"{split}.jsonl.gz",
+                    artefact_paths["scores"],
+                    artefact_paths["metrics"] / f"{split}.jsonl.gz",
+                    [action["name"] for action in protocol["actions"]],
+                )
+                for split in ("train", "calibration")
+            }
         )
     elif arguments.command == "freeze":
         emit(
             freeze_decisions(
                 artefact_paths["prepared"],
                 artefact_paths["scores"],
-                artefact_paths["metrics"] / "development.jsonl.gz",
+                artefact_paths["metrics"] / "train.jsonl.gz",
+                artefact_paths["metrics"] / "calibration.jsonl.gz",
+                artefact_paths["prepared"] / "content_audit.json",
                 REVISION / "config" / "protocol.json",
                 artefact_paths["frozen"],
             )
@@ -224,12 +262,14 @@ def main() -> None:
                 artefact_paths["scores"],
                 artefact_paths["metrics"] / "locked_test.jsonl.gz",
                 [action["name"] for action in protocol["actions"]],
+                frozen_manifest_path=arguments.decision_manifest.resolve(),
+                refuse_overwrite=True,
             )
         )
     elif arguments.command == "evaluate":
         emit(
             evaluate_frozen_decisions(
-                artefact_paths["frozen"],
+                arguments.decision_manifest.resolve(),
                 artefact_paths["metrics"] / "locked_test.jsonl.gz",
                 REVISION / "config" / "protocol.json",
                 artefact_paths["results"],

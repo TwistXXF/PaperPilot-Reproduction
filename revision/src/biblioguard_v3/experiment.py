@@ -29,6 +29,9 @@ from .statistics import (
 )
 
 
+RETRIEVAL_SYSTEMS = ["bm25", "bge", "scincl", "specter2", "lambdarank"]
+
+
 def _layout(scores_directory: Path) -> tuple[list[str], list[str], np.ndarray]:
     qids = [str(value) for value in read_json(scores_directory / "qids.json")]
     candidate_ids = [str(value) for value in read_json(scores_directory / "candidate_doc_ids.json")]
@@ -38,11 +41,34 @@ def _layout(scores_directory: Path) -> tuple[list[str], list[str], np.ndarray]:
     return qids, candidate_ids, offsets
 
 
+def _system_score_paths(scores_directory: Path, action_names: list[str]) -> dict[str, Path]:
+    paths = {name: scores_directory / f"{name}.npy" for name in RETRIEVAL_SYSTEMS}
+    paths.update(
+        {f"action_{name}": scores_directory / f"action_{name}.npy" for name in action_names}
+    )
+    return paths
+
+
+def _verify_frozen_scores(
+    scores_directory: Path, action_names: list[str], frozen_manifest: dict[str, Any]
+) -> dict[str, str]:
+    paths = _system_score_paths(scores_directory, action_names)
+    expected = frozen_manifest.get("score_hashes")
+    if not isinstance(expected, dict) or set(expected) != set(paths):
+        raise RuntimeError("Frozen manifest does not cover the complete score family")
+    actual = {name: sha256_file(path) for name, path in paths.items()}
+    if actual != expected:
+        changed = sorted(name for name in paths if actual.get(name) != expected.get(name))
+        raise RuntimeError(f"Score files changed after decision freeze: {changed}")
+    return actual
+
+
 def build_metadata_actions(
     prepared_directory: Path,
     scores_directory: Path,
     metadata_path: Path,
     protocol: dict[str, Any],
+    protocol_path: Path,
 ) -> dict[str, Any]:
     qids, candidate_doc_ids, offsets = _layout(scores_directory)
     queries = read_jsonl_gz(prepared_directory / "queries.jsonl.gz")
@@ -129,7 +155,7 @@ def build_metadata_actions(
         np.save(path, values, allow_pickle=False)
         output_hashes[f"action_{name}"] = sha256_file(path)
     report = {
-        "protocol_sha256": sha256_file(prepared_directory.parents[2] / "config" / "protocol.json"),
+        "protocol_sha256": sha256_file(protocol_path),
         "metadata_sha256": sha256_file(metadata_path),
         "specter2_scores_sha256": sha256_file(scores_directory / "specter2.npy"),
         "candidate_instances": len(candidate_doc_ids),
@@ -152,15 +178,14 @@ def evaluate_score_files(
     scores_directory: Path,
     output_path: Path,
     action_names: list[str],
+    frozen_manifest_path: Path | None = None,
+    refuse_overwrite: bool = False,
 ) -> dict[str, Any]:
+    if refuse_overwrite and output_path.exists():
+        raise FileExistsError(f"Refusing to overwrite one-shot metrics: {output_path}")
     qids, candidate_ids, offsets = _layout(scores_directory)
     qid_to_index = {qid: index for index, qid in enumerate(qids)}
-    system_paths = {
-        name: scores_directory / f"{name}.npy" for name in ["bm25", "bge", "scincl", "specter2"]
-    }
-    system_paths.update(
-        {f"action_{name}": scores_directory / f"action_{name}.npy" for name in action_names}
-    )
+    system_paths = _system_score_paths(scores_directory, action_names)
     missing = [path for path in system_paths.values() if not path.exists()]
     if missing:
         raise FileNotFoundError(f"Missing score files: {missing}")
@@ -183,7 +208,7 @@ def evaluate_score_files(
         }
         rows.append({"qid": qid, "split": label_row["split"], "metrics": metrics})
     write_jsonl_gz(output_path, rows)
-    report = {
+    report: dict[str, Any] = {
         "labels_sha256": sha256_file(labels_path),
         "queries": len(rows),
         "systems": sorted(systems),
@@ -191,6 +216,13 @@ def evaluate_score_files(
         "output_sha256": sha256_file(output_path),
         "score_hashes": {name: sha256_file(path) for name, path in system_paths.items()},
     }
+    if frozen_manifest_path is not None:
+        frozen_manifest = read_json(frozen_manifest_path)
+        actual = _verify_frozen_scores(scores_directory, action_names, frozen_manifest)
+        if actual != report["score_hashes"]:
+            raise AssertionError("Score hashes changed during locked evaluation")
+        report["frozen_decision_manifest_sha256"] = sha256_file(frozen_manifest_path)
+        report["frozen_decisions_sha256"] = frozen_manifest["decisions_sha256"]
     write_json(output_path.with_suffix(output_path.suffix + ".manifest.json"), report)
     return report
 
@@ -247,6 +279,115 @@ def query_features(prepared_directory: Path, scores_directory: Path) -> tuple[li
     return qids, matrix
 
 
+def _within_query_minmax(values: np.ndarray) -> np.ndarray:
+    values = np.asarray(values, dtype=float)
+    present = values[~np.isnan(values)]
+    if len(present) == 0:
+        return np.zeros(len(values), dtype=np.float32)
+    median = float(np.median(present))
+    filled = np.where(np.isnan(values), median, values)
+    low = float(np.min(filled))
+    high = float(np.max(filled))
+    if high <= low:
+        return np.zeros(len(values), dtype=np.float32)
+    return np.asarray((filled - low) / (high - low), dtype=np.float32)
+
+
+def candidate_features(scores_directory: Path) -> tuple[list[str], np.ndarray, np.ndarray]:
+    qids, _, offsets = _layout(scores_directory)
+    retrieval = {
+        name: np.load(scores_directory / f"{name}.npy", mmap_mode="r")
+        for name in ["bm25", "bge", "scincl", "specter2"]
+    }
+    citation = np.load(scores_directory / "citation_count.npy", mmap_mode="r")
+    year = np.load(scores_directory / "year.npy", mmap_mode="r")
+    features = np.empty((int(offsets[-1]), 6), dtype=np.float32)
+    for query_number in range(len(qids)):
+        start, stop = int(offsets[query_number]), int(offsets[query_number + 1])
+        columns = [
+            _within_query_minmax(np.asarray(retrieval[name][start:stop], dtype=float))
+            for name in ["bm25", "bge", "scincl", "specter2"]
+        ]
+        citation_values = np.asarray(citation[start:stop], dtype=float)
+        citation_values = np.where(np.isnan(citation_values), np.nan, np.log1p(citation_values))
+        columns.append(_within_query_minmax(citation_values))
+        columns.append(_within_query_minmax(np.asarray(year[start:stop], dtype=float)))
+        features[start:stop] = np.column_stack(columns)
+    if not np.isfinite(features).all():
+        raise ValueError("Candidate features contain non-finite values")
+    return qids, offsets, features
+
+
+def fit_lambdarank(
+    labels_path: Path,
+    scores_directory: Path,
+    protocol_path: Path,
+) -> dict[str, Any]:
+    import lightgbm as lgb
+
+    protocol = read_json(protocol_path)
+    qids, offsets, features = candidate_features(scores_directory)
+    qid_to_index = {qid: index for index, qid in enumerate(qids)}
+    labels = read_jsonl_gz(labels_path)
+    if not labels or {row["split"] for row in labels} != {"train"}:
+        raise ValueError("LambdaRank fit accepts training labels only")
+
+    def materialise(rows: list[dict[str, Any]]) -> tuple[np.ndarray, np.ndarray, list[int]]:
+        feature_parts: list[np.ndarray] = []
+        label_parts: list[np.ndarray] = []
+        groups: list[int] = []
+        for row in rows:
+            index = qid_to_index[str(row["qid"])]
+            start, stop = int(offsets[index]), int(offsets[index + 1])
+            relevance = np.asarray(row["labels"], dtype=np.int32)
+            if len(relevance) != stop - start:
+                raise ValueError(f"LambdaRank label count mismatch for {row['qid']}")
+            feature_parts.append(features[start:stop])
+            label_parts.append(relevance)
+            groups.append(stop - start)
+        return np.vstack(feature_parts), np.concatenate(label_parts), groups
+
+    train_x, train_y, train_group = materialise(labels)
+    params = {
+        "objective": "lambdarank",
+        "metric": "ndcg",
+        "label_gain": [0, 1, 2],
+        "n_estimators": 500,
+        "learning_rate": 0.03,
+        "num_leaves": 31,
+        "min_child_samples": 20,
+        "subsample": 1.0,
+        "colsample_bytree": 1.0,
+        "reg_lambda": 1.0,
+        "random_state": int(protocol["seed"]),
+        "deterministic": True,
+        "force_col_wise": True,
+        "verbosity": -1,
+    }
+    ranker = lgb.LGBMRanker(**params)
+    ranker.fit(train_x, train_y, group=train_group)
+    predictions = np.asarray(ranker.predict(features), dtype=np.float32)
+    output_path = scores_directory / "lambdarank.npy"
+    np.save(output_path, predictions, allow_pickle=False)
+    model_path = scores_directory / "lambdarank_model.txt"
+    ranker.booster_.save_model(str(model_path))
+    report = {
+        "implementation": "lightgbm.LGBMRanker",
+        "lightgbm_version": lgb.__version__,
+        "feature_names": ["bm25", "bge", "scincl", "specter2", "log_citation", "year"],
+        "parameters": params,
+        "iterations": int(params["n_estimators"]),
+        "training_queries": len(labels),
+        "calibration_labels_consumed": False,
+        "training_labels_sha256": sha256_file(labels_path),
+        "actions_manifest_sha256": sha256_file(scores_directory / "actions.manifest.json"),
+        "scores_sha256": sha256_file(output_path),
+        "model_sha256": sha256_file(model_path),
+    }
+    write_json(scores_directory / "lambdarank.manifest.json", report)
+    return report
+
+
 def _selected_effects(effects: np.ndarray, action_index: np.ndarray) -> np.ndarray:
     return effects[np.arange(len(effects)), action_index]
 
@@ -271,21 +412,27 @@ def _safe_calibration(
 def freeze_decisions(
     prepared_directory: Path,
     scores_directory: Path,
-    development_metrics_path: Path,
+    training_metrics_path: Path,
+    calibration_metrics_path: Path,
+    content_audit_path: Path,
     protocol_path: Path,
     output_directory: Path,
 ) -> dict[str, Any]:
+    manifest_path = output_directory / "decision_manifest.json"
+    if manifest_path.exists():
+        raise FileExistsError(f"Refusing to overwrite frozen decisions: {manifest_path}")
     protocol = read_json(protocol_path)
     action_names = [action["name"] for action in protocol["actions"]]
     queries = read_jsonl_gz(prepared_directory / "queries.jsonl.gz")
     query_by_id = {str(query["qid"]): query for query in queries}
-    metric_rows = read_jsonl_gz(development_metrics_path)
-    by_split = {
-        split: [row for row in metric_rows if row["split"] == split]
-        for split in ("train", "calibration")
-    }
-    if not by_split["train"] or not by_split["calibration"]:
-        raise ValueError("Both training and calibration metrics are required")
+    train_rows = read_jsonl_gz(training_metrics_path)
+    calibration_rows = read_jsonl_gz(calibration_metrics_path)
+    if not train_rows or {row["split"] for row in train_rows} != {"train"}:
+        raise ValueError("Training metrics file must contain training rows only")
+    if not calibration_rows or {row["split"] for row in calibration_rows} != {"calibration"}:
+        raise ValueError("Calibration metrics file must contain calibration rows only")
+    content_audit = read_json(content_audit_path)
+    locked_similarity = content_audit["locked_max_similarity_to_development"]
 
     def effect_matrix(rows: list[dict[str, Any]]) -> np.ndarray:
         return np.asarray(
@@ -300,8 +447,6 @@ def freeze_decisions(
             dtype=float,
         )
 
-    train_rows = by_split["train"]
-    calibration_rows = by_split["calibration"]
     train_effects = effect_matrix(train_rows)
     calibration_effects = effect_matrix(calibration_rows)
     train_titles = [query_by_id[str(row["qid"])]["title"] for row in train_rows]
@@ -355,6 +500,16 @@ def freeze_decisions(
         decision_rows.append(
             {
                 "qid": str(query["qid"]),
+                "content_audit": {
+                    "max_similarity_to_development": float(
+                        locked_similarity[str(query["qid"])]["similarity"]
+                    ),
+                    "nearest_development_qid": locked_similarity[str(query["qid"])]["qid"],
+                    "exclude_from_near_duplicate_sensitivity": bool(
+                        locked_similarity[str(query["qid"])]["similarity"]
+                        >= float(protocol["evaluation"]["near_duplicate_sensitivity_threshold"])
+                    ),
+                },
                 "methods": {
                     "biblioguard": {
                         "action": action_names[int(local_locked.action_index[index])],
@@ -404,35 +559,75 @@ def freeze_decisions(
         "locked_queries": len(locked_queries),
     }
     write_json(calibration_path, calibration_report)
+    lambdarank_manifest_path = scores_directory / "lambdarank.manifest.json"
+    if not lambdarank_manifest_path.exists():
+        raise FileNotFoundError("LambdaRank must be fitted before freezing decisions")
+    score_paths = _system_score_paths(scores_directory, action_names)
+    score_hashes = {name: sha256_file(path) for name, path in score_paths.items()}
+    feature_files = [
+        "qids.json",
+        "candidate_doc_ids.json",
+        "offsets.npy",
+        "citation_count.npy",
+        "year.npy",
+        "layout.manifest.json",
+        "actions.manifest.json",
+        "lambdarank.manifest.json",
+    ]
     manifest = {
         "phase": "freeze",
         "test_labels_consumed": False,
         "protocol_sha256": sha256_file(protocol_path),
-        "development_metrics_sha256": sha256_file(development_metrics_path),
+        "training_metrics_sha256": sha256_file(training_metrics_path),
+        "calibration_metrics_sha256": sha256_file(calibration_metrics_path),
+        "content_audit_sha256": sha256_file(content_audit_path),
         "queries_sha256": sha256_file(prepared_directory / "queries.jsonl.gz"),
         "actions_manifest_sha256": sha256_file(scores_directory / "actions.manifest.json"),
+        "lambdarank_manifest_sha256": sha256_file(lambdarank_manifest_path),
+        "score_hashes": score_hashes,
+        "feature_hashes": {
+            name: sha256_file(scores_directory / name) for name in feature_files
+        },
         "decisions_file": decisions_path.name,
         "decisions_sha256": sha256_file(decisions_path),
         "calibration_file": calibration_path.name,
         "calibration_sha256": sha256_file(calibration_path),
         "locked_queries": len(decision_rows),
     }
-    write_json(output_directory / "decision_manifest.json", manifest)
+    write_json(manifest_path, manifest)
     return manifest
 
 
 def evaluate_frozen_decisions(
-    frozen_directory: Path,
+    frozen_manifest_path: Path,
     locked_metrics_path: Path,
     protocol_path: Path,
     output_directory: Path,
 ) -> dict[str, Any]:
+    results_path = output_directory / "results.json"
+    if results_path.exists():
+        raise FileExistsError(f"Refusing to overwrite one-shot locked results: {results_path}")
     protocol = read_json(protocol_path)
-    manifest_path = frozen_directory / "decision_manifest.json"
-    manifest = read_json(manifest_path)
-    decisions_path = frozen_directory / manifest["decisions_file"]
+    manifest = read_json(frozen_manifest_path)
+    if manifest.get("test_labels_consumed") is not False:
+        raise RuntimeError("Invalid frozen decision manifest")
+    if manifest["protocol_sha256"] != sha256_file(protocol_path):
+        raise RuntimeError("Protocol changed after decision freeze")
+    decisions_path = frozen_manifest_path.parent / manifest["decisions_file"]
     if sha256_file(decisions_path) != manifest["decisions_sha256"]:
         raise RuntimeError("Frozen decisions changed after the freeze phase")
+    locked_metrics_manifest_path = locked_metrics_path.with_suffix(
+        locked_metrics_path.suffix + ".manifest.json"
+    )
+    locked_metrics_manifest = read_json(locked_metrics_manifest_path)
+    if locked_metrics_manifest.get("frozen_decision_manifest_sha256") != sha256_file(
+        frozen_manifest_path
+    ):
+        raise RuntimeError("Locked metrics were not generated from this frozen manifest")
+    if locked_metrics_manifest.get("score_hashes") != manifest.get("score_hashes"):
+        raise RuntimeError("Locked metric score hashes differ from the frozen score family")
+    if locked_metrics_manifest.get("output_sha256") != sha256_file(locked_metrics_path):
+        raise RuntimeError("Locked metrics changed after generation")
     decisions = {str(row["qid"]): row for row in read_jsonl_gz(decisions_path)}
     metric_rows = read_jsonl_gz(locked_metrics_path)
     if set(decisions) != {str(row["qid"]) for row in metric_rows}:
@@ -440,16 +635,27 @@ def evaluate_frozen_decisions(
     method_effects: dict[str, list[float]] = {}
     method_active: dict[str, list[bool]] = {}
     method_confidence: dict[str, list[float]] = {}
-    baseline_metrics: dict[str, list[float]] = {}
-    retrieval_systems = ["bm25", "bge", "scincl", "specter2"]
+    retrieval_metrics: dict[str, dict[str, list[float]]] = {}
+    action_metrics: dict[str, list[float]] = {}
+    retrieval_systems = RETRIEVAL_SYSTEMS
     per_query: list[dict[str, Any]] = []
     for metric_row in metric_rows:
         qid = str(metric_row["qid"])
         metrics = metric_row["metrics"]
         baseline = float(metrics["specter2"]["ndcg_at_10"])
         for system in retrieval_systems:
-            baseline_metrics.setdefault(system, []).append(float(metrics[system]["ndcg_at_10"]))
-        query_result: dict[str, Any] = {"qid": qid, "methods": {}}
+            for metric_name, value in metrics[system].items():
+                retrieval_metrics.setdefault(system, {}).setdefault(metric_name, []).append(float(value))
+        for system, values in metrics.items():
+            if system.startswith("action_"):
+                action_metrics.setdefault(system.removeprefix("action_"), []).append(
+                    float(values["ndcg_at_10"])
+                )
+        query_result: dict[str, Any] = {
+            "qid": qid,
+            "content_audit": decisions[qid]["content_audit"],
+            "methods": {},
+        }
         for method, decision in decisions[qid]["methods"].items():
             action = str(decision["action"])
             effect = float(metrics[f"action_{action}"]["ndcg_at_10"] - baseline)
@@ -466,12 +672,30 @@ def evaluate_frozen_decisions(
     operating: dict[str, Any] = {}
     matched: dict[str, Any] = {}
     curves: dict[str, Any] = {}
+    specter2_mean = float(np.mean(retrieval_metrics["specter2"]["ndcg_at_10"]))
     budgets = [float(value) for value in protocol["evaluation"]["coverage_budgets"]]
     for method in sorted(method_effects):
         effects = np.asarray(method_effects[method], dtype=float)
         active = np.asarray(method_active[method], dtype=bool)
         confidence = np.asarray(method_confidence[method], dtype=float)
         operating[method] = policy_outcomes(effects, active)
+        operating[method]["policy_ndcg_at_10"] = (
+            specter2_mean + float(operating[method]["overall_mean_gain"])
+        )
+        operating[method]["active_action_counts"] = {
+            action: sum(
+                1
+                for row in per_query
+                if row["methods"][method]["active"] and row["methods"][method]["action"] == action
+            )
+            for action in sorted(
+                {
+                    row["methods"][method]["action"]
+                    for row in per_query
+                    if row["methods"][method]["active"]
+                }
+            )
+        }
         matched[method] = {
             f"{budget:.2f}": policy_outcomes(effects, deterministic_top_k(confidence, budget))
             for budget in budgets
@@ -487,6 +711,14 @@ def evaluate_frozen_decisions(
     randomisation_replicates = int(protocol["evaluation"]["randomisation_replicates"])
     primary_ci = paired_bootstrap_ci(primary_effects, replicates, seed)
     primary_p = paired_randomisation_pvalue(primary_effects, randomisation_replicates, seed)
+    sensitivity_keep = np.asarray(
+        [
+            not bool(row["content_audit"]["exclude_from_near_duplicate_sensitivity"])
+            for row in per_query
+        ],
+        dtype=bool,
+    )
+    sensitivity_effects = primary_effects[sensitivity_keep]
     comparator_pvalues = {}
     for method in sorted(method_effects):
         if method == "biblioguard":
@@ -504,8 +736,16 @@ def evaluate_frozen_decisions(
         "frozen_decisions_sha256": sha256_file(decisions_path),
         "locked_metrics_sha256": sha256_file(locked_metrics_path),
         "locked_queries": len(metric_rows),
-        "retrieval_ndcg_at_10": {
-            system: float(np.mean(values)) for system, values in baseline_metrics.items()
+        "retrieval_metrics": {
+            system: {metric: float(np.mean(values)) for metric, values in metrics.items()}
+            for system, metrics in retrieval_metrics.items()
+        },
+        "fixed_action_ndcg_at_10": {
+            action: float(np.mean(values)) for action, values in action_metrics.items()
+        },
+        "fixed_action_gain_vs_specter2": {
+            action: float(np.mean(values) - np.mean(retrieval_metrics["specter2"]["ndcg_at_10"]))
+            for action, values in action_metrics.items()
         },
         "operating_point": operating,
         "matched_coverage": matched,
@@ -516,11 +756,23 @@ def evaluate_frozen_decisions(
             "bootstrap_95_ci": list(primary_ci),
             "paired_randomisation_p": primary_p,
         },
+        "near_duplicate_sensitivity": {
+            "threshold": float(protocol["evaluation"]["near_duplicate_sensitivity_threshold"]),
+            "included_queries": int(np.sum(sensitivity_keep)),
+            "excluded_queries": int(np.sum(~sensitivity_keep)),
+            "mean_effect": float(np.mean(sensitivity_effects)),
+            "bootstrap_95_ci": list(
+                paired_bootstrap_ci(sensitivity_effects, replicates, seed + 1)
+            ),
+            "paired_randomisation_p": paired_randomisation_pvalue(
+                sensitivity_effects, randomisation_replicates, seed + 1
+            ),
+        },
         "comparisons_vs_biblioguard_holm_p": holm_adjust(comparator_pvalues),
     }
     output_directory.mkdir(parents=True, exist_ok=True)
     per_query_path = output_directory / "locked_per_query.jsonl.gz"
     write_jsonl_gz(per_query_path, per_query)
     report["per_query_sha256"] = sha256_file(per_query_path)
-    write_json(output_directory / "results.json", report)
+    write_json(results_path, report)
     return report

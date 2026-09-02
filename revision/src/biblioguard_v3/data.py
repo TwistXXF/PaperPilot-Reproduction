@@ -18,7 +18,7 @@ from .io import (
     write_json,
     write_jsonl_gz,
 )
-from .splits import assign_split, audit_splits, group_id, split_bucket
+from .splits import assign_split, audit_splits, group_id, normalise_title, split_bucket
 
 
 def download_file(url: str, destination: Path, timeout: int = 60) -> dict[str, Any]:
@@ -163,6 +163,102 @@ def prepare_unlabelled(
     return report
 
 
+def audit_content_near_duplicates(
+    queries_path: Path,
+    output_path: Path,
+    sensitivity_threshold: float = 0.80,
+) -> dict[str, Any]:
+    """Audit title similarity across the already-frozen split without labels."""
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    queries = sorted(read_jsonl_gz(queries_path), key=lambda row: str(row["qid"]))
+    titles = [normalise_title(str(row.get("title") or "")) for row in queries]
+    vectorizer = TfidfVectorizer(
+        analyzer="char_wb",
+        ngram_range=(3, 5),
+        lowercase=False,
+        norm="l2",
+        dtype=np.float64,
+    )
+    matrix = vectorizer.fit_transform(titles)
+    indices = {
+        split: np.asarray(
+            [index for index, row in enumerate(queries) if row["split"] == split], dtype=int
+        )
+        for split in ("train", "calibration", "locked_test")
+    }
+    thresholds = [0.70, 0.75, 0.80, 0.90, 0.95]
+    counts = {f"{threshold:.2f}": 0 for threshold in thresholds}
+    retained_pairs: list[dict[str, Any]] = []
+    for left_split, right_split in [
+        ("train", "calibration"),
+        ("train", "locked_test"),
+        ("calibration", "locked_test"),
+    ]:
+        left = indices[left_split]
+        right = indices[right_split]
+        similarities = (matrix[left] @ matrix[right].T).toarray()
+        for threshold in thresholds:
+            counts[f"{threshold:.2f}"] += int(np.sum(similarities >= threshold))
+        left_position, right_position = np.where(similarities >= thresholds[0])
+        for row_position, column_position in zip(left_position.tolist(), right_position.tolist()):
+            left_query = queries[int(left[row_position])]
+            right_query = queries[int(right[column_position])]
+            retained_pairs.append(
+                {
+                    "left_qid": str(left_query["qid"]),
+                    "left_split": left_split,
+                    "left_title": str(left_query["title"]),
+                    "right_qid": str(right_query["qid"]),
+                    "right_split": right_split,
+                    "right_title": str(right_query["title"]),
+                    "similarity": float(similarities[row_position, column_position]),
+                }
+            )
+    retained_pairs.sort(
+        key=lambda row: (-float(row["similarity"]), row["left_qid"], row["right_qid"])
+    )
+
+    development = np.concatenate([indices["train"], indices["calibration"]])
+    locked = indices["locked_test"]
+    locked_to_development = (matrix[locked] @ matrix[development].T).toarray()
+    nearest = np.argmax(locked_to_development, axis=1)
+    locked_max: dict[str, dict[str, Any]] = {}
+    for position, locked_index in enumerate(locked.tolist()):
+        development_index = int(development[int(nearest[position])])
+        locked_max[str(queries[locked_index]["qid"])] = {
+            "qid": str(queries[development_index]["qid"]),
+            "split": str(queries[development_index]["split"]),
+            "similarity": float(locked_to_development[position, int(nearest[position])]),
+        }
+
+    report = {
+        "phase": "content_only_split_audit",
+        "labels_consumed": False,
+        "queries_sha256": sha256_file(queries_path),
+        "method": "char_wb_tfidf_cosine",
+        "ngram_range": [3, 5],
+        "sensitivity_threshold": sensitivity_threshold,
+        "cross_split_pair_counts": counts,
+        "pairs_at_or_above_0_70": retained_pairs,
+        "locked_queries_at_or_above_sensitivity_threshold": int(
+            sum(value["similarity"] >= sensitivity_threshold for value in locked_max.values())
+        ),
+        "locked_max_similarity_to_development": locked_max,
+    }
+    write_json(output_path, report)
+    return {
+        "phase": report["phase"],
+        "labels_consumed": False,
+        "queries_sha256": report["queries_sha256"],
+        "cross_split_pair_counts": counts,
+        "locked_queries_at_or_above_sensitivity_threshold": report[
+            "locked_queries_at_or_above_sensitivity_threshold"
+        ],
+        "output_sha256": sha256_file(output_path),
+    }
+
+
 def extract_labels(
     parquet_path: Path,
     prepared_directory: Path,
@@ -174,9 +270,17 @@ def extract_labels(
     if not phases or not phases.issubset(allowed):
         raise ValueError(f"phases must be a non-empty subset of {sorted(allowed)}")
     if "locked_test" in phases:
+        if output_path.exists():
+            raise FileExistsError(f"Refusing to overwrite materialised locked labels: {output_path}")
         if frozen_decisions_manifest is None or not frozen_decisions_manifest.exists():
             raise RuntimeError("Locked-test labels require a pre-existing frozen decision manifest")
         decision_manifest = read_json(frozen_decisions_manifest)
+        if decision_manifest.get("phase") != "freeze" or decision_manifest.get(
+            "test_labels_consumed"
+        ) is not False:
+            raise RuntimeError("Locked-test labels require a valid pre-test freeze manifest")
+        if not decision_manifest.get("score_hashes"):
+            raise RuntimeError("Frozen manifest does not lock the evaluated score family")
         decision_path = frozen_decisions_manifest.parent / decision_manifest["decisions_file"]
         if sha256_file(decision_path) != decision_manifest["decisions_sha256"]:
             raise RuntimeError("Frozen decisions do not match their committed manifest")
@@ -259,13 +363,19 @@ def fetch_semantic_scholar_metadata(
         payload = {"ids": [f"CorpusId:{value}" for value in batch]}
         response = None
         for attempt in range(maximum_attempts):
-            response = requests.post(
-                endpoint,
-                params={"fields": ",".join(fields)},
-                headers=headers,
-                json=payload,
-                timeout=90,
-            )
+            try:
+                response = requests.post(
+                    endpoint,
+                    params={"fields": ",".join(fields)},
+                    headers=headers,
+                    json=payload,
+                    timeout=90,
+                )
+            except (requests.ConnectionError, requests.Timeout):
+                if attempt + 1 == maximum_attempts:
+                    raise
+                time.sleep(min(60.0, 2.0**attempt))
+                continue
             if response.status_code == 200:
                 break
             if response.status_code not in {429, 500, 502, 503, 504}:

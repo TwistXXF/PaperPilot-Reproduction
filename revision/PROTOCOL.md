@@ -1,8 +1,14 @@
 # Locked protocol for the BiblioGuard re-evaluation
 
-Protocol version: `3.0.0`
+Protocol version: `3.1.0`
 
 Frozen at: `2026-09-01T01:55:10Z`
+
+Amended before locked-test access at: `2026-09-02T01:51:04Z`
+
+Version 3.1 records implementation corrections found during a read-only code
+audit.  They were made before locked RELISH labels were materialised and are
+listed in `ERRATA.md`.
 
 This file was committed before downloading or evaluating the labelled
 `allenai/scirepeval_test` RELISH configuration.  The earlier BEIR results in
@@ -40,6 +46,10 @@ outcome and will not claim superior safety or effectiveness.
   are the locked test.  A content-only audit will report exact and near
   duplicates across splits; labels are never used to alter membership.
 - Candidate order is not treated as a feature.  Ties are broken by CorpusId.
+- The content-only near-duplicate audit uses character 3--5-gram TF--IDF cosine
+  similarity over titles.  It does not alter the primary split.  A secondary
+  sensitivity analysis excludes locked titles with similarity at least 0.80
+  to a training or calibration title.
 
 The label-bearing test data may be downloaded by the evaluation environment,
 but the pipeline must keep the phases separate: `fit` may read only training
@@ -69,7 +79,11 @@ SPECTER2.  SPECTER2 is fixed a priori as the primary backbone; its choice is
 not conditional on development performance.  A supervised LightGBM LambdaRank
 model using the four retrieval scores plus the two metadata features is the
 strong learned-fusion baseline.  Model identifiers and resolved Hugging Face
-commit revisions are frozen in the run manifest.
+commit revisions are frozen in `config/models.json` and the run manifest.
+SciNCL joins title and abstract with its official tokenizer separator; BGE uses
+a space and SPECTER2 uses its base tokenizer separator.  LambdaRank is fitted
+for the fixed 500 trees using training labels only and sets graded gains to
+`[0,1,2]`; calibration labels are not used for early stopping.
 
 ## Metadata actions
 
@@ -83,6 +97,10 @@ The fixed action family is:
 - equal citation/recency interpolation at weights 0.15 and 0.30;
 - reciprocal-rank fusion of SPECTER2 with citation rank at `k=60`;
 - reciprocal-rank fusion of SPECTER2 with recency rank at `k=60`.
+
+Equal metadata values receive midranks in reciprocal-rank fusion.  A constant
+or fully missing metadata field therefore contributes a constant and cannot
+create an identifier-driven ranking signal.
 
 No new action or weight may be added after locked-test evaluation.  The
 global-action baseline selects one of these actions by training mean NDCG@10
@@ -114,8 +132,10 @@ selection, so methods are never compared only at their native coverage.
 
 ## Outcomes and inference
 
-Primary metric: NDCG@10.  Secondary retrieval metrics are NDCG@20, MAP@10,
-Recall@50, and Precision@10.  The following policy outcomes are reported both
+Primary metric: NDCG@10 with linear graded gains, matching
+trec_eval/pytrec_eval.  Secondary retrieval metrics are NDCG@20, full-list
+NDCG, MAP@10 (trec_eval `map_cut.10`, with all relevant candidates in the
+denominator), Recall@50, and Precision@10.  The following policy outcomes are reported both
 at the calibrated operating point and at matched coverage:
 
 - overall mean gain, including zero for abstention;
@@ -141,4 +161,3 @@ being rerun.  SCIDOCS citation-count interventions are excluded from efficacy
 claims because current citation counts leak future/target information into a
 citation-prediction task.  Any refreshed numbers are labelled exploratory and
 are accompanied by duplicate-query and input-lineage checks.
-

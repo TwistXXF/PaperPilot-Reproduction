@@ -2,21 +2,26 @@
   "bge": {
     "kind": "sentence_transformer",
     "model_id": "BAAI/bge-small-en-v1.5",
+    "revision": "5c38ec7c405ec4b44b94cc5a9bb96e735b38267a",
+    "separator": "space",
     "batch_size": 128,
     "max_length": 512
   },
   "scincl": {
     "kind": "sentence_transformer",
     "model_id": "malteos/scincl",
+    "revision": "ebc5348d184ba2fc9beee69b4e394263fce57b2e",
+    "separator": "tokenizer_sep",
     "batch_size": 64,
     "max_length": 512
   },
   "specter2": {
     "kind": "adapter",
     "base_model_id": "allenai/specter2_base",
+    "base_revision": "3447645e1def9117997203454fa4495937bfbd83",
     "adapter_model_id": "allenai/specter2",
+    "adapter_revision": "2081559630a80fc5851d8f798a05ba81e9468089",
     "batch_size": 16,
     "max_length": 512
   }
 }
-

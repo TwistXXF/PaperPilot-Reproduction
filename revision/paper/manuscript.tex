@@ -1,0 +1,438 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.45cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{natbib}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{siunitx}
+\usepackage{threeparttable}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\sisetup{round-mode=places,round-precision=4,detect-all}
+\setlist{nosep,leftmargin=*}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\dataset}{RELISH}
+
+\IfFileExists{generated/results_macros.tex}{
+  \input{generated/results_macros.tex}
+}{
+  \newcommand{\TrainQueries}{611}
+  \newcommand{\CalibrationQueries}{339}
+  \newcommand{\TestQueries}{2240}
+  \newcommand{\CandidatePairs}{191245}
+  \newcommand{\UniqueDocuments}{162971}
+  \newcommand{\PrimaryGain}{pending}
+  \newcommand{\PrimaryCI}{pending}
+  \newcommand{\PrimaryPValue}{pending}
+  \newcommand{\PrimaryCoverage}{pending}
+}
+
+\title{When should bibliographic metadata alter related-article recommendations?\\
+A leakage-aware selective evaluation}
+\author{Zichen Feng\\
+Department of Computer Science and Technology, University of Sanya, Sanya, Hainan, China\\
+\texttt{3353854381@qq.com}}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Citation counts and publication years can alter scientific-paper recommendations,
+but their apparent value is easily overstated by target leakage, post-publication
+metadata, repeated use of test collections, and comparisons against weak content
+retrievers.  We re-evaluate bibliographic intervention as a selective decision: for
+each seed paper, either retain a fixed SPECTER2 ranking or choose one of eight
+pre-specified citation/recency rerankings.  Before materialising locked-test labels, we
+publicly froze the split, action family, metric definitions, calibration rule, and stopping
+criterion.  The confirmatory experiment uses \dataset, an expert-curated biomedical
+related-article benchmark with \CandidatePairs{} graded query--candidate judgements.
+The policy is trained on \TrainQueries{} seed papers, calibrated on \CalibrationQueries{},
+and evaluated once on \TestQueries{} locked seeds.  Comparators include BM25,
+BGE-small, SciNCL, SPECTER2, a training-only LambdaRank fusion, a global metadata
+action, local k-nearest-neighbour action selection, and a gradient-boosted gain
+predictor.  We report mean NDCG@10 change, matched-coverage conditional harm,
+negative shortfall, and a genuine selective risk--coverage curve.  At the locked
+operating point, the BiblioGuard policy changes NDCG@10 by \PrimaryGain{}
+(95\% paired-bootstrap interval \PrimaryCI{}; randomisation \(p=\PrimaryPValue\))
+at \PrimaryCoverage{} coverage.  The accompanying audit shows why the earlier
+SCIDOCS citation result is retrospective rather than confirmatory: current citation
+counts are coupled to a citation-prediction target and the official test collection
+had already influenced method development.  The contribution is therefore a
+leakage-aware empirical assessment and reproducible decision protocol, not a formal
+safety guarantee.
+\end{abstract}
+
+\noindent\textbf{Keywords:} scientific paper recommendation; bibliographic metadata;
+selective prediction; risk--coverage; test leakage; reproducibility
+
+\section{Introduction}
+
+Related-article recommenders help researchers navigate a literature that is too large
+to inspect manually.  Text encoders estimate topical similarity, while bibliographic
+signals such as citation count and publication year encode visibility and recency.
+Hybridising these signals appears attractive, but a citation prior can reward age,
+field size, and accumulated attention instead of query-specific relevance.  A fixed
+metadata weight can therefore improve a mean metric while degrading many individual
+queries.
+
+This paper asks a narrower question: \emph{given a strong content ranking, when does
+the available development evidence justify changing it with bibliographic metadata?}
+The question is a selective-decision problem because abstention has a concrete
+meaning---retain the content ranking.  It is also an evaluation-design problem.
+Citation metadata gathered years after a benchmark was created can leak future
+information; on citation-prediction collections it can be directly coupled to the
+target.  Cross-validation does not restore confirmatory status when the same official
+test collection has already been used for feature, neighbourhood, or threshold
+choices.
+
+An earlier version of this work did not resolve those threats.  Its only material gain
+occurred on SCIDOCS, where post-hoc citation counts were used for a citation-prediction
+task.  It also varied several configurations on the same official tests, lacked
+matched-coverage selectors and modern scientific encoders, and called an aggregate
+gain/coverage plot ``risk--coverage'' without computing conditional selective risk.
+We do not conceal those facts: the old four-dataset results are retained only as a
+retrospective audit.
+
+The revised study makes four contributions:
+
+\begin{enumerate}
+  \item A publicly timestamped protocol and physically separated
+  \code{fit}, \code{calibrate}, \code{freeze}, and \code{evaluate} phases.  Frozen
+  decisions are hashed before locked labels can be materialised.
+  \item A new confirmatory evaluation on human graded relevance rather than a
+  citation-prediction target, with exact-CorpusId metadata provenance and explicit
+  missingness.
+  \item Comparisons with recent scientific document representations and a supervised
+  learning-to-rank fusion, plus selectors evaluated at identical coverage budgets.
+  \item Query-level inference and risk reporting: paired effects, harm probability,
+  severe harm, negative shortfall, selective risk--coverage, and AURC.
+\end{enumerate}
+
+Our stopping rule is deliberately adverse to a positive narrative.  If a fixed action,
+LambdaRank, or a simpler gain predictor matches or exceeds BiblioGuard, that result is
+reported and the method is not described as safer or more effective.
+
+\section{Related work}
+
+\subsection{Scientific-paper recommendation and representation}
+
+Research-paper recommenders combine content, collaborative, and graph signals, but
+their datasets and evaluation designs vary widely \citep{zhang2023survey}.  RELISH
+provides more than 180,000 document-pair judgements from over 1,500 scientists
+\citep{brown2019relish}; a broad comparison found that representation choice and
+domain adaptation materially affect biomedical recommendation
+\citep{zhang2022comparative}.  The current study uses RELISH's three graded relevance
+levels and its fixed 60-document candidate pools.
+
+Dense scientific representations have advanced beyond compact general-purpose
+sentence encoders.  SPECTER uses citation links to learn paper representations
+\citep{cohan2020specter}; SciNCL samples neighbourhoods in a citation-embedding space
+\citep{ostendorff2022scincl}.  SciRepEval showed that scientific representations do not
+generalise uniformly across task formats and introduced task-format adapters in
+SPECTER2 \citep{singh2023scirepeval}.  We therefore compare lexical BM25, BGE-small,
+SciNCL, and the SPECTER2 proximity adapter on exactly the same candidate pools.
+
+Recent academic recommendation work uses large citation graphs, content, and learned
+multi-stage systems \citep{stergiopoulos2024academic,kanwal2024multiple}.  Knowledge-
+aware citation recommendation and OAG-Bench further illustrate the stronger graph and
+benchmark comparisons expected in current TKDE and KDD research
+\citep{wu2024supporting,zhang2024oagbench}.  These methods address broader problems
+than the present metadata intervention, but they motivate the inclusion of a supervised
+LambdaRank fusion rather than comparison only with fixed linear weights.
+
+\subsection{Bibliographic signals and bias}
+
+Citation count is an attention measure, not a direct measure of scientific quality.
+It varies with field, publication age, language, and network visibility; responsible
+metric use requires multiple indicators and explicit context
+\citep{hicks2015leiden}.  A current citation snapshot is especially problematic when
+the target itself is a citation edge.  Our confirmatory target is instead human graded
+relatedness.  Even there, current metadata remains observational and time-dependent,
+so the experiment supports neither a causal claim nor a historical simulation.
+
+\subsection{Selective decisions and risk}
+
+Selective prediction evaluates a model jointly with a reject option and studies risk
+as coverage changes \citep{geifman2017selective,geifman2019selectivenet}.  High-
+confidence policy improvement similarly compares a proposed action with a baseline
+under explicit assumptions \citep{thomas2015hcpi}.  BiblioGuard borrows the operational
+idea of a pessimistic score but does not inherit a theorem: similarity-selected
+neighbours are dependent and the weighted standard error is heuristic.  We therefore
+calibrate a threshold on a separate split and call it an empirical operating rule.
+
+\section{Problem formulation}
+
+For seed paper \(q\), let \(D_q\) be its fixed candidate pool, \(s_0(q,d)\) the
+SPECTER2 cosine score, and \(y_{qd}\in\{0,1,2\}\) the locked relevance grade.  The
+content ranking is \(\pi_0(q)\).  An action \(a\in\mathcal{A}\) changes scores but not
+the candidate pool.  Its query-level effect is
+\begin{equation}
+  \Delta_q(a)=\operatorname{NDCG@10}(\pi_a(q),y_q)
+  -\operatorname{NDCG@10}(\pi_0(q),y_q).
+\end{equation}
+A policy chooses \(a\) or abstains.  Abstention has effect zero.  The primary estimand
+is the mean policy effect over every locked query, not merely active queries.
+
+Three validity constraints follow.  First, action decisions cannot use locked labels.
+Second, action prediction must remain fixed while a gate threshold is swept; otherwise
+the curve confounds action and coverage.  Third, methods must be compared at the same
+coverage as well as at their native calibrated operating points.
+
+\section{Method}
+
+\subsection{Pre-specified metadata actions}
+
+Within each candidate pool, SPECTER2 score, \(\log(1+\text{citations})\), and year are
+min--max scaled.  A missing value is replaced by the observed pool median before
+scaling; a fully missing or constant field maps to zero.  The action family contains
+citation, recency, and equally balanced interpolations at weights 0.15 and 0.30, plus
+reciprocal-rank fusion of SPECTER2 with citation or recency rank at \(k=60\).  No
+action or weight is added after test evaluation.  Equal metadata values receive
+midranks in reciprocal-rank fusion, so a constant or fully missing metadata field
+cannot create an identifier-driven ordering.
+
+\subsection{Local action prediction}
+
+Word (1--2 gram) and character (3--5 gram) TF--IDF features are fitted on training
+seed titles.  A target uses \(k=\lfloor\sqrt{n_{\mathrm{train}}}\rfloor\) nearest
+training seeds.  Negative cosine similarities are clipped and the remaining
+similarities are normalised to weights \(w_i\).  For action \(a\),
+\begin{align}
+  \widehat\mu_a &= \sum_i w_i\Delta_i(a),\\
+  \widehat v_a &= \frac{\sum_i w_i(\Delta_i(a)-\widehat\mu_a)^2}
+    {1-\sum_i w_i^2},\\
+  \widehat{\operatorname{SE}}_a &=
+    \sqrt{\widehat v_a\sum_iw_i^2}.
+\end{align}
+The action predictor is \(\arg\max_a\widehat\mu_a\).  Importantly, it is fixed before
+gating.  The confidence score is
+\(g=\widehat\mu_{a^*}-1.645\widehat{\operatorname{SE}}_{a^*}\).
+
+\subsection{Calibration and comparators}
+
+On the independent calibration split, the threshold is the least restrictive value
+whose one-sided 95\% Clopper--Pearson upper bound on conditional harm is at most
+0.20 with at least 30 active queries \citep{clopper1934}.  Among eligible thresholds,
+coverage is maximised.  If none is eligible, the policy abstains everywhere.
+
+Comparator selectors are (i) local kNN mean without the uncertainty penalty,
+(ii) a multi-output histogram gradient-boosted gain predictor, and (iii) a regressor
+that gates the single globally best training action.  A LightGBM LambdaRank model
+\citep{ke2017lightgbm} is a separate ranking baseline trained on BM25, BGE, SciNCL,
+SPECTER2, log-citation, and year features.  It is fitted for 500 trees on training
+labels only, with linear graded gains $[0,1,2]$; calibration and locked labels are
+not used for fitting or early stopping.
+
+\section{Locked experimental protocol}
+
+\subsection{Data and split}
+
+The pinned SciRepEval RELISH input contains 3,190 seed papers,
+\CandidatePairs{} judged pairs, and
+\UniqueDocuments{} unique documents.  Exact normalised seed titles form groups.
+The SHA-256 of \code{relish-v1|group} assigns buckets 0--1 to training, bucket 2 to
+calibration, and buckets 3--9 to the locked test.  This produced \TrainQueries{},
+\CalibrationQueries{}, and \TestQueries{} seed papers, with no identical normalised
+title crossing splits.
+
+A pre-test character 3--5-gram TF--IDF audit found 17 cross-split title pairs with
+cosine similarity at least 0.70 and four locked queries with similarity at least 0.80
+to a training or calibration title.  Membership was not changed after this audit.  We
+instead froze those four identifiers and report a secondary analysis excluding them,
+while retaining all 2,240 queries in the primary result.
+
+The test labels have three levels: irrelevant, somewhat relevant, and relevant.  We
+retain every query.  Candidate order is not used as a feature, and score ties are
+broken by the dataset document identifier.  The raw input and label Parquet files are
+pinned to immutable Hugging Face revisions and checksummed.
+
+\subsection{Metadata and model provenance}
+
+Semantic Scholar metadata are requested only by exact, non-missing CorpusId.  Raw
+responses, request fields, retrieval times, missing records, title checks, and the
+snapshot hash are stored.  The 1,788 unique documents whose CorpusId is encoded as
+missing are not string-matched to external records.  This avoids the silent entity
+resolution errors present in the earlier repository.
+
+All neural models are resolved to immutable Hugging Face commit hashes.  Documents
+are encoded locally from title and abstract on an NVIDIA RTX 4060; SciNCL uses its
+required tokenizer separator between the two fields, BGE uses a space, and SPECTER2
+uses its base tokenizer separator.  No old embedding
+cache is accepted.  Package versions, CUDA build, hardware, input hashes, score
+hashes, policy decisions, and Git commit are included in the run manifest.
+
+\subsection{Outcomes and inference}
+
+The primary metric is NDCG@10 with linear graded gain, matching the
+trec\_eval/pytrec\_eval convention used by SciRepEval \citep{jarvelin2002}.  Secondary
+metrics are NDCG@20, full-list NDCG, MAP@10, Recall@50, and Precision@10.  MAP@10
+uses the total number of relevant candidates in its denominator, as in
+\code{map\_cut.10}; it is not renormalised when more than ten candidates are relevant.
+At the calibrated operating point and coverage
+budgets 10\%, 25\%, 50\%, 75\%, and 100\%, we report overall mean gain, active-query
+mean gain, \(P(\Delta<0\mid\mathrm{active})\),
+\(P(\Delta\le -0.05\mid\mathrm{active})\), and mean negative shortfall
+\(E[\max(0,-\Delta)\mid\mathrm{active}]\).  Selective risk is the latter conditional
+expectation as queries are included in descending confidence order; AURC is its
+trapezoidal area.
+
+The mean primary effect receives a 10,000-replicate paired query bootstrap
+interval.  A two-sided paired randomisation test uses 100,000 sign flips.  Secondary
+method comparisons use Holm adjustment \citep{holm1979}.  These analyses quantify
+sampling uncertainty over the fixed fitted policy; they do not establish a
+distribution-free safety guarantee.
+
+\subsection{Retrospective audit}
+
+SCIDOCS, SciFact, NFCorpus, and TREC-COVID are not reused as confirmatory tests.  The
+repository audit found that SCIDOCS current citation counts were coupled to its
+citation-prediction target, official tests had influenced method choices, SciFact and
+NFCorpus contained cross-split duplicate query texts, and cache files lacked complete
+query-order and metadata hashes.  The earlier ``fuzzy gate'' claims are removed
+because neither an implementation nor result lineage exists on any repository branch.
+
+\section{Results}
+
+\subsection{Retriever and learned-fusion baselines}
+
+\IfFileExists{generated/table_retrievers.tex}{
+  \input{generated/table_retrievers.tex}
+}{
+  \begin{center}\fbox{Retriever table is generated only from the completed locked run.}\end{center}
+}
+
+The comparison uses the same candidate documents and labels for every system.  We
+interpret the strongest locked baseline descriptively; it does not change the
+pre-specified SPECTER2 backbone or the primary comparison.
+
+\subsection{Calibrated operating points and matched coverage}
+
+\IfFileExists{generated/table_policy.tex}{
+  \input{generated/table_policy.tex}
+}{
+  \begin{center}\fbox{Policy table is generated only from the completed locked run.}\end{center}
+}
+
+\IfFileExists{generated/figure_risk_coverage.pdf}{
+  \begin{figure}[t]
+    \centering
+    \includegraphics[width=0.82\linewidth]{generated/figure_risk_coverage.pdf}
+    \caption{Conditional negative-shortfall risk as coverage increases.  Each selector
+    keeps its action predictor fixed; only its confidence threshold changes.}
+    \label{fig:riskcoverage}
+  \end{figure}
+}{}
+
+\subsection{Primary inference and failure analysis}
+
+At its frozen operating point, BiblioGuard changes mean NDCG@10 by \PrimaryGain{}
+with 95\% interval \PrimaryCI{} and paired-randomisation \(p=\PrimaryPValue\).
+Coverage is \PrimaryCoverage{}.  The claim made from this result follows the stopping
+rule stated before label access: superiority is asserted only if the policy exceeds the
+content baseline and remains competitive with the fixed-action and learned selectors
+under equal coverage.
+
+\IfFileExists{generated/table_actions.tex}{
+  \input{generated/table_actions.tex}
+}{}
+
+\section{Discussion}
+
+\subsection{What the locked result does and does not show}
+
+The experiment isolates current bibliographic metadata on a human relatedness target.
+It can show whether such signals improve a fixed 2026 recommendation snapshot under
+the stated candidate pool and development distribution.  It cannot show that citation
+count caused relevance, that the same policy would have worked historically, or that
+offline NDCG implies downstream researcher benefit.
+
+The strongest simple comparator is central to interpretation.  If a global action has
+the best mean effect, the main finding is that a popularity/recency prior is useful on
+this collection, not that local routing is necessary.  If LambdaRank is best, the
+selective layer may still reduce exposure but is not the best ranker.  If calibration
+forces complete abstention, it prevents an unsupported intervention but adds no
+retrieval value.  These are substantive outcomes rather than presentation problems.
+
+\subsection{Why the earlier positive result is withdrawn}
+
+The original SCIDOCS number mixed a post-benchmark citation snapshot with a citation-
+prediction outcome.  The same test collection was then used for feature, neighbour,
+and penalty ablations.  Its reported score is numerically reproducible from stored
+arrays, but it is not clean confirmatory evidence.  Reclassifying it as retrospective
+is necessary even though it weakens the paper's headline.
+
+\subsection{Responsible use}
+
+Citation-based reranking can amplify established venues, older papers, dominant
+languages, and already visible groups.  The system should expose which signal changed
+a ranking and permit users to disable metadata.  Missing metadata must remain missing;
+title-based substitution without verified identifiers is inappropriate for a decision
+study.  Abstention limits the number of interventions but does not remove bias among
+the interventions that remain.
+
+\section{Limitations}
+
+First, the locked confirmatory collection is biomedical; other domains in the old
+study are retrospective.  Second, RELISH uses candidate pools assembled by earlier
+retrieval systems, so results do not evaluate full-corpus recall.  Third, current
+citation counts and years are an explicitly dated snapshot.  Fourth, the local
+standard error does not model dependence among related training papers.  Fifth, the
+calibration rule controls only an empirical split-specific upper bound and may choose
+zero coverage.  Sixth, 2,240 test seeds quantify offline ranking, not user satisfaction
+or discovery diversity.  Seventh, four locked titles have high character similarity
+to development titles; the frozen sensitivity analysis addresses but cannot eliminate
+all topic dependence.  Eighth, model and metadata providers may later change, even
+though the resolved artefacts and hashes used here are frozen.
+
+\section{Reproducibility}
+
+The public repository contains the locked protocol, exact data and model revisions,
+fully pinned environment, phased command-line pipeline, leakage tests, frozen
+decision hash, per-query locked outcomes, generated tables, and manuscript source.
+Aligned candidate scores, citation/year vectors, and the compressed metadata snapshot
+are stored with the release; large public inputs and document embeddings are regenerated.
+A
+verification command checks every published number against the machine-readable
+result file.  A v3.1 erratum records metric, preprocessing, and integrity corrections
+found during code audit; it was committed before locked-test access.  The original
+protocol commit predates labelled RELISH evaluation, and the freeze
+manifest explicitly records \code{test\_labels\_consumed: false}.
+
+\section{Conclusion}
+
+We replaced a favourable but confounded four-benchmark narrative with a locked,
+leakage-aware test of bibliographic intervention.  The revised contribution is not
+that citation and recency are universally useful, nor that a heuristic lower score is
+a safety theorem.  It is a falsifiable selective-decision protocol, a fair comparison
+against modern retrieval and learned fusion, and an auditable account of query-level
+benefit and harm.  The empirical conclusion is determined by the frozen RELISH run
+rather than selected after it.
+
+\section*{Declarations}
+
+\textbf{Funding.} The author received no specific funding for this work.
+
+\textbf{Competing interests.} The author declares no competing interests.
+
+\textbf{Ethics.} The computational study uses public, de-identified benchmark data.
+RELISH's original collection and consent procedures are described by
+\citet{brown2019relish}.
+
+\textbf{Data and code availability.} Code, protocols, hashes, and non-restricted
+results are available in the public PaperPilot-Reproduction repository.  The final
+commit identifier is inserted after the verified release; no archival DOI is claimed
+until one exists.
+
+\textbf{Author contributions.} Zichen Feng: conceptualisation, methodology, software,
+validation, formal analysis, investigation, writing---original draft, and
+writing---review and editing.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+\end{document}

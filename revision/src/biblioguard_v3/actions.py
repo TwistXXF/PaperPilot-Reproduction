@@ -27,11 +27,22 @@ def reciprocal_rank_scores(
     semantic: np.ndarray, metadata: np.ndarray, corpus_ids: list[str | int], k: int
 ) -> np.ndarray:
     semantic_order = stable_order(semantic, corpus_ids)
-    metadata_order = stable_order(metadata, corpus_ids)
     semantic_rank = np.empty(len(semantic_order), dtype=int)
-    metadata_rank = np.empty(len(metadata_order), dtype=int)
     semantic_rank[semantic_order] = np.arange(1, len(semantic_order) + 1)
-    metadata_rank[metadata_order] = np.arange(1, len(metadata_order) + 1)
+    metadata = np.asarray(metadata, dtype=float)
+    if not np.isfinite(metadata).all():
+        raise ValueError("Metadata rank input contains a non-finite value")
+    metadata_order = np.argsort(-metadata, kind="stable")
+    sorted_values = metadata[metadata_order]
+    metadata_rank = np.empty(len(metadata_order), dtype=float)
+    start = 0
+    while start < len(metadata_order):
+        stop = start + 1
+        while stop < len(metadata_order) and sorted_values[stop] == sorted_values[start]:
+            stop += 1
+        midrank = 0.5 * ((start + 1) + stop)
+        metadata_rank[metadata_order[start:stop]] = midrank
+        start = stop
     return 1.0 / (k + semantic_rank) + 1.0 / (k + metadata_rank)
 
 

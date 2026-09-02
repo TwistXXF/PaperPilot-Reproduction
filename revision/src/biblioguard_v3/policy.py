@@ -100,13 +100,13 @@ def calibrate_threshold(
     harm_upper_bound: float,
     confidence: float,
     minimum_active: int,
-) -> dict[str, float | int | bool]:
+) -> dict[str, float | int | bool | None]:
     scores = np.asarray(gate_scores, dtype=float)
     effects = np.asarray(realised_effects, dtype=float)
     if scores.shape != effects.shape or scores.ndim != 1:
         raise ValueError("Calibration arrays must be aligned vectors")
     candidates = np.unique(scores)
-    eligible: list[dict[str, float | int | bool]] = []
+    eligible: list[dict[str, float | int | bool | None]] = []
     for threshold in candidates:
         active_mask = scores >= threshold
         active = int(np.sum(active_mask))
@@ -132,10 +132,9 @@ def calibrate_threshold(
             "active": 0,
             "coverage": 0.0,
             "harms": 0,
-            "harm_upper": 0.0,
-            "mean_gain": 0.0,
+            "harm_upper": None,
+            "mean_gain": None,
             "eligible": False,
         }
     eligible.sort(key=lambda row: (-float(row["coverage"]), -float(row["mean_gain"]), -float(row["threshold"])))
     return eligible[0]
-

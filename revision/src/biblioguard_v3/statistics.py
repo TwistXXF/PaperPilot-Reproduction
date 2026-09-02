@@ -16,7 +16,9 @@ def deterministic_top_k(scores: Iterable[float], coverage: float) -> np.ndarray:
     return selected
 
 
-def policy_outcomes(effects: Iterable[float], active: Iterable[bool]) -> dict[str, float | int]:
+def policy_outcomes(
+    effects: Iterable[float], active: Iterable[bool]
+) -> dict[str, float | int | None]:
     delta = np.asarray(list(effects), dtype=float)
     mask = np.asarray(list(active), dtype=bool)
     if delta.shape != mask.shape:
@@ -29,10 +31,10 @@ def policy_outcomes(effects: Iterable[float], active: Iterable[bool]) -> dict[st
             "active": 0,
             "coverage": 0.0,
             "overall_mean_gain": 0.0,
-            "conditional_mean_gain": 0.0,
-            "conditional_harm_probability": 0.0,
-            "severe_harm_probability": 0.0,
-            "mean_negative_shortfall": 0.0,
+            "conditional_mean_gain": None,
+            "conditional_harm_probability": None,
+            "severe_harm_probability": None,
+            "mean_negative_shortfall": None,
         }
     return {
         "queries": len(delta),
@@ -107,4 +109,3 @@ def holm_adjust(pvalues: dict[str, float]) -> dict[str, float]:
         running = max(running, min(1.0, (count - index) * float(value)))
         adjusted[name] = running
     return adjusted
-

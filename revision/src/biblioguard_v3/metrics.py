@@ -21,7 +21,9 @@ def dcg(relevance: np.ndarray, k: int) -> float:
     if len(values) == 0:
         return 0.0
     discounts = np.log2(np.arange(2, len(values) + 2, dtype=float))
-    return float(np.sum((np.power(2.0, values) - 1.0) / discounts))
+    # SciRepEval delegates NDCG to trec_eval/pytrec_eval, whose graded gain is
+    # the relevance level itself (RELISH: 0, 1, 2), not 2**rel - 1.
+    return float(np.sum(values / discounts))
 
 
 def ndcg_at_k(relevance: Iterable[float], order: np.ndarray, k: int) -> float:
@@ -57,7 +59,9 @@ def average_precision_at_k(relevance: Iterable[float], order: np.ndarray, k: int
         if is_relevant:
             hits += 1
             total += hits / rank
-    return float(total / min(positives, k))
+    # trec_eval map_cut.k keeps the total number of relevant documents in the
+    # denominator; it does not renormalise to one when more than k are relevant.
+    return float(total / positives)
 
 
 def evaluate_ranking(
@@ -68,7 +72,8 @@ def evaluate_ranking(
     return {
         "ndcg_at_10": ndcg_at_k(relevance_array, order, 10),
         "ndcg_at_20": ndcg_at_k(relevance_array, order, 20),
-        "map_at_10": average_precision_at_k(relevance_array, order, 10),
+        "ndcg_full": ndcg_at_k(relevance_array, order, len(relevance_array)),
+        "map_cut_10": average_precision_at_k(relevance_array, order, 10),
         "recall_at_50": recall_at_k(relevance_array, order, 50),
         "precision_at_10": precision_at_k(relevance_array, order, 10),
     }
@@ -78,4 +83,3 @@ def validate_metric_range(metrics: dict[str, float]) -> None:
     for name, value in metrics.items():
         if not math.isfinite(value) or not 0.0 <= value <= 1.0:
             raise ValueError(f"Metric {name} is outside [0, 1]: {value}")
-
