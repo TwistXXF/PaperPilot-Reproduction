@@ -1,5 +1,16 @@
 # PaperPilot-Reproduction
 
+> **Current audited study (2026):** start with
+> [`revision/README.md`](revision/README.md), the locked RELISH protocol in
+> [`revision/PROTOCOL.md`](revision/PROTOCOL.md), and the disclosed corrections in
+> [`revision/ERRATA.md`](revision/ERRATA.md).  The earlier BEIR/ESWA experiments below
+> are retained for forensic reproduction only.  Their official test collections had
+> already influenced method development, and the SCIDOCS citation intervention couples
+> post-benchmark citation counts to a citation-prediction target; they are not presented
+> as confirmatory evidence in the revised manuscript.
+
+## Legacy retrospective study
+
 Reproduction package for the manuscript:
 
 > **BiblioGuard: Selective bibliographic metadata intervention for
