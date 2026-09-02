@@ -40,6 +40,17 @@ RETRIEVER_LABELS = {
     "lambdarank": "LambdaRank fusion",
 }
 
+ACTION_LABELS = {
+    "citation_015": r"Citation ($w=0.15$)",
+    "citation_030": r"Citation ($w=0.30$)",
+    "recency_015": r"Recency ($w=0.15$)",
+    "recency_030": r"Recency ($w=0.30$)",
+    "balanced_015": r"Citation + recency ($w=0.15$)",
+    "balanced_030": r"Citation + recency ($w=0.30$)",
+    "rrf_citation": "RRF with citation",
+    "rrf_recency": "RRF with recency",
+}
+
 METRIC_ORDER = [
     "ndcg_at_10",
     "ndcg_at_20",
@@ -92,7 +103,8 @@ def optional_number(value: float | None, *, percent: bool = False, signed: bool 
     numeric = 100 * value if percent else value
     suffix = r"\%" if percent else ""
     sign = "+" if signed and numeric > 0 else ""
-    return f"{sign}{numeric:.4f}{suffix}"
+    digits = 1 if percent else 4
+    return f"{sign}{numeric:.{digits}f}{suffix}"
 
 
 def write_text(path: Path, text: str) -> None:
@@ -220,10 +232,14 @@ def render_tables_and_figure(results: dict[str, Any], generated: Path) -> None:
         r"Action & NDCG@10 & Gain vs. SPECTER2 \\",
         r"\midrule",
     ]
-    for action in sorted(results["fixed_action_ndcg_at_10"]):
+    fixed_actions = results["fixed_action_ndcg_at_10"]
+    action_order = [name for name in ACTION_LABELS if name in fixed_actions]
+    action_order.extend(sorted(set(fixed_actions).difference(action_order)))
+    for action in action_order:
         ndcg = results["fixed_action_ndcg_at_10"][action]
         gain = results["fixed_action_gain_vs_specter2"][action]
-        action_lines.append(f"{action.replace('_', r'\_')} & {ndcg:.4f} & {gain:+.4f} \\\\")
+        label = ACTION_LABELS.get(action, action.replace("_", r"\_"))
+        action_lines.append(f"{label} & {ndcg:.4f} & {gain:+.4f} \\\\")
     action_lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}", ""])
     write_text(generated / "table_actions.tex", "\n".join(action_lines))
 
