@@ -307,6 +307,7 @@ def main() -> None:
             "results_macros.tex",
             "table_retrievers.tex",
             "table_policy.tex",
+            "table_matched.tex",
             "table_actions.tex",
         ):
             if (regenerated / name).read_bytes() != (REVISION / "paper" / "generated" / name).read_bytes():

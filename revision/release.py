@@ -187,6 +187,28 @@ def render_tables_and_figure(results: dict[str, Any], generated: Path) -> None:
     policy_lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table*}", ""])
     write_text(generated / "table_policy.tex", "\n".join(policy_lines))
 
+    matched_lines = [
+        r"\begin{table*}[t]",
+        r"\centering",
+        r"\caption{Matched-coverage comparison. Each cell is overall mean NDCG@10 gain / conditional harm probability among active queries.}",
+        r"\label{tab:matched}",
+        r"\small",
+        r"\begin{tabular}{lccccc}",
+        r"\toprule",
+        r"Selector & 10\% & 25\% & 50\% & 75\% & 100\% \\",
+        r"\midrule",
+    ]
+    for method in ["biblioguard", "global_gain_gate", "hgb_gain", "knn_mean"]:
+        cells: list[str] = []
+        for budget in ["0.10", "0.25", "0.50", "0.75", "1.00"]:
+            row = results["matched_coverage"][method][budget]
+            harm = row["conditional_harm_probability"]
+            harm_text = "--" if harm is None else f"{100 * harm:.1f}\\%"
+            cells.append(f"{row['overall_mean_gain']:+.4f} / {harm_text}")
+        matched_lines.append(f"{METHOD_LABELS[method]} & " + " & ".join(cells) + r" \\")
+    matched_lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table*}", ""])
+    write_text(generated / "table_matched.tex", "\n".join(matched_lines))
+
     action_lines = [
         r"\begin{table}[t]",
         r"\centering",

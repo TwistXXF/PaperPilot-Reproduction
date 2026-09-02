@@ -20,6 +20,7 @@ class ReleaseRenderingTests(unittest.TestCase):
         }
         operating = {}
         curves = {}
+        matched = {}
         for name in ("biblioguard", "knn_mean", "hgb_gain", "global_gain_gate", "global_all"):
             operating[name] = {
                 "coverage": 0.0 if name == "biblioguard" else 1.0,
@@ -30,6 +31,13 @@ class ReleaseRenderingTests(unittest.TestCase):
                 "mean_negative_shortfall": None if name == "biblioguard" else 0.0,
             }
             curves[name] = {"coverage": [0.5, 1.0], "risk": [0.0, 0.1], "aurc": 0.025}
+            matched[name] = {
+                budget: {
+                    "overall_mean_gain": 0.0,
+                    "conditional_harm_probability": 0.0,
+                }
+                for budget in ("0.10", "0.25", "0.50", "0.75", "1.00")
+            }
         results = {
             "dataset_summary": {
                 "queries": 12,
@@ -45,6 +53,7 @@ class ReleaseRenderingTests(unittest.TestCase):
                 "paired_randomisation_p": 1.0,
             },
             "operating_point": operating,
+            "matched_coverage": matched,
             "retrieval_metrics": retrieval,
             "fixed_action_ndcg_at_10": {"citation_015": 0.51},
             "fixed_action_gain_vs_specter2": {"citation_015": 0.01},
@@ -54,6 +63,7 @@ class ReleaseRenderingTests(unittest.TestCase):
             output = Path(directory)
             render_tables_and_figure(results, output)
             self.assertTrue((output / "figure_risk_coverage.pdf").exists())
+            self.assertTrue((output / "table_matched.tex").exists())
             policy = (output / "table_policy.tex").read_text(encoding="utf-8")
             self.assertIn("BiblioGuard", policy)
             self.assertIn("--", policy)
@@ -63,6 +73,9 @@ class ReleaseRenderingTests(unittest.TestCase):
             ]
             self.assertEqual(len(retriever_rows), 1)
             self.assertTrue(retriever_rows[0].endswith("\\\\"))
+            matched = (output / "table_matched.tex").read_text(encoding="utf-8")
+            self.assertIn("Matched-coverage comparison", matched)
+            self.assertIn("BiblioGuard", matched)
 
 
 if __name__ == "__main__":

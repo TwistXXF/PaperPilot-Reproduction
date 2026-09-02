@@ -52,7 +52,8 @@ outcome and will not claim superior safety or effectiveness.
   buckets 0--1 are policy training, bucket 2 is calibration, and buckets 3--9
   are the locked test.  A content-only audit will report exact and near
   duplicates across splits; labels are never used to alter membership.
-- Candidate order is not treated as a feature.  Ties are broken by CorpusId.
+- Candidate order is not treated as a feature.  Score ties are broken by the
+  dataset `doc_id`; metadata lookup separately uses exact CorpusId.
 - The content-only near-duplicate audit uses character 3--5-gram TF--IDF cosine
   similarity over titles.  It does not alter the primary split.  A secondary
   sensitivity analysis excludes locked titles with similarity at least 0.80
@@ -83,7 +84,8 @@ to a machine-readable run manifest.
 
 ## Retrieval baselines
 
-All models rank the same 60-document candidate pool using title plus abstract.
+All models rank the same per-query candidate pool (53--60 documents, usually 60)
+using title plus abstract.
 The planned unsupervised baselines are BM25, BGE-small-en-v1.5, SciNCL, and
 SPECTER2.  SPECTER2 is fixed a priori as the primary backbone; its choice is
 not conditional on development performance.  A supervised LightGBM LambdaRank

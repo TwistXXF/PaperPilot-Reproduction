@@ -132,7 +132,7 @@ contains more than 180,000 document-pair judgements supplied by over 1,500 scien
 \citep{brown2019relish}.  A broad comparison found that representation choice and
 domain adaptation materially affect biomedical recommendation
 \citep{zhang2022comparative}.  The current study uses RELISH's three graded relevance
-levels and its fixed 60-document candidate pools.
+levels and its fixed per-query candidate pools of 53--60 documents.
 
 Dense scientific representations have advanced beyond compact general-purpose
 sentence encoders.  SPECTER uses citation links to learn paper representations
@@ -330,6 +330,12 @@ pre-specified SPECTER2 backbone or the primary comparison.
   \input{generated/table_policy.tex}
 }{
   \begin{center}\fbox{Policy table is generated only from the completed locked run.}\end{center}
+}
+
+\IfFileExists{generated/table_matched.tex}{
+  \input{generated/table_matched.tex}
+}{
+  \begin{center}\fbox{Matched-coverage table is generated only from the completed locked run.}\end{center}
 }
 
 \IfFileExists{generated/figure_risk_coverage.pdf}{
