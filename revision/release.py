@@ -292,6 +292,30 @@ def publish_release(artifacts: Path) -> dict[str, Any]:
     for name, expected in frozen_feature_hashes.items():
         require_hash(artifacts / "scores" / name, expected, f"Frozen feature {name}")
     require_hash(
+        artifacts / "prepared" / "prepare_manifest.json",
+        frozen_manifest["prepare_manifest_sha256"],
+        "Prepared-data manifest",
+    )
+    prepared_manifest = read_json(artifacts / "prepared" / "prepare_manifest.json")
+    raw_input_download = read_json(artifacts / "raw" / "relish_inputs.parquet.download.json")
+    if prepared_manifest.get("source", {}).get("sha256") != raw_input_download.get("sha256"):
+        raise RuntimeError("Prepared data do not descend from the pinned raw input file")
+    require_hash(
+        artifacts / "prepared" / "content_audit.json",
+        frozen_manifest["content_audit_sha256"],
+        "Content-only split audit",
+    )
+    require_hash(
+        source_metrics / "train.jsonl.gz",
+        frozen_manifest["training_metrics_sha256"],
+        "Frozen training metrics",
+    )
+    require_hash(
+        source_metrics / "calibration.jsonl.gz",
+        frozen_manifest["calibration_metrics_sha256"],
+        "Frozen calibration metrics",
+    )
+    require_hash(
         REVISION / "config" / "models.json",
         frozen_manifest["models_config_sha256"],
         "Model configuration",
@@ -301,13 +325,60 @@ def publish_release(artifacts: Path) -> dict[str, Any]:
         frozen_manifest["requirements_lock_sha256"],
         "Requirements lock",
     )
+    prepared_documents_sha256 = prepared_manifest["outputs"]["documents"]["sha256"]
     for model in ("bge", "scincl", "specter2"):
         score_manifest = read_json(artifacts / "scores" / f"{model}.manifest.json")
+        embedding_manifest_path = artifacts / "embeddings" / f"{model}.manifest.json"
         require_hash(
-            artifacts / "embeddings" / f"{model}.manifest.json",
+            embedding_manifest_path,
             score_manifest["model_manifest_sha256"],
             f"Embedding manifest {model}",
         )
+        embedding_manifest = read_json(embedding_manifest_path)
+        if embedding_manifest.get("documents_sha256") != prepared_documents_sha256:
+            raise RuntimeError(f"{model} embeddings used a different prepared document file")
+        if score_manifest.get("scores_sha256") != frozen_score_hashes[model]:
+            raise RuntimeError(f"{model} score manifest differs from the frozen score array")
+
+    bm25_manifest = read_json(artifacts / "scores" / "bm25.manifest.json")
+    if bm25_manifest.get("scores_sha256") != frozen_score_hashes["bm25"]:
+        raise RuntimeError("BM25 manifest differs from the frozen score array")
+
+    actions_manifest = read_json(artifacts / "scores" / "actions.manifest.json")
+    metadata_path = artifacts / "metadata" / "semantic_scholar.jsonl.gz"
+    require_hash(metadata_path, actions_manifest["metadata_sha256"], "Metadata snapshot")
+    metadata_manifest = read_json(metadata_path.with_suffix(metadata_path.suffix + ".manifest.json"))
+    if metadata_manifest.get("snapshot_sha256") != sha256_file(metadata_path):
+        raise RuntimeError("Metadata snapshot differs from its provenance manifest")
+    for name, expected in actions_manifest.get("outputs", {}).items():
+        path = artifacts / "scores" / f"{name}.npy"
+        require_hash(path, expected, f"Action output {name}")
+
+    lambdarank_manifest = read_json(artifacts / "scores" / "lambdarank.manifest.json")
+    if lambdarank_manifest.get("scores_sha256") != frozen_score_hashes["lambdarank"]:
+        raise RuntimeError("LambdaRank manifest differs from the frozen score array")
+    require_hash(
+        artifacts / "scores" / "lambdarank_model.txt",
+        lambdarank_manifest["model_sha256"],
+        "LambdaRank model",
+    )
+
+    raw_label_download = read_json(artifacts / "raw" / "relish_labels.parquet.download.json")
+    split_files = {
+        "train": ("train.jsonl.gz", "train.jsonl.gz"),
+        "calibration": ("calibration.jsonl.gz", "calibration.jsonl.gz"),
+        "locked_test": ("locked_test.jsonl.gz", "locked_test.jsonl.gz"),
+    }
+    for split, (label_name, metric_name) in split_files.items():
+        label_path = artifacts / "labels" / label_name
+        label_manifest = read_json(label_path.with_suffix(label_path.suffix + ".manifest.json"))
+        require_hash(label_path, label_manifest["output_sha256"], f"{split} labels")
+        if label_manifest.get("source_sha256") != raw_label_download.get("sha256"):
+            raise RuntimeError(f"{split} labels do not descend from the pinned raw label file")
+        metric_path = source_metrics / metric_name
+        metric_manifest = read_json(metric_path.with_suffix(metric_path.suffix + ".manifest.json"))
+        if metric_manifest.get("labels_sha256") != label_manifest["output_sha256"]:
+            raise RuntimeError(f"{split} metrics and label manifests differ")
 
     locked_metrics_path = source_metrics / "locked_test.jsonl.gz"
     locked_metrics_manifest = read_json(
@@ -335,7 +406,7 @@ def publish_release(artifacts: Path) -> dict[str, Any]:
             source_metrics / "calibration.jsonl.gz", published / "calibration_metrics.jsonl.gz"
         ),
         copy_verified(
-            artifacts / "metadata" / "semantic_scholar.jsonl.gz",
+            metadata_path,
             published / "metadata" / "semantic_scholar.jsonl.gz",
         ),
     ]
@@ -345,6 +416,7 @@ def publish_release(artifacts: Path) -> dict[str, Any]:
         "offsets.npy",
         "citation_count.npy",
         "year.npy",
+        "lambdarank_model.txt",
     ] + [f"{name}.npy" for name in sorted(frozen_score_hashes)]
     for name in score_files:
         copied.append(

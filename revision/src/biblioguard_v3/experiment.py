@@ -577,6 +577,7 @@ def freeze_decisions(
         "offsets.npy",
         "citation_count.npy",
         "year.npy",
+        "lambdarank_model.txt",
         "layout.manifest.json",
         "bm25.manifest.json",
         "bge.manifest.json",

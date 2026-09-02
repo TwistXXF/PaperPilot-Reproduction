@@ -287,6 +287,7 @@ class PhaseIsolationTests(unittest.TestCase):
             np.save(scores / "year.npy", 2000 + np.arange(len(candidate_ids)), allow_pickle=False)
             write_json(scores / "actions.manifest.json", {"fixture": True})
             write_json(scores / "lambdarank.manifest.json", {"fixture": True})
+            (scores / "lambdarank_model.txt").write_text("fixture", encoding="utf-8")
             for action_name in action_names:
                 np.save(
                     scores / f"action_{action_name}.npy",

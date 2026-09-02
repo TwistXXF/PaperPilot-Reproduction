@@ -114,15 +114,81 @@ def main() -> None:
         if sha256_file(path) != expected:
             raise RuntimeError(f"Published feature differs from public freeze: {name}")
 
+    prepare_manifest_path = published / "manifests" / "prepared" / "prepare_manifest.json"
+    if sha256_file(prepare_manifest_path) != frozen["prepare_manifest_sha256"]:
+        raise RuntimeError("Published prepared-data manifest differs from the public freeze")
+    prepare_manifest = read_json(prepare_manifest_path)
+    raw_input_download = read_json(
+        published / "manifests" / "raw" / "relish_inputs.parquet.download.json"
+    )
+    if prepare_manifest.get("source", {}).get("sha256") != raw_input_download.get("sha256"):
+        raise RuntimeError("Published prepared data have a different raw input source")
+    content_audit_path = published / "manifests" / "prepared" / "content_audit.json"
+    if sha256_file(content_audit_path) != frozen["content_audit_sha256"]:
+        raise RuntimeError("Published content audit differs from the public freeze")
+
     if sha256_file(REVISION / "config" / "models.json") != frozen["models_config_sha256"]:
         raise RuntimeError("Model configuration changed after the public freeze")
     if sha256_file(REVISION / "requirements-lock.txt") != frozen["requirements_lock_sha256"]:
         raise RuntimeError("Requirements lock changed after the public freeze")
+    prepared_documents_sha256 = prepare_manifest["outputs"]["documents"]["sha256"]
     for model in ("bge", "scincl", "specter2"):
         score_manifest = read_json(published / "manifests" / "scores" / f"{model}.manifest.json")
         embedding_manifest = published / "manifests" / "embeddings" / f"{model}.manifest.json"
         if sha256_file(embedding_manifest) != score_manifest["model_manifest_sha256"]:
             raise RuntimeError(f"Published embedding provenance differs for {model}")
+        embedding_report = read_json(embedding_manifest)
+        if embedding_report.get("documents_sha256") != prepared_documents_sha256:
+            raise RuntimeError(f"Published {model} embeddings used different prepared documents")
+        if score_manifest.get("scores_sha256") != frozen_scores[model]:
+            raise RuntimeError(f"Published {model} score manifest differs from its array")
+
+    bm25_manifest = read_json(published / "manifests" / "scores" / "bm25.manifest.json")
+    if bm25_manifest.get("scores_sha256") != frozen_scores["bm25"]:
+        raise RuntimeError("Published BM25 manifest differs from its score array")
+
+    metadata_path = published / "metadata" / "semantic_scholar.jsonl.gz"
+    actions_manifest = read_json(published / "manifests" / "scores" / "actions.manifest.json")
+    if sha256_file(metadata_path) != actions_manifest["metadata_sha256"]:
+        raise RuntimeError("Published metadata differs from the frozen action provenance")
+    for name, expected in actions_manifest.get("outputs", {}).items():
+        output_path = published / "scores" / f"{name}.npy"
+        if sha256_file(output_path) != expected:
+            raise RuntimeError(f"Published action output differs from its manifest: {name}")
+    metadata_manifest = read_json(
+        published / "manifests" / "metadata" / "semantic_scholar.jsonl.gz.manifest.json"
+    )
+    if metadata_manifest.get("snapshot_sha256") != sha256_file(metadata_path):
+        raise RuntimeError("Published metadata differs from its provenance manifest")
+
+    lambdarank_manifest = read_json(
+        published / "manifests" / "scores" / "lambdarank.manifest.json"
+    )
+    if lambdarank_manifest.get("scores_sha256") != frozen_scores["lambdarank"]:
+        raise RuntimeError("Published LambdaRank manifest differs from its score array")
+    if sha256_file(published / "scores" / "lambdarank_model.txt") != lambdarank_manifest.get(
+        "model_sha256"
+    ):
+        raise RuntimeError("Published LambdaRank model differs from its manifest")
+
+    raw_label_download = read_json(
+        published / "manifests" / "raw" / "relish_labels.parquet.download.json"
+    )
+    for split, metric_name in (
+        ("train", "train"),
+        ("calibration", "calibration"),
+        ("locked_test", "locked_test"),
+    ):
+        label_manifest = read_json(
+            published / "manifests" / "labels" / f"{split}.jsonl.gz.manifest.json"
+        )
+        metric_manifest = read_json(
+            published / "manifests" / "metrics" / f"{metric_name}.jsonl.gz.manifest.json"
+        )
+        if label_manifest.get("source_sha256") != raw_label_download.get("sha256"):
+            raise RuntimeError(f"Published {split} label manifest has a different raw source")
+        if metric_manifest.get("labels_sha256") != label_manifest.get("output_sha256"):
+            raise RuntimeError(f"Published {split} metric/label lineage differs")
 
     locked_manifest = read_json(
         published / "manifests" / "metrics" / "locked_test.jsonl.gz.manifest.json"
