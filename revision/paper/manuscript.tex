@@ -15,6 +15,7 @@
 
 \sisetup{round-mode=places,round-precision=4,detect-all}
 \setlist{nosep,leftmargin=*}
+\setlength{\emergencystretch}{2em}
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\dataset}{RELISH}
 
@@ -35,7 +36,8 @@
 \title{When should bibliographic metadata alter related-article recommendations?\\
 A leakage-aware selective evaluation}
 \author{Zichen Feng\\
-Department of Computer Science and Technology, University of Sanya, Sanya, Hainan, China\\
+Department of Computer Science and Technology, University of Sanya\\
+Sanya, Hainan, China\\
 \texttt{3353854381@qq.com}}
 \date{}
 
@@ -124,8 +126,8 @@ reported and the method is not described as safer or more effective.
 
 Research-paper recommenders combine content, collaborative, and graph signals, but
 their datasets and evaluation designs vary widely \citep{zhang2023survey}.  RELISH
-provides more than 180,000 document-pair judgements from over 1,500 scientists
-\citep{brown2019relish}; a broad comparison found that representation choice and
+contains more than 180,000 document-pair judgements supplied by over 1,500 scientists
+\citep{brown2019relish}.  A broad comparison found that representation choice and
 domain adaptation materially affect biomedical recommendation
 \citep{zhang2022comparative}.  The current study uses RELISH's three graded relevance
 levels and its fixed 60-document candidate pools.
@@ -136,15 +138,21 @@ sentence encoders.  SPECTER uses citation links to learn paper representations
 \citep{ostendorff2022scincl}.  SciRepEval showed that scientific representations do not
 generalise uniformly across task formats and introduced task-format adapters in
 SPECTER2 \citep{singh2023scirepeval}.  We therefore compare lexical BM25, BGE-small,
-SciNCL, and the SPECTER2 proximity adapter on exactly the same candidate pools.
+SciNCL, and the SPECTER2 proximity adapter on exactly the same candidate pools; the
+BGE checkpoint belongs to the C-Pack embedding resources \citep{xiao2024cpack}.
+Scholarly retrieval remains sensitive to linguistic form, while aspect-level
+multi-vector representations can improve fine-grained document similarity
+\citep{singh2022inefficiency,mysore2022multivector}.
 
-Recent academic recommendation work uses large citation graphs, content, and learned
-multi-stage systems \citep{stergiopoulos2024academic,kanwal2024multiple}.  Knowledge-
-aware citation recommendation and OAG-Bench further illustrate the stronger graph and
-benchmark comparisons expected in current TKDE and KDD research
-\citep{wu2024supporting,zhang2024oagbench}.  These methods address broader problems
-than the present metadata intervention, but they motivate the inclusion of a supervised
-LambdaRank fusion rather than comparison only with fixed linear weights.
+Recent systems span fine-grained abstract analysis, sequential writing assistance,
+large citation graphs, and local citation-context modelling
+\citep{takahashi2022solutiontailor,santosa2024s3par,stergiopoulos2024academic,
+kanwal2024multiple,jebari2023context,goyal2024symtax}.  Knowledge-aware citation
+recommendation and OAG-Bench represent, respectively, a local citation task and
+human-curated academic-graph tasks \citep{wu2024supporting,zhang2024oagbench}; their
+scores are not directly comparable with RELISH seed-paper relatedness.  Their breadth
+nevertheless makes a supervised fusion baseline more informative than comparison only
+with fixed linear weights.
 
 \subsection{Bibliographic signals and bias}
 
@@ -165,6 +173,9 @@ under explicit assumptions \citep{thomas2015hcpi}.  BiblioGuard borrows the oper
 idea of a pessimistic score but does not inherit a theorem: similarity-selected
 neighbours are dependent and the weighted standard error is heuristic.  We therefore
 calibrate a threshold on a separate split and call it an empirical operating rule.
+Formal post-selection risk guarantees require accounting for parameter selection, for
+example through learn-then-test calibration \citep{angelopoulos2025learn}; the selected
+Clopper--Pearson screen used here is not such a guarantee.
 
 \section{Problem formulation}
 
@@ -236,7 +247,7 @@ not used for fitting or early stopping.
 The pinned SciRepEval RELISH input contains 3,190 seed papers,
 \CandidatePairs{} judged pairs, and
 \UniqueDocuments{} unique documents.  Exact normalised seed titles form groups.
-The SHA-256 of \code{relish-v1|group} assigns buckets 0--1 to training, bucket 2 to
+The SHA-256 of the salt \code{relish-v1} and group title assigns buckets 0--1 to training, bucket 2 to
 calibration, and buckets 3--9 to the locked test.  This produced \TrainQueries{},
 \CalibrationQueries{}, and \TestQueries{} seed papers, with no identical normalised
 title crossing splits.
@@ -269,8 +280,8 @@ hashes, policy decisions, and Git commit are included in the run manifest.
 
 \subsection{Outcomes and inference}
 
-The primary metric is NDCG@10 with linear graded gain, matching the
-trec\_eval/pytrec\_eval convention used by SciRepEval \citep{jarvelin2002}.  Secondary
+The primary metric is NDCG@10 with linear graded gain, matching the convention used
+by SciRepEval's \code{trec\_eval} evaluator \citep{jarvelin2002}.  Secondary
 metrics are NDCG@20, full-list NDCG, MAP@10, Recall@50, and Precision@10.  MAP@10
 uses the total number of relevant candidates in its denominator, as in
 \code{map\_cut.10}; it is not renormalised when more than ten candidates are relevant.
@@ -280,7 +291,7 @@ mean gain, \(P(\Delta<0\mid\mathrm{active})\),
 \(P(\Delta\le -0.05\mid\mathrm{active})\), and mean negative shortfall
 \(E[\max(0,-\Delta)\mid\mathrm{active}]\).  Selective risk is the latter conditional
 expectation as queries are included in descending confidence order; AURC is its
-trapezoidal area.
+trapezoidal area \citep{zhou2025aurc}.
 
 The mean primary effect receives a 10,000-replicate paired query bootstrap
 interval.  A two-sided paired randomisation test uses 100,000 sign flips.  Secondary
